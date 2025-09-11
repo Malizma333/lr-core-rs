@@ -12,6 +12,10 @@ impl Vector2Di {
         Vector2Di::new(v1.x(), v1.y())
     }
 
+    pub fn equal(v1: &Vector2Di, v2: &Vector2Di) -> bool {
+        v1.x() == v2.x() && v1.y() == v2.y()
+    }
+
     pub fn x(&self) -> i64 {
         self.x
     }
@@ -28,16 +32,14 @@ impl Vector2Di {
         self.y = y;
     }
 
+    /** Creates a new vector that is the result of `v1 + v2` */
     pub fn add(v1: &Vector2Di, v2: &Vector2Di) -> Vector2Di {
         Vector2Di::new(v1.x() + v2.x(), v1.y() + v2.y())
     }
 
+    /** Creates a new vector that is the result of `v1 - v2` */
     pub fn sub(v1: &Vector2Di, v2: &Vector2Di) -> Vector2Di {
         Vector2Di::new(v1.x() - v2.x(), v1.y() - v2.y())
-    }
-
-    pub fn equal(v1: &Vector2Di, v2: &Vector2Di) -> bool {
-        v1.x() == v2.x() && v1.y() == v2.y()
     }
 }
 

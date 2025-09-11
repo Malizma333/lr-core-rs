@@ -12,6 +12,10 @@ impl Vector2Df {
         Vector2Df::new(v1.x(), v1.y())
     }
 
+    pub fn equal(v1: &Vector2Df, v2: &Vector2Df) -> bool {
+        v1.x() == v2.x() && v1.y() == v2.y()
+    }
+
     pub fn x(&self) -> f64 {
         self.x
     }
@@ -28,26 +32,32 @@ impl Vector2Df {
         self.y = y;
     }
 
+    /** Creates a new vector that is the result of `v1 + v2` */
     pub fn add(v1: &Vector2Df, v2: &Vector2Df) -> Vector2Df {
         Vector2Df::new(v1.x() + v2.x(), v1.y() + v2.y())
     }
 
-    pub fn sub(v1: &Vector2Df, v2: &Vector2Df) -> Vector2Df {
+    /** Creates a new vector that is the result of `v1 - v2` */
+    pub fn subtract(v1: &Vector2Df, v2: &Vector2Df) -> Vector2Df {
         Vector2Df::new(v1.x() - v2.x(), v1.y() - v2.y())
     }
 
-    pub fn equal(v1: &Vector2Df, v2: &Vector2Df) -> bool {
-        v1.x() == v2.x() && v1.y() == v2.y()
-    }
-
-    pub fn scale(v1: &Vector2Df, s: f64) -> Vector2Df {
+    /** Creates a new vector that is the result of `v1 * s` */
+    pub fn multiply(v1: &Vector2Df, s: f64) -> Vector2Df {
         Vector2Df::new(v1.x() * s, v1.y() * s)
     }
 
+    /** Creates a new vector that is the result of `v1 / s` */
+    pub fn divide(v1: &Vector2Df, s: f64) -> Vector2Df {
+        Vector2Df::new(v1.x() / s, v1.y() / s)
+    }
+
+    /** Calculates the result of `v1 ⋅ v2` */
     pub fn dot(v1: &Vector2Df, v2: &Vector2Df) -> f64 {
         v1.x() * v2.x() + v1.y() * v2.y()
     }
 
+    /** Calculates the result of `v1 ⨯ v2` */
     pub fn cross(v1: &Vector2Df, v2: &Vector2Df) -> f64 {
         v1.x() * v2.y() - v1.y() * v2.x()
     }
@@ -64,10 +74,12 @@ impl Vector2Df {
         ((v1.x() - v2.x()) * (v1.x() - v2.x()) + (v1.y() - v2.y()) * (v1.y() - v2.y())).sqrt()
     }
 
+    /** Creates a new vector that is `v1` rotated 90° clockwise about the origin */
     pub fn rotate_cw(v1: &Vector2Df) -> Vector2Df {
         Vector2Df::new(v1.y(), -v1.x())
     }
 
+    /** Creates a new vector that is `v1` rotated 90° counterclockwise about the origin */
     pub fn rotate_ccw(v1: &Vector2Df) -> Vector2Df {
         Vector2Df::new(-v1.y(), v1.x())
     }
@@ -114,7 +126,7 @@ mod tests {
     fn subtraction() {
         let v1 = Vector2Df::new(1.0, 5.0);
         let v2 = Vector2Df::new(4.0, 2.0);
-        let v3 = Vector2Df::sub(&v1, &v2);
+        let v3 = Vector2Df::subtract(&v1, &v2);
         assert_eq!(v3.x(), -3.0);
         assert_eq!(v3.y(), 3.0);
     }
@@ -122,9 +134,17 @@ mod tests {
     #[test]
     fn scalar_multiplication() {
         let v1 = Vector2Df::new(2.0, 3.0);
-        let v2 = Vector2Df::scale(&v1, 5.0);
+        let v2 = Vector2Df::multiply(&v1, 5.0);
         assert_eq!(v2.x(), 10.0);
         assert_eq!(v2.y(), 15.0);
+    }
+
+    #[test]
+    fn scalar_division() {
+        let v1 = Vector2Df::new(2.0, 6.0);
+        let v2 = Vector2Df::divide(&v1, 2.0);
+        assert_eq!(v2.x(), 1.0);
+        assert_eq!(v2.y(), 3.0);
     }
 
     #[test]
