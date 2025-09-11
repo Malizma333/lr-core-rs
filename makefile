@@ -22,16 +22,13 @@ dev: ## Run the application in development mode
 build: ## Build the optimized, product-ready application
 
 .PHONY: format
-format: ## Format all files with cargo and dprint
-	-cd vector2d && cargo fmt
+format: ## Format all files with rustfmt
+	cargo fmt --all
 
 .PHONY: lint
 lint: ## Lint rust files with clippy
-	-cd vector2d && cargo clippy
+	cargo clippy --all-targets --all-features -- -Aclippy::style
 
 .PHONY: test
 test: ## Run rust unit tests
-	-cd vector2d && cargo test
-
-.PHONY: precommit
-precommit: test lint format ## Run tests, then lint and format code
+	cargo test --workspace
