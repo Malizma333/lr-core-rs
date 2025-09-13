@@ -1,45 +1,59 @@
+use std::ops::{Add, Sub};
+
 pub struct Vector2Di {
-    x: i64,
-    y: i64,
+    x: i32,
+    y: i32,
+}
+
+impl Copy for Vector2Di {}
+
+impl Clone for Vector2Di {
+    fn clone(&self) -> Vector2Di {
+        Vector2Di::new(self.x(), self.y())
+    }
+}
+
+impl PartialEq for Vector2Di {
+    fn eq(&self, other: &Self) -> bool {
+        self.x() == other.x() && self.y() == other.y()
+    }
+}
+
+impl Add for Vector2Di {
+    type Output = Vector2Di;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Vector2Di::new(self.x() + rhs.x(), self.y() + rhs.y())
+    }
+}
+
+impl Sub for Vector2Di {
+    type Output = Vector2Di;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Vector2Di::new(self.x() - rhs.x(), self.y() - rhs.y())
+    }
 }
 
 impl Vector2Di {
-    pub fn new(x: i64, y: i64) -> Vector2Di {
+    pub fn new(x: i32, y: i32) -> Vector2Di {
         Vector2Di { x, y }
     }
 
-    pub fn copy(v1: &Vector2Di) -> Vector2Di {
-        Vector2Di::new(v1.x(), v1.y())
-    }
-
-    pub fn equal(v1: &Vector2Di, v2: &Vector2Di) -> bool {
-        v1.x() == v2.x() && v1.y() == v2.y()
-    }
-
-    pub fn x(&self) -> i64 {
+    pub fn x(&self) -> i32 {
         self.x
     }
 
-    pub fn y(&self) -> i64 {
+    pub fn y(&self) -> i32 {
         self.y
     }
 
-    pub fn set_x(&mut self, x: i64) {
+    pub fn set_x(&mut self, x: i32) {
         self.x = x;
     }
 
-    pub fn set_y(&mut self, y: i64) {
+    pub fn set_y(&mut self, y: i32) {
         self.y = y;
-    }
-
-    /** Creates a new vector that is the result of `v1 + v2` */
-    pub fn add(v1: &Vector2Di, v2: &Vector2Di) -> Vector2Di {
-        Vector2Di::new(v1.x() + v2.x(), v1.y() + v2.y())
-    }
-
-    /** Creates a new vector that is the result of `v1 - v2` */
-    pub fn sub(v1: &Vector2Di, v2: &Vector2Di) -> Vector2Di {
-        Vector2Di::new(v1.x() - v2.x(), v1.y() - v2.y())
     }
 }
 
@@ -64,18 +78,20 @@ mod tests {
     }
 
     #[test]
-    fn copy() {
+    fn clone() {
         let v1 = Vector2Di::new(5, 10);
-        let v2 = Vector2Di::copy(&v1);
+        let mut v2 = v1.clone();
         assert_eq!(v2.x(), 5);
         assert_eq!(v2.y(), 10);
+        v2.set_x(20);
+        assert_ne!(v1.x(), 20);
     }
 
     #[test]
     fn addition() {
         let v1 = Vector2Di::new(1, 2);
         let v2 = Vector2Di::new(4, 5);
-        let v3 = Vector2Di::add(&v1, &v2);
+        let v3 = v1 + v2;
         assert_eq!(v3.x(), 5);
         assert_eq!(v3.y(), 7);
     }
@@ -84,7 +100,7 @@ mod tests {
     fn subtraction() {
         let v1 = Vector2Di::new(1, 5);
         let v2 = Vector2Di::new(4, 2);
-        let v3 = Vector2Di::sub(&v1, &v2);
+        let v3 = v1 - v2;
         assert_eq!(v3.x(), -3);
         assert_eq!(v3.y(), 3);
     }
@@ -94,9 +110,9 @@ mod tests {
         let v1 = Vector2Di::new(1, 5);
         let v2 = Vector2Di::new(4, 3);
         let v3 = Vector2Di::new(1, 5);
-        assert_eq!(Vector2Di::equal(&v1, &v2), false);
-        assert_eq!(Vector2Di::equal(&v2, &v1), false);
-        assert_eq!(Vector2Di::equal(&v1, &v3), true);
-        assert_eq!(Vector2Di::equal(&v2, &v3), false);
+        assert_eq!(v1 == v2, false);
+        assert_eq!(v2 == v1, false);
+        assert_eq!(v1 == v3, true);
+        assert_eq!(v2 == v3, false);
     }
 }
