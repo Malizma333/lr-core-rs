@@ -1,6 +1,6 @@
-use geometry::{Line, Point, Rectangle};
+use geometry::{Circle, Line, Point, Rectangle};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use vector2d::Vector2Df;
+use vector2d::{Vector2Df, Vector2Di};
 
 use crate::grid::cell_position::{CellKey, GridCell};
 
@@ -226,48 +226,74 @@ impl Grid {
         cells
     }
 
-    /** Finds all of the lines that lie within a rectangular region (inclusive) and returns their ids */
-    pub fn select_lines_in_rect(&self, rectangle: Rectangle) -> Vec<u32> {
-        let mut regional_lines: HashSet<u32> = HashSet::new();
-        let lower_cell = GridCell::new(rectangle.bottom_left(), self.cell_size);
-        let upper_cell = GridCell::new(rectangle.top_right(), self.cell_size);
-
-        for cell_x in lower_cell.position().x()..upper_cell.position().x() + 1 {
-            for cell_y in lower_cell.position().y()..upper_cell.position().y() + 1 {
+    fn get_lines_between_grid_cells(&self, cell1: GridCell, cell2: GridCell) -> HashSet<u32> {
+        let lower = Vector2Di::new(
+            cell1.position().x().min(cell2.position().x()),
+            cell1.position().y().min(cell2.position().y()),
+        );
+        let upper = Vector2Di::new(
+            cell1.position().x().max(cell2.position().x()),
+            cell1.position().y().max(cell2.position().y()),
+        );
+        let mut lines_between: HashSet<u32> = HashSet::new();
+        for cell_x in lower.x()..upper.x() + 1 {
+            for cell_y in lower.y()..upper.y() + 1 {
                 let key = GridCell::new(
                     Point::new(f64::from(cell_x), f64::from(cell_y)),
                     self.cell_size,
                 )
                 .get_key();
                 if let Some(cell) = self.cells.get(&key) {
-                    regional_lines.extend(cell.iter());
+                    lines_between.extend(cell.iter());
                 }
             }
         }
+        lines_between
+    }
 
+    /** Finds all of the lines that lie within a rectangular region (inclusive) and returns their ids */
+    pub fn select_lines_in_rect(&self, rectangle: Rectangle) -> Vec<u32> {
+        let lower_cell = GridCell::new(rectangle.bottom_left(), self.cell_size);
+        let upper_cell = GridCell::new(rectangle.top_right(), self.cell_size);
         let mut lines_included: Vec<u32> = Vec::new();
 
-        for id in regional_lines {
-            // TODO: make sure that line should exist in self.lines (otherwise something went wrong)
+        for id in self.get_lines_between_grid_cells(lower_cell, upper_cell) {
             if let Some(line) = self.lines.get(&id) {
-                if rectangle.contains(line) {
+                if rectangle.includes_portion_of_line(line) {
                     lines_included.push(id);
                 }
+            } else {
+                unreachable!("line registered in grid cells should exist in line hashmap")
             }
         }
 
         lines_included
     }
 
-    pub fn select_lines_in_radius(&self, center: Point, radius: f64) -> Vec<u32> {
-        todo!()
+    pub fn select_lines_in_radius(&self, circle: Circle) -> Vec<u32> {
+        let radius_vector = Vector2Df::one() * circle.radius();
+        let lower_cell = GridCell::new(circle.center() - radius_vector, self.cell_size);
+        let upper_cell = GridCell::new(circle.center() + radius_vector, self.cell_size);
+        let mut lines_included: Vec<u32> = Vec::new();
+
+        for id in self.get_lines_between_grid_cells(lower_cell, upper_cell) {
+            if let Some(line) = self.lines.get(&id) {
+                if circle.includes_part_of_line(line) {
+                    lines_included.push(id);
+                }
+            } else {
+                unreachable!("line registered in grid cells should exist in line hashmap")
+            }
+        }
+
+        lines_included
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::grid::{Grid, cell_position::GridCell};
-    use geometry::{Line, Point, Rectangle};
+    use geometry::{Circle, Line, Point, Rectangle};
 
     #[test]
     fn line_id() {
@@ -325,21 +351,6 @@ mod tests {
         grid.register(&position, line_zero);
 
         assert!(grid.cells.get(&key).is_some_and(|x| x.contains(&line_zero)));
-    }
-
-    #[test]
-    fn cell_positions_of_line_60() {
-        todo!()
-    }
-
-    #[test]
-    fn cell_positions_of_line_61() {
-        todo!()
-    }
-
-    #[test]
-    fn cell_positions_of_line_62() {
-        todo!()
     }
 
     #[test]
@@ -445,6 +456,34 @@ mod tests {
 
     #[test]
     fn select_circle() {
+        let mut grid = Grid::new(super::GridVersion::V6_2, 1);
+        grid.add_line(Line(Point::one(), Point::zero()));
+        grid.add_line(Line(Point::one(), Point::one() * 2.0));
+        grid.add_line(Line(Point::one() * 0.5, Point::one() * 2.0));
+        let lines = grid.select_lines_in_radius(Circle::new(Point::one(), 0.5));
+        assert!(lines.len() == 3);
+        let lines = grid.select_lines_in_radius(Circle::new(Point::zero(), 0.5));
+        assert!(lines.len() == 1);
+        let lines = grid.select_lines_in_radius(Circle::new(Point::one() * 2.0, 0.5));
+        assert!(lines.len() == 2);
+        let lines = grid.select_lines_in_radius(Circle::new(Point::new(-1.0, 0.0), 1.0));
+        assert!(lines.len() == 1);
+        let lines = grid.select_lines_in_radius(Circle::new(Point::one() * 1.5, 0.5));
+        assert!(lines.len() == 2);
+    }
+
+    #[test]
+    fn cell_positions_of_line_60() {
+        todo!()
+    }
+
+    #[test]
+    fn cell_positions_of_line_61() {
+        todo!()
+    }
+
+    #[test]
+    fn cell_positions_of_line_62() {
         todo!()
     }
 }

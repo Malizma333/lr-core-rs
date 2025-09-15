@@ -58,9 +58,22 @@ impl Line {
         }
     }
 
-    fn contains_point(&self, point: Point) -> bool {
+    pub fn contains_point(&self, point: Point) -> bool {
         Vector2Df::distance(self.0, point) + Vector2Df::distance(self.1, point)
             == Vector2Df::distance(self.0, self.1)
+    }
+
+    /** Returns the closest point that lies on this line from another point */
+    pub fn closest_included_point_from(&self, point: Point) -> Point {
+        let delta = self.1 - self.0;
+
+        if delta == Vector2Df::zero() {
+            self.0
+        } else {
+            let alignment = Vector2Df::dot(point - self.0, delta);
+            let percent_along_line = (alignment / delta.length_squared()).clamp(0.0, 1.0);
+            self.0 + percent_along_line * delta
+        }
     }
 }
 
@@ -108,6 +121,26 @@ mod tests {
         assert!(
             !line.contains_point(point4),
             "line should not contain point away from segment"
+        );
+    }
+
+    #[test]
+    fn closet_point_on_line() {
+        let line = Line(Point::new(-2.0, -1.0), Point::new(2.0, 1.0));
+        let point1 = Point::new(-1.0, 2.0);
+        let point2 = Point::new(-3.0, -3.0);
+        let point3 = Point::new(0.0, 0.0);
+        assert!(
+            line.closest_included_point_from(point1) == Point::new(0.0, 0.0),
+            "closest point should form line with other point perpendicular to this line"
+        );
+        assert!(
+            line.closest_included_point_from(point2) == Point::new(-2.0, -1.0),
+            "closest point away from line should be line endpoint"
+        );
+        assert!(
+            line.closest_included_point_from(point3) == Point::new(0.0, 0.0),
+            "closest point already on line should be the same point"
         );
     }
 }

@@ -101,8 +101,12 @@ impl Vector2Df {
         self.length_squared().sqrt()
     }
 
+    pub fn distance_squared(v1: Vector2Df, v2: Vector2Df) -> f64 {
+        (v1 - v2).length_squared()
+    }
+
     pub fn distance(v1: Vector2Df, v2: Vector2Df) -> f64 {
-        (v1.clone() - v2.clone()).length()
+        (v1 - v2).length()
     }
 
     /** Creates a new vector rotated 90° clockwise about the origin */

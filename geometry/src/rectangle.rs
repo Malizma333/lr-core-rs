@@ -88,16 +88,15 @@ impl Rectangle {
         )
     }
 
-    /** Whether this rectangle contains a segment of a line, including lines with endpoints outside of the rectangle */
-    pub fn contains(&self, line: &Line) -> bool {
-        let first_point_inside =
-            between(self.origin.x(), line.0.x(), self.origin.x() + self.size.x())
-                && between(self.origin.y(), line.0.y(), self.origin.y() + self.size.y());
-        let second_point_inside =
-            between(self.origin.x(), line.1.x(), self.origin.x() + self.size.x())
-                && between(self.origin.y(), line.1.y(), self.origin.y() + self.size.y());
+    pub fn contains_point(&self, point: Point) -> bool {
+        between(self.origin.x(), point.x(), self.origin.x() + self.size.x())
+            && between(self.origin.y(), point.y(), self.origin.y() + self.size.y())
+    }
 
-        (first_point_inside && second_point_inside)
+    /** Whether this rectangle includes part of a line, including lines with endpoints outside of the rectangle that intersect it */
+    pub fn includes_portion_of_line(&self, line: &Line) -> bool {
+        self.contains_point(line.0)
+            || self.contains_point(line.1)
             || self.bottom().intersects(line)
             || self.top().intersects(line)
             || self.left().intersects(line)
@@ -146,57 +145,62 @@ mod tests {
     }
 
     #[test]
-    fn contains() {
+    fn line_inclusion() {
         let rect = Rectangle::new(Point::new(-1.0, -3.0), Point::new(1.0, 3.0));
         let line1 = Line(Point::new(0.0, -2.0), Point::new(0.0, 2.0));
         let line2 = Line(Point::new(0.0, -2.0), Point::new(-2.0, 4.0));
         let line3 = Line(Point::new(2.0, -5.0), Point::new(-2.0, 4.0));
         let line4 = Line(Point::new(-2.0, -5.0), Point::new(-2.0, 4.0));
         assert!(
-            rect.contains(&line1),
+            rect.includes_portion_of_line(&line1),
             "rectangle should contain line inside"
         );
         assert!(
-            rect.contains(&line2),
+            rect.includes_portion_of_line(&line2),
             "rectangle should contain line with one point inside"
         );
         assert!(
-            rect.contains(&line3),
+            rect.includes_portion_of_line(&line3),
             "rectangle should contain line intersecting it"
         );
         assert!(
-            !rect.contains(&line4),
+            !rect.includes_portion_of_line(&line4),
             "rectangle should not contain line outside"
         );
     }
 
     #[test]
-    fn contains_edges() {
+    fn line_inclusion_edge_cases() {
         let rect = Rectangle::new(Point::new(-1.0, -3.0), Point::new(1.0, 3.0));
         let line1 = Line(Point::new(-2.0, -3.0), Point::new(3.0, -3.0));
         let line2 = Line(Point::new(-2.0, 3.0), Point::new(4.0, 3.0));
         let line3 = Line(Point::new(-1.0, -5.0), Point::new(-1.0, 4.0));
         let line4 = Line(Point::new(1.0, -3.0), Point::new(1.0, 4.0));
         let line5 = Line(Point::new(-2.0, -2.0), Point::new(0.0, -4.0));
+        let line6 = Line(Point::new(-5.0, -5.0), Point::new(-1.0, -1.0));
         assert!(
-            rect.contains(&line1),
+            rect.includes_portion_of_line(&line1),
             "rectangle should contain line collinear with bottom"
         );
         assert!(
-            rect.contains(&line2),
+            rect.includes_portion_of_line(&line2),
             "rectangle should contain line collinear with top"
         );
         assert!(
-            rect.contains(&line3),
+            rect.includes_portion_of_line(&line3),
             "rectangle should contain line collinear with left"
         );
         assert!(
-            rect.contains(&line4),
+            rect.includes_portion_of_line(&line4),
             "rectangle should contain line collinear with right"
         );
         assert!(
-            rect.contains(&line5),
+            rect.includes_portion_of_line(&line5),
             "rectangle should contain line intersecting corner"
+        );
+        assert!(
+            rect.includes_portion_of_line(&line6),
+            "rectangle should contain line with point touching perimeter"
         );
     }
 }
