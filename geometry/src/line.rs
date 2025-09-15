@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use vector2d::Vector2Df;
 
-use crate::{Point, between};
+use crate::Point;
 
 #[derive(PartialEq, Debug)]
 pub struct Line(pub Point, pub Point);
@@ -12,6 +12,10 @@ enum Orientation {
     Collinear,
     Clockwise,
     Counterclockwise,
+}
+
+fn between(bound0: f64, value: f64, bound1: f64) -> bool {
+    bound0.min(bound1) <= value && value <= bound0.max(bound1)
 }
 
 impl Line {

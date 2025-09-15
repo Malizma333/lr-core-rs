@@ -1,4 +1,4 @@
-use crate::{Line, Point, between};
+use crate::{Line, Point};
 use vector2d::Vector2Df;
 
 #[derive(Debug)]
@@ -89,8 +89,10 @@ impl Rectangle {
     }
 
     pub fn contains_point(&self, point: Point) -> bool {
-        between(self.origin.x(), point.x(), self.origin.x() + self.size.x())
-            && between(self.origin.y(), point.y(), self.origin.y() + self.size.y())
+        self.origin.x() <= point.x()
+            && point.x() <= self.origin.x() + self.size.x()
+            && self.origin.y() <= point.y()
+            && point.y() <= self.origin.y() + self.size.y()
     }
 
     /** Whether this rectangle includes part of a line, including lines with endpoints outside of the rectangle that intersect it */
