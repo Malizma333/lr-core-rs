@@ -484,11 +484,7 @@ mod tests {
         assert!(lines.len() == 2);
     }
 
-    #[test]
-    fn cell_positions_of_line_60() {
-        let grid = Grid::new(super::GridVersion::V6_0, 14);
-        let data =
-            fs::read_to_string("tests/grid_60_tests.json").expect("Failed to read JSON file");
+    fn run_grid_tests(grid: Grid, data: String) {
         let test_cases: Vec<GridTestCase> =
             serde_json::from_str(&data).expect("Failed to parse JSON");
 
@@ -512,6 +508,14 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn cell_positions_of_line_60() {
+        let grid = Grid::new(super::GridVersion::V6_0, 14);
+        let data =
+            fs::read_to_string("tests/grid_60_tests.json").expect("Failed to read JSON file");
+        run_grid_tests(grid, data);
     }
 
     #[test]
@@ -519,29 +523,7 @@ mod tests {
         let grid = Grid::new(super::GridVersion::V6_1, 14);
         let data =
             fs::read_to_string("tests/grid_61_tests.json").expect("Failed to read JSON file");
-        let test_cases: Vec<GridTestCase> =
-            serde_json::from_str(&data).expect("Failed to parse JSON");
-
-        for case in test_cases {
-            let line = Line::new(
-                Point::new(case.input.0, case.input.1),
-                Point::new(case.input.2, case.input.3),
-            );
-            let grid_cells = grid.get_cell_positions_along(&line);
-            assert!(
-                grid_cells.len() == case.expected.len(),
-                "Test '{}' failed",
-                case.name
-            );
-            for i in 0..grid_cells.len() {
-                assert!(
-                    grid_cells[i].position().x() == case.expected[i].0
-                        && grid_cells[i].position().y() == case.expected[i].1,
-                    "Test '{}' failed",
-                    case.name
-                );
-            }
-        }
+        run_grid_tests(grid, data);
     }
 
     #[test]
@@ -549,28 +531,6 @@ mod tests {
         let grid = Grid::new(super::GridVersion::V6_2, 14);
         let data =
             fs::read_to_string("tests/grid_62_tests.json").expect("Failed to read JSON file");
-        let test_cases: Vec<GridTestCase> =
-            serde_json::from_str(&data).expect("Failed to parse JSON");
-
-        for case in test_cases {
-            let line = Line::new(
-                Point::new(case.input.0, case.input.1),
-                Point::new(case.input.2, case.input.3),
-            );
-            let grid_cells = grid.get_cell_positions_along(&line);
-            assert!(
-                grid_cells.len() == case.expected.len(),
-                "Test '{}' failed",
-                case.name
-            );
-            for i in 0..grid_cells.len() {
-                assert!(
-                    grid_cells[i].position().x() == case.expected[i].0
-                        && grid_cells[i].position().y() == case.expected[i].1,
-                    "Test '{}' failed",
-                    case.name
-                );
-            }
-        }
+        run_grid_tests(grid, data);
     }
 }
