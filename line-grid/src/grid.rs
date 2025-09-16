@@ -1,4 +1,4 @@
-mod cell_position;
+mod grid_cell;
 mod line_grid;
 
 pub(crate) use line_grid::Grid;

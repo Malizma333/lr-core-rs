@@ -62,7 +62,7 @@ mod tests {
     use geometry::Point;
     use std::collections::HashMap;
 
-    use crate::grid::cell_position::GridCell;
+    use crate::grid::grid_cell::GridCell;
 
     #[test]
     fn unique_hash() {

@@ -2,7 +2,7 @@ use geometry::{Circle, Line, Point, Rectangle};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use vector2d::{Vector2Df, Vector2Di};
 
-use crate::grid::cell_position::{CellKey, GridCell};
+use crate::grid::grid_cell::{CellKey, GridCell};
 
 pub enum GridVersion {
     V6_0,
@@ -292,7 +292,7 @@ impl Grid {
 
 #[cfg(test)]
 mod tests {
-    use crate::grid::{Grid, cell_position::GridCell};
+    use crate::grid::{Grid, grid_cell::GridCell};
     use geometry::{Circle, Line, Point, Rectangle};
     use serde::Deserialize;
     use std::fs;
