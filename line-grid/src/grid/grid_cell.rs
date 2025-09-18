@@ -1,6 +1,8 @@
 use geometry::Point;
 use vector2d::{Vector2Df, Vector2Di};
 
+use crate::grid::line_grid::CELL_SIZE;
+
 pub type CellKey = i32;
 
 pub struct GridCell {
@@ -9,13 +11,13 @@ pub struct GridCell {
 }
 
 impl GridCell {
-    pub fn new(world_position: Point, cell_size: u32) -> GridCell {
-        let scaled_position = world_position / f64::from(cell_size);
+    pub fn new(world_position: Point) -> GridCell {
+        let scaled_position = world_position / f64::from(CELL_SIZE);
         let position = Vector2Di::new(
             scaled_position.x().floor() as i32,
             scaled_position.y().floor() as i32,
         );
-        let remainder = world_position - f64::from(cell_size) * Vector2Df::from(&position);
+        let remainder = world_position - f64::from(CELL_SIZE) * Vector2Df::from(&position);
         GridCell {
             position,
             remainder,
@@ -62,7 +64,7 @@ mod tests {
     use geometry::Point;
     use std::collections::HashMap;
 
-    use crate::grid::grid_cell::GridCell;
+    use crate::grid::{grid_cell::GridCell, line_grid::CELL_SIZE};
 
     #[test]
     fn unique_hash() {
@@ -70,7 +72,8 @@ mod tests {
 
         for i in -10..11 {
             for j in -10..11 {
-                let key = GridCell::new(Point::new(f64::from(i), f64::from(j)), 1).get_key();
+                let key =
+                    GridCell::new(CELL_SIZE * Point::new(f64::from(i), f64::from(j))).get_key();
                 assert!(!seen.contains_key(&key));
                 seen.insert(key, (i, j));
             }

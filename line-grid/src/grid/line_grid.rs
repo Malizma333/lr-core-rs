@@ -1,8 +1,9 @@
-use geometry::{Line, Point, Rectangle};
-use std::collections::{BTreeSet, HashMap, HashSet};
-use vector2d::{Vector2Df, Vector2Di};
-
 use crate::grid::grid_cell::{CellKey, GridCell};
+use geometry::{Line, Point};
+use std::collections::{BTreeSet, HashMap};
+use vector2d::Vector2Df;
+
+pub const CELL_SIZE: f64 = 14.0;
 
 pub enum GridVersion {
     V6_0,
@@ -14,15 +15,13 @@ pub type LineId = u32;
 
 pub struct Grid {
     version: GridVersion,
-    cell_size: u32,
     cells: HashMap<CellKey, BTreeSet<LineId>>,
 }
 
 impl Grid {
-    pub fn new(version: GridVersion, cell_size: u32) -> Grid {
+    pub fn new(version: GridVersion) -> Grid {
         Grid {
             version,
-            cell_size,
             cells: HashMap::new(),
         }
     }
@@ -69,17 +68,17 @@ impl Grid {
     }
 
     fn get_next_position(&self, current_position: Point, endpoints: &Line) -> Point {
-        let current_cell = GridCell::new(current_position, self.cell_size);
+        let current_cell = GridCell::new(current_position);
         let endpoint_vector = endpoints.get_vector();
 
         let mut delta_x = if endpoint_vector.x() > 0.0 {
-            f64::from(self.cell_size) - current_cell.remainder().x()
+            f64::from(CELL_SIZE) - current_cell.remainder().x()
         } else {
             -1.0 - current_cell.remainder().x()
         };
 
         let mut delta_y = if endpoint_vector.y() > 0.0 {
-            f64::from(self.cell_size) - current_cell.remainder().y()
+            f64::from(CELL_SIZE) - current_cell.remainder().y()
         } else {
             -1.0 - current_cell.remainder().y()
         };
@@ -87,16 +86,16 @@ impl Grid {
         if matches!(self.version, GridVersion::V6_2) {
             if current_cell.position().x() < 0 {
                 delta_x = if endpoint_vector.x() > 0.0 {
-                    f64::from(self.cell_size) + current_cell.remainder().x()
+                    f64::from(CELL_SIZE) + current_cell.remainder().x()
                 } else {
-                    -(f64::from(self.cell_size) + current_cell.remainder().x())
+                    -(f64::from(CELL_SIZE) + current_cell.remainder().x())
                 }
             }
             if current_cell.position().y() < 0 {
                 delta_y = if endpoint_vector.y() > 0.0 {
-                    f64::from(self.cell_size) + current_cell.remainder().y()
+                    f64::from(CELL_SIZE) + current_cell.remainder().y()
                 } else {
-                    -(f64::from(self.cell_size) + current_cell.remainder().y())
+                    -(f64::from(CELL_SIZE) + current_cell.remainder().y())
                 }
             }
         }
@@ -139,8 +138,8 @@ impl Grid {
     }
 
     fn get_cell_positions_along(&self, endpoints: &Line) -> Vec<GridCell> {
-        let initial_cell = GridCell::new(endpoints.p0(), self.cell_size);
-        let final_cell = GridCell::new(endpoints.p1(), self.cell_size);
+        let initial_cell = GridCell::new(endpoints.p0());
+        let final_cell = GridCell::new(endpoints.p1());
 
         if endpoints.p0() == endpoints.p1() || initial_cell.position() == final_cell.position() {
             return vec![initial_cell];
@@ -162,9 +161,9 @@ impl Grid {
             let absolute_normal = Vector2Df::new(line_normal.x().abs(), line_normal.y().abs());
             for cell_x in lower_bound_x..upper_bound_x + 1 {
                 for cell_y in lower_bound_y..upper_bound_y + 1 {
-                    let current_position_in_box = f64::from(self.cell_size)
+                    let current_position_in_box = CELL_SIZE
                         * Vector2Df::new(f64::from(cell_x) + 0.5, f64::from(cell_y) + 0.5);
-                    let next_cell_position = GridCell::new(current_position_in_box, self.cell_size);
+                    let next_cell_position = GridCell::new(current_position_in_box);
                     let distance_between_centers = line_midpoint - current_position_in_box;
                     let distance_from_cell_center =
                         Vector2Df::dot(absolute_normal, *next_cell_position.remainder());
@@ -195,7 +194,7 @@ impl Grid {
             {
                 current_position_along_line =
                     self.get_next_position(current_position_along_line, endpoints);
-                let next_cell = GridCell::new(current_position_along_line, self.cell_size);
+                let next_cell = GridCell::new(current_position_along_line);
                 if next_cell.position() == current_cell.position() {
                     break;
                 } else {
@@ -208,51 +207,29 @@ impl Grid {
         cells
     }
 
-    fn get_lines_between_grid_cells(&self, cell1: &GridCell, cell2: &GridCell) -> HashSet<u32> {
-        let lower = Vector2Di::new(
-            cell1.position().x().min(cell2.position().x()),
-            cell1.position().y().min(cell2.position().y()),
-        );
-        let upper = Vector2Di::new(
-            cell1.position().x().max(cell2.position().x()),
-            cell1.position().y().max(cell2.position().y()),
-        );
-        let mut lines_between: HashSet<u32> = HashSet::new();
-        for cell_x in lower.x()..upper.x() + 1 {
-            for cell_y in lower.y()..upper.y() + 1 {
-                let key = GridCell::new(
-                    Point::new(f64::from(cell_x), f64::from(cell_y)),
-                    self.cell_size,
-                )
-                .get_key();
-                if let Some(cell) = self.cells.get(&key) {
-                    lines_between.extend(cell.iter());
+    pub fn get_lines_near_point(&self, point: Point) -> Vec<LineId> {
+        let mut line_ids: Vec<LineId> = Vec::new();
+        for i in -1..2 {
+            for j in -1..2 {
+                let position = CELL_SIZE * Vector2Df::new(f64::from(i), f64::from(j)) + point;
+                let cell_key = GridCell::new(position).get_key();
+                if let Some(cell) = self.cells.get(&cell_key) {
+                    for line_id in cell.iter().rev() {
+                        line_ids.push(*line_id);
+                    }
                 }
             }
         }
-        lines_between
-    }
-
-    /** Finds all of the lines that lie near a rectangular region and returns their ids */
-    pub fn select_lines_near_rect(&self, rectangle: &Rectangle) -> Vec<u32> {
-        let lower_cell = GridCell::new(rectangle.bottom_left(), self.cell_size);
-        let upper_cell = GridCell::new(rectangle.top_right(), self.cell_size);
-        let mut lines_included: Vec<u32> = Vec::new();
-
-        for id in self.get_lines_between_grid_cells(&lower_cell, &upper_cell) {
-            lines_included.push(id);
-        }
-
-        lines_included
+        line_ids
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::grid::{Grid, grid_cell::GridCell, line_grid::LineId};
-    use geometry::{Circle, Line, Point, Rectangle};
+    use crate::grid::{Grid, grid_cell::GridCell, line_grid::CELL_SIZE};
+    use geometry::{Line, Point};
     use serde::Deserialize;
-    use std::{collections::HashMap, fs};
+    use std::fs;
     use vector2d::Vector2Df;
 
     #[derive(Deserialize)]
@@ -264,10 +241,13 @@ mod tests {
 
     #[test]
     fn add_move_remove_lines() {
-        let mut grid = Grid::new(super::GridVersion::V6_2, 1);
-        let line0 = Line::new(Point::zero(), Point::one());
-        let line1 = Line::new(Point::one() * 2.0, Point::one() * 3.0);
-        let cell_key = GridCell::new(Vector2Df::zero(), 1).get_key();
+        let mut grid = Grid::new(super::GridVersion::V6_2);
+        let line0 = Line::new(Point::zero(), Point::one() * CELL_SIZE);
+        let line1 = Line::new(
+            Point::one() * 2.0 * CELL_SIZE,
+            Point::one() * 3.0 * CELL_SIZE,
+        );
+        let cell_key = GridCell::new(Vector2Df::zero()).get_key();
 
         assert!(grid.cells.is_empty(), "new grid should have no cells");
 
@@ -308,28 +288,33 @@ mod tests {
     }
 
     #[test]
-    fn select_rect() {
-        let mut grid = Grid::new(super::GridVersion::V6_2, 1);
-        grid.add_line(0, &Line::new(Point::one() * 0.25, Point::one() * 0.5));
-        grid.add_line(1, &Line::new(Point::one() * 0.5, Point::one() * 1.5));
-        grid.add_line(2, &Line::new(Point::one() * 0.5, Point::one() * 2.5));
-        let lines =
-            grid.select_lines_near_rect(&Rectangle::new(Point::one() * -1.0, Point::one() * 5.0));
-        assert!(lines.len() == 3, "large rect should include all");
-        let lines =
-            grid.select_lines_near_rect(&Rectangle::new(Point::one() * 0.25, Point::one() * 0.75));
-        assert!(
-            lines.len() == 3,
-            "rect intersecting each should include all"
+    fn select_near_point() {
+        let mut grid = Grid::new(super::GridVersion::V6_2);
+        let line1 = Line::new(Point::new(10.0, 10.0), Point::new(17.0, 10.0));
+        let line2 = Line::new(Point::new(10.0, 10.0), Point::new(10.0, 17.0));
+        let line3 = Line::new(Point::new(34.0, 34.0), Point::new(50.0, 36.0));
+        grid.add_line(0, &line1);
+        grid.add_line(1, &line2);
+        grid.add_line(2, &line3);
+        let lines_near_point = grid.get_lines_near_point(Point::new(-3.0, -1.0));
+        assert_eq!(lines_near_point, vec![1, 0], "line order should match");
+        let lines_near_point = grid.get_lines_near_point(Point::new(50.0, 23.0));
+        assert_eq!(
+            lines_near_point,
+            vec![2, 2],
+            "list should contain duplicates"
         );
-        let lines =
-            grid.select_lines_near_rect(&Rectangle::new(Point::one() * 1.25, Point::one() * 1.75));
-        assert!(lines.len() == 2, "rect intersecting two should include two");
-        let lines =
-            grid.select_lines_near_rect(&Rectangle::new(Point::one() * -0.75, Point::one() * -0.5));
-        assert!(
-            lines.len() == 0,
-            "rect intersecting nothing should include nothing"
+        let lines_near_point = grid.get_lines_near_point(Point::new(7.0, 8.0));
+        assert_eq!(
+            lines_near_point,
+            vec![1, 0, 1, 0],
+            "cell processing order should match"
+        );
+        let lines_near_point = grid.get_lines_near_point(Point::new(17.0, 19.0));
+        assert_eq!(
+            lines_near_point,
+            vec![1, 0, 1, 0, 2],
+            "all lines in 3x3 should be included"
         );
     }
 
@@ -361,7 +346,7 @@ mod tests {
 
     #[test]
     fn cell_positions_of_line_60() {
-        let grid = Grid::new(super::GridVersion::V6_0, 14);
+        let grid = Grid::new(super::GridVersion::V6_0);
         let data =
             fs::read_to_string("tests/grid_60_tests.json").expect("Failed to read JSON file");
         run_grid_tests(grid, data);
@@ -369,7 +354,7 @@ mod tests {
 
     #[test]
     fn cell_positions_of_line_61() {
-        let grid = Grid::new(super::GridVersion::V6_1, 14);
+        let grid = Grid::new(super::GridVersion::V6_1);
         let data =
             fs::read_to_string("tests/grid_61_tests.json").expect("Failed to read JSON file");
         run_grid_tests(grid, data);
@@ -377,7 +362,7 @@ mod tests {
 
     #[test]
     fn cell_positions_of_line_62() {
-        let grid = Grid::new(super::GridVersion::V6_2, 14);
+        let grid = Grid::new(super::GridVersion::V6_2);
         let data =
             fs::read_to_string("tests/grid_62_tests.json").expect("Failed to read JSON file");
         run_grid_tests(grid, data);
