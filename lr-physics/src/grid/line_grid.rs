@@ -61,68 +61,62 @@ impl Grid {
         let current_cell = GridCell::new(current_position);
         let endpoint_vector = endpoints.get_vector();
 
-        let mut delta_x = if endpoint_vector.x() > 0.0 {
-            f64::from(CELL_SIZE) - current_cell.remainder().x()
+        let mut delta_x = if endpoint_vector.x > 0.0 {
+            f64::from(CELL_SIZE) - current_cell.remainder().x
         } else {
-            -1.0 - current_cell.remainder().x()
+            -1.0 - current_cell.remainder().x
         };
 
-        let mut delta_y = if endpoint_vector.y() > 0.0 {
-            f64::from(CELL_SIZE) - current_cell.remainder().y()
+        let mut delta_y = if endpoint_vector.y > 0.0 {
+            f64::from(CELL_SIZE) - current_cell.remainder().y
         } else {
-            -1.0 - current_cell.remainder().y()
+            -1.0 - current_cell.remainder().y
         };
 
         if matches!(self.version, GridVersion::V6_2) {
-            if current_cell.position().x() < 0 {
-                delta_x = if endpoint_vector.x() > 0.0 {
-                    f64::from(CELL_SIZE) + current_cell.remainder().x()
+            if current_cell.position().x < 0 {
+                delta_x = if endpoint_vector.x > 0.0 {
+                    f64::from(CELL_SIZE) + current_cell.remainder().x
                 } else {
-                    -(f64::from(CELL_SIZE) + current_cell.remainder().x())
+                    -(f64::from(CELL_SIZE) + current_cell.remainder().x)
                 }
             }
-            if current_cell.position().y() < 0 {
-                delta_y = if endpoint_vector.y() > 0.0 {
-                    f64::from(CELL_SIZE) + current_cell.remainder().y()
+            if current_cell.position().y < 0 {
+                delta_y = if endpoint_vector.y > 0.0 {
+                    f64::from(CELL_SIZE) + current_cell.remainder().y
                 } else {
-                    -(f64::from(CELL_SIZE) + current_cell.remainder().y())
+                    -(f64::from(CELL_SIZE) + current_cell.remainder().y)
                 }
             }
         }
 
-        if endpoint_vector.x() == 0.0 {
-            Point::new(current_position.x(), current_position.y() + delta_y)
-        } else if endpoint_vector.y() == 0.0 {
-            Point::new(current_position.x() + delta_x, current_position.y())
+        if endpoint_vector.x == 0.0 {
+            Point::new(current_position.x, current_position.y + delta_y)
+        } else if endpoint_vector.y == 0.0 {
+            Point::new(current_position.x + delta_x, current_position.y)
         } else if matches!(self.version, GridVersion::V6_1) {
-            let slope = endpoint_vector.y() / endpoint_vector.x();
-            let y_intercept = endpoints.p0().y() - slope * endpoints.p0().x();
-            let next_x = ((current_position.y() + delta_y - y_intercept) / slope).round();
-            let next_y = (slope * (current_position.x() + delta_x) + y_intercept).round();
-            if (next_y - current_position.y()).abs() < delta_y.abs() {
-                Point::new(current_position.x() + delta_x, next_y)
-            } else if (next_y - current_position.y()).abs() == delta_y.abs() {
-                Point::new(
-                    current_position.x() + delta_x,
-                    current_position.y() + delta_y,
-                )
+            let slope = endpoint_vector.y / endpoint_vector.x;
+            let y_intercept = endpoints.p0().y - slope * endpoints.p0().x;
+            let next_x = ((current_position.y + delta_y - y_intercept) / slope).round();
+            let next_y = (slope * (current_position.x + delta_x) + y_intercept).round();
+            if (next_y - current_position.y).abs() < delta_y.abs() {
+                Point::new(current_position.x + delta_x, next_y)
+            } else if (next_y - current_position.y).abs() == delta_y.abs() {
+                Point::new(current_position.x + delta_x, current_position.y + delta_y)
             } else {
-                Point::new(next_x, current_position.y() + delta_y)
+                Point::new(next_x, current_position.y + delta_y)
             }
         } else {
-            let y_based_delta_x = delta_y * (endpoint_vector.x() / endpoint_vector.y());
-            let x_based_delta_y = delta_x * (endpoint_vector.y() / endpoint_vector.x());
-            let next_x = current_position.x() + y_based_delta_x;
-            let next_y = current_position.y() + x_based_delta_y;
+            let y_based_delta_x = delta_y * (endpoint_vector.x / endpoint_vector.y);
+            let x_based_delta_y = delta_x * (endpoint_vector.y / endpoint_vector.x);
+            let next_x = current_position.x + y_based_delta_x;
+            let next_y = current_position.y + x_based_delta_y;
             if x_based_delta_y.abs() < delta_y.abs() {
-                Point::new(current_position.x() + delta_x, next_y)
+                Point::new(current_position.x + delta_x, next_y)
             } else if x_based_delta_y.abs() == delta_y.abs() {
-                Point::new(
-                    current_position.x() + delta_x,
-                    current_position.y() + delta_y,
-                )
+                Point::new(current_position.x + delta_x, current_position.y + delta_y)
             } else {
-                Point::new(next_x, current_position.y() + delta_y)
+                Point::new(next_x, current_position.y + delta_y)
             }
         }
     }
@@ -136,19 +130,19 @@ impl Grid {
         }
 
         let mut cells: Vec<GridCell> = Vec::new();
-        let lower_bound_x = initial_cell.position().x().min(final_cell.position().x());
-        let upper_bound_x = initial_cell.position().x().max(final_cell.position().x());
-        let lower_bound_y = initial_cell.position().y().min(final_cell.position().y());
-        let upper_bound_y = initial_cell.position().y().max(final_cell.position().y());
+        let lower_bound_x = initial_cell.position().x.min(final_cell.position().x);
+        let upper_bound_x = initial_cell.position().x.max(final_cell.position().x);
+        let lower_bound_y = initial_cell.position().y.min(final_cell.position().y);
+        let upper_bound_y = initial_cell.position().y.max(final_cell.position().y);
         let mut current_position_along_line = endpoints.p0();
         let mut current_cell = initial_cell;
         let line_vector = endpoints.get_vector();
         let line_normal = line_vector.rotate_ccw() * (1.0 / line_vector.length());
 
         if matches!(self.version, GridVersion::V6_0) {
-            let line_halfway = 0.5 * Vector2Df::new(line_vector.x().abs(), line_vector.y().abs());
+            let line_halfway = 0.5 * Vector2Df::new(line_vector.x.abs(), line_vector.y.abs());
             let line_midpoint = endpoints.p0() + 0.5 * line_vector;
-            let absolute_normal = Vector2Df::new(line_normal.x().abs(), line_normal.y().abs());
+            let absolute_normal = Vector2Df::new(line_normal.x.abs(), line_normal.y.abs());
             for cell_x in lower_bound_x..upper_bound_x + 1 {
                 for cell_y in lower_bound_y..upper_bound_y + 1 {
                     let current_position_in_box = CELL_SIZE
@@ -163,13 +157,13 @@ impl Grid {
                     );
                     let normal_distance_between_centers =
                         Vector2Df::dot(line_normal, distance_between_centers);
-                    let distance_from_line = (normal_distance_between_centers * line_normal.x())
+                    let distance_from_line = (normal_distance_between_centers * line_normal.x)
                         .abs()
-                        + (normal_distance_between_centers * line_normal.y()).abs();
-                    if line_halfway.x() + next_cell_position.remainder().x()
-                        >= distance_between_centers.x().abs()
-                        && line_halfway.y() + next_cell_position.remainder().y()
-                            >= distance_between_centers.y().abs()
+                        + (normal_distance_between_centers * line_normal.y).abs();
+                    if line_halfway.x + next_cell_position.remainder().x
+                        >= distance_between_centers.x.abs()
+                        && line_halfway.y + next_cell_position.remainder().y
+                            >= distance_between_centers.y.abs()
                         && cell_overlap_into_hitbox >= distance_from_line
                     {
                         cells.push(next_cell_position);
@@ -177,10 +171,10 @@ impl Grid {
                 }
             }
         } else {
-            while lower_bound_x <= current_cell.position().x()
-                && current_cell.position().x() <= upper_bound_x
-                && lower_bound_y <= current_cell.position().y()
-                && current_cell.position().y() <= upper_bound_y
+            while lower_bound_x <= current_cell.position().x
+                && current_cell.position().x <= upper_bound_x
+                && lower_bound_y <= current_cell.position().y
+                && current_cell.position().y <= upper_bound_y
             {
                 current_position_along_line =
                     self.get_next_position(current_position_along_line, endpoints);
@@ -328,8 +322,8 @@ mod tests {
             );
             for i in 0..grid_cells.len() {
                 assert!(
-                    grid_cells[i].position().x() == case.expected[i].0
-                        && grid_cells[i].position().y() == case.expected[i].1,
+                    grid_cells[i].position().x == case.expected[i].0
+                        && grid_cells[i].position().y == case.expected[i].1,
                     "Test '{}' failed",
                     case.name
                 );

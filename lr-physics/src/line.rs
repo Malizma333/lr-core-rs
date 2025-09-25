@@ -1,2 +1,2 @@
-mod computed;
-mod hitbox;
+pub mod computed;
+pub mod hitbox;

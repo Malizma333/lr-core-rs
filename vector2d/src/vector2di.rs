@@ -2,15 +2,15 @@ use std::ops::{Add, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vector2Di {
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Add for Vector2Di {
     type Output = Vector2Di;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Vector2Di::new(self.x() + rhs.x(), self.y() + rhs.y())
+        Vector2Di::new(self.x + rhs.x, self.y + rhs.y)
     }
 }
 
@@ -18,7 +18,7 @@ impl Sub for Vector2Di {
     type Output = Vector2Di;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Vector2Di::new(self.x() - rhs.x(), self.y() - rhs.y())
+        Vector2Di::new(self.x - rhs.x, self.y - rhs.y)
     }
 }
 
@@ -46,7 +46,7 @@ mod tests {
         let v2 = Vector2Di::new(4, 5);
         let v3 = v1 + v2;
         assert!(
-            v3.x() == 5 && v3.y() == 7,
+            v3.x == 5 && v3.y == 7,
             "vector addition should sum both components"
         );
     }
@@ -57,7 +57,7 @@ mod tests {
         let v2 = Vector2Di::new(4, 2);
         let v3 = v1 - v2;
         assert!(
-            v3.x() == -3 && v3.y() == 3,
+            v3.x == -3 && v3.y == 3,
             "vector subtraction should difference both components"
         );
     }

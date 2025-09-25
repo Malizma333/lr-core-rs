@@ -1,3 +1,4 @@
+use geometry::Point;
 use vector2d::Vector2Df;
 
 use crate::{entity::point::EntityPoint, line::computed::ComputedLineProperties};
@@ -5,16 +6,20 @@ use crate::{entity::point::EntityPoint, line::computed::ComputedLineProperties};
 pub(crate) const HITBOX_HEIGHT: f64 = 10.0;
 
 pub trait Hitbox: ComputedLineProperties {
+    /** Returns the new (position, previous position) to update a point with after it interacts with this line\
+    (The previous position is not necessarily `position - velocity`, it represents how much force is applied
+    on the momentum tick due to forces such as friction)
+    */
     fn interact(
         &self,
-        point: &mut EntityPoint,
+        point: &EntityPoint,
         distance_from_line_top: f64,
         position_between_ends: f64,
-    );
+    ) -> Option<(Point, Point)>;
 
-    fn check_interaction(&self, point: &mut EntityPoint) -> bool {
+    fn check_interaction(&self, point: &EntityPoint) -> Option<(Point, Point)> {
         if !point.contact() {
-            return false;
+            return None;
         }
 
         let offset_from_point = point.position() - self.endpoints().0;
@@ -29,10 +34,9 @@ pub trait Hitbox: ComputedLineProperties {
             && self.left_limit() <= position_between_ends
             && position_between_ends <= self.right_limit()
         {
-            self.interact(point, distance_from_line_top, position_between_ends);
-            true
+            self.interact(point, distance_from_line_top, position_between_ends)
         } else {
-            false
+            None
         }
     }
 }
@@ -69,10 +73,11 @@ mod tests {
     impl Hitbox for SimpleStruct {
         fn interact(
             &self,
-            point: &mut EntityPoint,
-            distance_from_line_top: f64,
-            position_between_ends: f64,
-        ) {
+            _point: &EntityPoint,
+            _distance_from_line_top: f64,
+            _position_between_ends: f64,
+        ) -> Option<(Point, Point)> {
+            Some((Point::zero(), Point::zero()))
         }
     }
 
@@ -91,7 +96,7 @@ mod tests {
             .unwrap();
         contact_point.update(Point::one(), Vector2Df::one(), Point::zero());
         assert!(
-            line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_some(),
             "Contact point moving into line within hitbox should interact"
         );
     }
@@ -111,7 +116,7 @@ mod tests {
             .unwrap();
         contact_point.update(Point::one(), -1.0 * Vector2Df::one(), Point::zero());
         assert!(
-            !line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_none(),
             "Contact point moving out of line should not interact"
         );
     }
@@ -131,7 +136,7 @@ mod tests {
             .unwrap();
         contact_point.update(Point::new(0.0, -1.0), Vector2Df::one(), Point::zero());
         assert!(
-            !line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_none(),
             "Contact point moving above line should not interact"
         );
     }
@@ -155,7 +160,7 @@ mod tests {
             Point::zero(),
         );
         assert!(
-            line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_some(),
             "Contact point moving above flipped line should interact"
         );
     }
@@ -175,7 +180,7 @@ mod tests {
             .unwrap();
         contact_point.update(Point::new(0.0, 12.0), Vector2Df::one(), Point::zero());
         assert!(
-            !line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_none(),
             "Contact point moving below line should not interact"
         );
     }
@@ -195,7 +200,7 @@ mod tests {
             .unwrap();
         contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
-            !line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_none(),
             "Contact point moving left of line should not interact"
         );
     }
@@ -215,7 +220,7 @@ mod tests {
             .unwrap();
         contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
-            !line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_none(),
             "Contact point moving right of line should not interact"
         );
     }
@@ -235,7 +240,7 @@ mod tests {
             .unwrap();
         contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
-            line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_some(),
             "Contact point moving left of line with extension should interact"
         );
     }
@@ -255,26 +260,8 @@ mod tests {
             .unwrap();
         contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
-            line.check_interaction(&mut contact_point),
+            line.check_interaction(&mut contact_point).is_some(),
             "Contact point moving right of line with extension should interact"
         );
     }
 }
-
-// TODO: Put line-specific implementations of interact somewhere else?
-// let new_position = point.position() - (self.normal_unit() * distance_from_line_top);
-//
-// let friction_vector =
-//     (self.normal_unit().rotate_cw() * point.friction) * distance_from_line_top;
-//
-// if point.previous_position().x() >= new_position.x() {
-//     friction_vector.x *= -1;
-// }
-//
-// if point.previous_position().y() < new_position.y() {
-//     friction_vector.y *= -1;
-// }
-//
-// let new_previous_position = point.base.previous_position + friction_vector - self.acceleration_vector;
-//
-// (new_position, new_previous_position)

@@ -2,16 +2,10 @@ use std::f64::INFINITY;
 
 use vector2d::Vector2Df;
 
-use crate::entity::point::{EntityPoint, EntityPointIndex};
-
-fn get_point(index: &EntityPointIndex) -> &EntityPoint {
-    todo!("Need to get this from a registry")
-}
-
-pub type EntityBoneIndex = usize;
+use crate::engine::{EntityRegistry, EntityRegistryIndex};
 
 pub struct EntityBone {
-    connected_points: (EntityPointIndex, EntityPointIndex),
+    connected_points: (EntityRegistryIndex, EntityRegistryIndex),
     bias: f64,
     initial_length: f64,
     rest_length_factor: f64,
@@ -23,7 +17,7 @@ pub struct EntityBone {
 }
 
 pub struct EntityBoneBuilder {
-    connected_points: Option<(EntityPointIndex, EntityPointIndex)>,
+    connected_points: Option<(EntityRegistryIndex, EntityRegistryIndex)>,
     bias: Option<f64>,
     rest_length_factor: Option<f64>,
     repel_only: bool,
@@ -52,7 +46,7 @@ impl EntityBoneBuilder {
         }
     }
 
-    pub fn points(&mut self, p1: EntityPointIndex, p2: EntityPointIndex) -> &mut Self {
+    pub fn points(&mut self, p1: EntityRegistryIndex, p2: EntityRegistryIndex) -> &mut Self {
         self.connected_points = Some((p1, p2));
         self
     }
@@ -92,10 +86,10 @@ impl EntityBoneBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<EntityBone, EntityBoneBuilderError> {
+    pub fn build(&self, registry: &EntityRegistry) -> Result<EntityBone, EntityBoneBuilderError> {
         if let Some(connected_points) = self.connected_points {
-            let bone_vector = get_point(&connected_points.1).position()
-                - get_point(&connected_points.0).position();
+            let bone_vector = registry.get_point(connected_points.1).position()
+                - registry.get_point(connected_points.0).position();
             Ok(EntityBone {
                 connected_points,
                 bias: self.bias.unwrap_or(0.5),
@@ -114,13 +108,13 @@ impl EntityBoneBuilder {
 }
 
 impl EntityBone {
-    pub fn get_vector(&self) -> Vector2Df {
-        get_point(&self.connected_points.1).position()
-            - get_point(&self.connected_points.0).position()
+    pub fn get_vector(&self, registry: &EntityRegistry) -> Vector2Df {
+        registry.get_point(self.connected_points.1).position()
+            - registry.get_point(self.connected_points.0).position()
     }
 
-    pub fn get_percent_adjustment(&self) -> f64 {
-        let bone_vector = self.get_vector();
+    pub fn get_percent_adjustment(&self, registry: &EntityRegistry) -> f64 {
+        let bone_vector = self.get_vector(registry);
         let current_length = bone_vector.length();
         let should_repel = current_length < self.initial_length * self.rest_length_factor;
 
@@ -131,9 +125,13 @@ impl EntityBone {
         }
     }
 
-    pub fn get_adjustment(&self, remounting: bool) -> (Vector2Df, Vector2Df) {
-        let bone_vector = self.get_vector();
-        let percent_adjustment = self.get_percent_adjustment();
+    pub fn get_adjustment(
+        &self,
+        registry: &EntityRegistry,
+        remounting: bool,
+    ) -> (Vector2Df, Vector2Df) {
+        let bone_vector = self.get_vector(registry);
+        let percent_adjustment = self.get_percent_adjustment(registry);
 
         let adjustment_strength = if remounting {
             self.adjustment_strength * self.remount_adjustment_strength_factor
@@ -147,8 +145,8 @@ impl EntityBone {
         )
     }
 
-    pub fn get_intact(&self, remounting: bool) -> bool {
-        let percent_adjustment = self.get_percent_adjustment();
+    pub fn get_intact(&self, registry: &EntityRegistry, remounting: bool) -> bool {
+        let percent_adjustment = self.get_percent_adjustment(registry);
 
         let endurance = if remounting {
             self.endurance * self.remount_endurance_factor

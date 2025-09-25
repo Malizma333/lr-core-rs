@@ -1,19 +1,13 @@
 use vector2d::Vector2Df;
 
-use crate::entity::bone::{EntityBone, EntityBoneIndex};
-
-fn get_bone(index: &EntityBoneIndex) -> &EntityBone {
-    todo!("Need to get this from a registry")
-}
-
-pub type EntityJointIndex = usize;
+use crate::engine::{EntityRegistry, EntityRegistryIndex};
 
 pub struct EntityJoint {
-    bones_involved: (EntityBoneIndex, EntityBoneIndex),
+    bones_involved: (EntityRegistryIndex, EntityRegistryIndex),
 }
 
 pub struct EntityJointBuilder {
-    bones_involved: Option<(EntityBoneIndex, EntityBoneIndex)>,
+    bones_involved: Option<(EntityRegistryIndex, EntityRegistryIndex)>,
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +22,7 @@ impl EntityJointBuilder {
         }
     }
 
-    pub fn bones(&mut self, bone1: EntityBoneIndex, bone2: EntityBoneIndex) -> &mut Self {
+    pub fn bones(&mut self, bone1: EntityRegistryIndex, bone2: EntityRegistryIndex) -> &mut Self {
         self.bones_involved = Some((bone1, bone2));
         self
     }
@@ -43,10 +37,14 @@ impl EntityJointBuilder {
 }
 
 impl EntityJoint {
-    pub fn get_intact(&self) -> bool {
+    pub fn get_intact(&self, registry: &EntityRegistry) -> bool {
         Vector2Df::cross(
-            get_bone(&self.bones_involved.0).get_vector(),
-            get_bone(&self.bones_involved.1).get_vector(),
+            registry
+                .get_bone(self.bones_involved.0)
+                .get_vector(registry),
+            registry
+                .get_bone(self.bones_involved.1)
+                .get_vector(registry),
         ) < 0.0
     }
 }
