@@ -92,6 +92,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::one(), Vector2Df::one(), Point::zero());
@@ -112,6 +113,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::one(), -1.0 * Vector2Df::one(), Point::zero());
@@ -132,6 +134,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::new(0.0, -1.0), Vector2Df::one(), Point::zero());
@@ -152,6 +155,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(
@@ -176,6 +180,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::new(0.0, 12.0), Vector2Df::one(), Point::zero());
@@ -196,6 +201,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
@@ -216,6 +222,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
@@ -236,6 +243,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
@@ -256,6 +264,7 @@ mod tests {
         );
         let mut contact_point = EntityPointBuilder::new()
             .initial_position(Point::zero())
+            .contact()
             .build()
             .unwrap();
         contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
