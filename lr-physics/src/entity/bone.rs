@@ -108,7 +108,7 @@ impl EntityBoneBuilder {
 }
 
 pub trait EntityBoneLogic {
-    fn get_vector(&self) -> Vector2Df;
+    fn vector(&self) -> Vector2Df;
     fn rest_length(&self) -> f64;
     fn is_repel(&self) -> bool;
     fn adjustment_strength(&self) -> f64;
@@ -116,7 +116,7 @@ pub trait EntityBoneLogic {
     fn bias(&self) -> f64;
 
     fn get_percent_adjustment(&self) -> f64 {
-        let bone_vector = self.get_vector();
+        let bone_vector = self.vector();
         let current_length = bone_vector.length();
         let should_repel = current_length < self.rest_length();
 
@@ -128,7 +128,7 @@ pub trait EntityBoneLogic {
     }
 
     fn get_adjustment(&self) -> (Vector2Df, Vector2Df) {
-        let bone_vector = self.get_vector();
+        let bone_vector = self.vector();
         let percent_adjustment = self.get_percent_adjustment();
         let adjustment_strength = self.adjustment_strength();
         (
@@ -156,7 +156,7 @@ pub struct EntityBoneSnapshot {
 }
 
 impl EntityBoneLogic for EntityBoneSnapshot {
-    fn get_vector(&self) -> Vector2Df {
+    fn vector(&self) -> Vector2Df {
         self.vector
     }
 
@@ -232,7 +232,7 @@ mod tests {
     struct PureBone(pub Vector2Df, pub f64, pub f64, pub f64, pub f64, pub bool);
 
     impl EntityBoneLogic for PureBone {
-        fn get_vector(&self) -> Vector2Df {
+        fn vector(&self) -> Vector2Df {
             self.0
         }
 

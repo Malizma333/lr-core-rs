@@ -4,7 +4,7 @@ use vector2d::Vector2Df;
 use crate::{
     entity::{
         bone::{EntityBone, EntityBoneLogic},
-        joint::EntityJoint,
+        joint::{EntityJoint, EntityJointLogic},
         point::EntityPoint,
         skeleton::EntitySkeleton,
     },
@@ -270,7 +270,7 @@ impl Engine {
         if skeleton.is_mounted() {
             for joint_index in skeleton.mount_joints() {
                 let joint = self.get_unstable_joint(*joint_index);
-                if !joint.get_intact(self) && !dismounted_this_frame {
+                if !joint.get_snapshot(self).is_intact() && !dismounted_this_frame {
                     dismounted_this_frame = true;
                 }
             }
@@ -278,7 +278,7 @@ impl Engine {
 
         for joint_index in skeleton.joints() {
             let joint = self.get_joint(*joint_index);
-            if !joint.get_intact(self) && !dismounted_this_frame {
+            if !joint.get_snapshot(self).is_intact() && !dismounted_this_frame {
                 intact_this_frame = false;
             }
         }
