@@ -67,6 +67,26 @@ impl Vector2Df {
         Vector2Df::new(1.0, 1.0)
     }
 
+    /** The vector (0.0, 1.0) */
+    pub fn up() -> Vector2Df {
+        Vector2Df::new(0.0, 1.0)
+    }
+
+    /** The vector (0.0, -1.0) */
+    pub fn down() -> Vector2Df {
+        Vector2Df::new(0.0, -1.0)
+    }
+
+    /** The vector (1.0, 0.0) */
+    pub fn right() -> Vector2Df {
+        Vector2Df::new(1.0, 0.0)
+    }
+
+    /** The vector (-1.0, 0.0) */
+    pub fn left() -> Vector2Df {
+        Vector2Df::new(-1.0, 0.0)
+    }
+
     /** Calculates the result of `v1 ⋅ v2` */
     pub fn dot(v1: Vector2Df, v2: Vector2Df) -> f64 {
         v1.x * v2.x + v1.y * v2.y

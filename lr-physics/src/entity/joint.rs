@@ -1,6 +1,9 @@
 use vector2d::Vector2Df;
 
-use crate::engine::{Engine, EntityRegistryIndex};
+use crate::{
+    engine::{Engine, EntityRegistryIndex},
+    entity::bone::EntityBoneLogic,
+};
 
 pub struct EntityJoint {
     bones_involved: (EntityRegistryIndex, EntityRegistryIndex),
@@ -38,9 +41,16 @@ impl EntityJointBuilder {
 
 impl EntityJoint {
     pub fn get_intact(&self, engine: &Engine) -> bool {
+        // TODO refactor this like bones
         Vector2Df::cross(
-            engine.get_bone(self.bones_involved.0).get_vector(engine),
-            engine.get_bone(self.bones_involved.1).get_vector(engine),
+            engine
+                .get_bone(self.bones_involved.0)
+                .get_snapshot(engine, false)
+                .get_vector(),
+            engine
+                .get_bone(self.bones_involved.1)
+                .get_snapshot(engine, false)
+                .get_vector(),
         ) < 0.0
     }
 }

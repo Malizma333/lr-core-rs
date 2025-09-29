@@ -2,7 +2,12 @@ use geometry::Point;
 use vector2d::Vector2Df;
 
 use crate::{
-    entity::{bone::EntityBone, joint::EntityJoint, point::EntityPoint, skeleton::EntitySkeleton},
+    entity::{
+        bone::{EntityBone, EntityBoneLogic},
+        joint::EntityJoint,
+        point::EntityPoint,
+        skeleton::EntitySkeleton,
+    },
     grid::Grid,
     line_manager::PhysicsLineManager,
 };
@@ -143,9 +148,9 @@ impl Engine {
     }
 
     fn process_bone(&mut self, bone_index: EntityRegistryIndex, remounting: bool) {
-        let bone = self.get_bone(bone_index);
-        let adjustment = bone.get_adjustment(self, remounting);
-        let point_indices = bone.get_points();
+        let bone = self.get_bone(bone_index).get_snapshot(&self, remounting);
+        let adjustment = bone.get_adjustment();
+        let point_indices = self.get_bone(bone_index).get_points();
         let p0 = self.get_point_mut(point_indices.0);
         p0.update(
             p0.position() - adjustment.0,
@@ -189,16 +194,20 @@ impl Engine {
         for _ in 0..6 {
             // TODO process other skeleton in mount's bones as well
             for bone_index in skeleton.bones() {
-                let bone = self.get_bone(*bone_index);
-                if !bone.is_repel() && bone.is_contact(self) {
+                let bone = self
+                    .get_bone(*bone_index)
+                    .get_snapshot(self, skeleton.is_remounting());
+                if !bone.is_repel() && !bone.is_flutter() {
                     self.process_bone(*bone_index, skeleton.is_remounting());
                 }
             }
 
             if skeleton.is_mounted() {
                 for bone_index in skeleton.mount_bones() {
-                    let bone = self.get_unstable_bone(*bone_index);
-                    let bone_intact = bone.get_intact(self, skeleton.is_remounting());
+                    let bone = self
+                        .get_unstable_bone(*bone_index)
+                        .get_snapshot(&self, skeleton.is_remounting());
+                    let bone_intact = bone.get_intact();
                     if dismounted_this_frame {
                         if bone_intact {
                             self.process_bone(*bone_index, skeleton.is_remounting());
@@ -210,8 +219,10 @@ impl Engine {
             }
 
             for bone_index in skeleton.bones() {
-                let bone = self.get_bone(*bone_index);
-                if bone.is_repel() && bone.is_contact(self) {
+                let bone = self
+                    .get_bone(*bone_index)
+                    .get_snapshot(&self, skeleton.is_remounting());
+                if bone.is_repel() && !bone.is_flutter() {
                     self.process_bone(*bone_index, skeleton.is_remounting());
                 }
             }
@@ -248,8 +259,10 @@ impl Engine {
         }
 
         for bone_index in skeleton.bones() {
-            let bone = self.get_bone(*bone_index);
-            if !bone.is_contact(self) {
+            let bone = self
+                .get_bone(*bone_index)
+                .get_snapshot(&self, skeleton.is_remounting());
+            if bone.is_flutter() {
                 self.process_bone(*bone_index, skeleton.is_remounting());
             }
         }
