@@ -1,4 +1,4 @@
-use crate::engine::EntityRegistryIndex;
+use crate::engine::registry_index::EntityRegistryIndex;
 
 const REMOUNT_STRENGTH_FACTOR: f64 = 0.1;
 const LRA_REMOUNT_STRENGTH_FACTOR: f64 = 0.5;
@@ -18,6 +18,7 @@ enum MountPhase {
 }
 
 struct MountState {
+    // TODO it should be clear that this should only have unstable indices
     mount_bones: Vec<EntityRegistryIndex>,
     mount_joints: Vec<EntityRegistryIndex>,
     mount_phase: MountPhase,

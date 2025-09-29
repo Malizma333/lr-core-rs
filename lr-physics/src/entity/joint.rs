@@ -1,7 +1,7 @@
 use vector2d::Vector2Df;
 
 use crate::{
-    engine::{Engine, EntityRegistryIndex},
+    engine::{registry_index::EntityRegistryIndex, timeline_engine::Engine},
     entity::bone::EntityBoneLogic,
 };
 

@@ -2,7 +2,7 @@ use std::f64::INFINITY;
 
 use vector2d::Vector2Df;
 
-use crate::engine::{Engine, EntityRegistryIndex};
+use crate::engine::{registry_index::EntityRegistryIndex, timeline_engine::Engine};
 
 pub struct EntityBone {
     connected_points: (EntityRegistryIndex, EntityRegistryIndex),
