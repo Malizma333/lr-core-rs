@@ -1,6 +1,13 @@
 use geometry::Point;
 use vector2d::Vector2Df;
 
+pub struct EntityPointProps {
+    initial_position: Point,
+    contact: bool,
+    contact_friction: f64,
+    air_friction: f64,
+}
+
 pub struct EntityPointState {
     position: Point,
     velocity: Vector2Df,
@@ -18,10 +25,8 @@ impl Clone for EntityPointState {
 }
 
 pub struct EntityPoint {
+    props: EntityPointProps,
     state: EntityPointState,
-    contact: bool,
-    contact_friction: f64,
-    air_friction: f64,
 }
 
 pub struct EntityPointBuilder {
@@ -74,9 +79,12 @@ impl EntityPointBuilder {
                     velocity: Vector2Df::zero(),
                     previous_position: initial_position,
                 },
-                contact: self.contact,
-                contact_friction: self.contact_friction.unwrap_or(0.0),
-                air_friction: self.air_friction.unwrap_or(0.0),
+                props: EntityPointProps {
+                    initial_position,
+                    contact: self.contact,
+                    contact_friction: self.contact_friction.unwrap_or(0.0),
+                    air_friction: self.air_friction.unwrap_or(0.0),
+                },
             })
         } else {
             Err(EntityPointBuilderError::MissingInitialPosition)
@@ -109,14 +117,14 @@ impl EntityPoint {
     }
 
     pub fn friction(&self) -> f64 {
-        self.contact_friction
+        self.props.contact_friction
     }
 
     pub fn air_friction(&self) -> f64 {
-        self.air_friction
+        self.props.air_friction
     }
 
     pub fn is_contact(&self) -> bool {
-        self.contact
+        self.props.contact
     }
 }

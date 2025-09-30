@@ -1,4 +1,4 @@
-use crate::engine::entity_registry::EntityRegistryIndex;
+use crate::entity::entity_registry::EntityRegistryIndex;
 
 const REMOUNT_STRENGTH_FACTOR: f64 = 0.1;
 const LRA_REMOUNT_STRENGTH_FACTOR: f64 = 0.5;
@@ -66,6 +66,12 @@ pub struct EntitySkeleton {
     remounted_timer: u32,
     state: EntitySkeletonState,
 }
+
+pub struct EntitySkeletonBuilder {}
+
+pub enum EntitySkeletonBuilderError {}
+
+impl EntitySkeletonBuilder {}
 
 impl EntitySkeleton {
     pub fn is_remounting(&self) -> bool {

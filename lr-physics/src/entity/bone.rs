@@ -2,18 +2,22 @@ use std::f64::INFINITY;
 
 use vector2d::Vector2Df;
 
-use crate::engine::entity_registry::{EntityRegistry, EntityRegistryIndex};
+use crate::entity::entity_registry::{EntityRegistry, EntityRegistryIndex};
 
-pub struct EntityBone {
-    connected_points: (EntityRegistryIndex, EntityRegistryIndex),
+pub struct EnityBoneProps {
     bias: f64,
-    initial_length: f64,
     initial_length_factor: f64,
     repel_only: bool,
     endurance: f64,
     adjustment_strength: f64,
     endurance_remount_factor: f64,
     adjustment_strength_remount_factor: f64,
+}
+
+pub struct EntityBone {
+    connected_points: (EntityRegistryIndex, EntityRegistryIndex),
+    initial_length: f64,
+    props: EnityBoneProps,
 }
 
 pub struct EntityBoneBuilder {
@@ -92,14 +96,18 @@ impl EntityBoneBuilder {
                 - registry.get_point(connected_points.0).position();
             Ok(EntityBone {
                 connected_points,
-                bias: self.bias.unwrap_or(0.5),
                 initial_length: bone_vector.length(),
-                initial_length_factor: self.initial_length_factor.unwrap_or(1.0),
-                repel_only: self.repel_only,
-                endurance: self.endurance.unwrap_or(INFINITY),
-                adjustment_strength: self.adjustment_strength.unwrap_or(1.0),
-                endurance_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
-                adjustment_strength_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
+                props: EnityBoneProps {
+                    bias: self.bias.unwrap_or(0.5),
+                    initial_length_factor: self.initial_length_factor.unwrap_or(1.0),
+                    repel_only: self.repel_only,
+                    endurance: self.endurance.unwrap_or(INFINITY),
+                    adjustment_strength: self.adjustment_strength.unwrap_or(1.0),
+                    endurance_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
+                    adjustment_strength_remount_factor: self
+                        .endurance_remount_factor
+                        .unwrap_or(1.0),
+                },
             })
         } else {
             Err(EntityBoneBuilderError::MissingPoints)
@@ -194,16 +202,16 @@ impl EntityBone {
         let vector = registry.get_point(self.connected_points.1).position()
             - registry.get_point(self.connected_points.0).position();
         let adjustment_strength = if remounting {
-            self.adjustment_strength * self.adjustment_strength_remount_factor
+            self.props.adjustment_strength * self.props.adjustment_strength_remount_factor
         } else {
-            self.adjustment_strength
+            self.props.adjustment_strength
         };
         let endurance = if remounting {
-            self.endurance * self.endurance_remount_factor
+            self.props.endurance * self.props.endurance_remount_factor
         } else {
-            self.endurance
+            self.props.endurance
         };
-        let rest_length = self.initial_length * self.initial_length_factor;
+        let rest_length = self.initial_length * self.props.initial_length_factor;
 
         EntityBoneSnapshot {
             vector,
@@ -211,8 +219,8 @@ impl EntityBone {
             is_flutter,
             adjustment_strength,
             endurance,
-            is_repel: self.repel_only,
-            bias: self.bias,
+            is_repel: self.props.repel_only,
+            bias: self.props.bias,
         }
     }
 

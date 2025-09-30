@@ -30,9 +30,9 @@ use geometry::Point;
 use vector2d::Vector2Df;
 
 use crate::{
-    engine::entity_registry::{EntityRegistry, EntityRegistryIndex},
     entity::{
         bone::EntityBoneLogic,
+        entity_registry::{EntityRegistry, EntityRegistryIndex},
         joint::EntityJointLogic,
         point::EntityPointState,
         skeleton::{EntitySkeleton, EntitySkeletonState},

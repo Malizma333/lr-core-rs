@@ -1,11 +1,8 @@
 use vector2d::Vector2Df;
 
-use crate::{
-    engine::{
-        entity_registry::{EntityRegistry, EntityRegistryIndex},
-        timeline_engine::Engine,
-    },
-    entity::bone::EntityBoneLogic,
+use crate::entity::{
+    bone::EntityBoneLogic,
+    entity_registry::{EntityRegistry, EntityRegistryIndex},
 };
 
 pub struct EntityJoint {
