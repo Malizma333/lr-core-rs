@@ -1,29 +1,3 @@
-// TODO Should version specific features (eg LRA Remount or .com Scarf) be plugins?
-
-// - adding and removing individual skeletons (cascade delete)
-// - adding and removing mounts (unlink skeletons)
-// - caching point states for each frame (basic clone)
-// - caching mount states for each frame (basic clone)
-// - removing from and adding to cache size whenever mounts change
-// - clearing front of cache whenever lines change
-// - swapping cached point states whenever frame info requested
-// - moving green lines?
-
-// Engine Constraints
-// Skeletons: <= 50
-// Bones: <= 2,500
-// Points: <= 2,500
-// Mounts: <= 25
-// Physics Lines <= 10,000
-// Scenery Lines <= ~100,000,000?
-
-/*
-Call free on skeleton/mount, which frees up lower components?
-When adding a new one, rebuild from reference data
-  Reset cache back to frame 0? (or use smart caching)
-Processing in order (Vec)
- */
-
 use std::collections::HashMap;
 
 use geometry::Point;
@@ -32,28 +6,23 @@ use vector2d::Vector2Df;
 use crate::{
     entity::{
         bone::EntityBoneLogic,
-        entity_registry::{EntityRegistry, EntityRegistryIndex},
+        entity_registry::{EntityBoneId, EntityPointId, EntityRegistry, EntitySkeletonId},
         joint::EntityJointLogic,
         point::EntityPointState,
-        skeleton::{EntitySkeleton, EntitySkeletonState},
     },
     grid::{Grid, GridVersion, LineId},
     line::hitbox::Hitbox,
 };
 
 struct EngineState {
-    frame: u32,
-    point_states: HashMap<EntityRegistryIndex, EntityPointState>,
-    skeleton_states: HashMap<EntityRegistryIndex, EntitySkeletonState>,
+    point_states: HashMap<EntityPointId, EntityPointState>,
 }
 
 impl Clone for EngineState {
     fn clone(&self) -> Self {
         Self {
-            frame: self.frame,
             // hashmap clone is implemented as a deep copy
             point_states: self.point_states.clone(),
-            skeleton_states: self.skeleton_states.clone(),
         }
     }
 }
@@ -61,9 +30,7 @@ impl Clone for EngineState {
 impl EngineState {
     fn new() -> Self {
         Self {
-            frame: 0,
             point_states: HashMap::new(),
-            skeleton_states: HashMap::new(),
         }
     }
 }
@@ -73,11 +40,12 @@ pub struct Engine {
     line_lookup: HashMap<LineId, Box<dyn Hitbox>>,
     registry: EntityRegistry,
     state: EngineState,
+    current_frame: u32,
     // use .truncate when clearing cache
     state_snapshots: Vec<EngineState>,
 }
 
-enum PhysicsInstance {
+pub enum PhysicsMoment {
     MomentumTick,
     AccelerationTick,
     FrictionTick,
@@ -90,12 +58,15 @@ enum PhysicsInstance {
 
 impl Engine {
     pub fn new(grid_version: GridVersion) -> Engine {
+        let initial_state = EngineState::new();
+
         Engine {
+            current_frame: 0,
             grid: Grid::new(grid_version),
             line_lookup: HashMap::new(),
             registry: EntityRegistry::new(),
-            state: EngineState::new(),
-            state_snapshots: Vec::new(),
+            state_snapshots: vec![initial_state.clone()],
+            state: initial_state,
         }
     }
 
@@ -105,7 +76,7 @@ impl Engine {
     }
 
     // TODO: Should be overridable
-    fn get_entity_frozen_at_time(&self, _entity: EntityRegistryIndex, _frame: u32) -> bool {
+    fn get_skeleton_frozen_at_time(&self, _skeleton: EntitySkeletonId, _frame: u32) -> bool {
         false
     }
 
@@ -118,20 +89,29 @@ impl Engine {
     }
 
     /** Generates the next frame by advancing the current physics state of the entity registry */
-    pub fn get_next_frame(&self) {}
-
-    /** Jumps to a target instance by retrieving its snapshot and stepping forward if needed */
-    pub fn get_target_instance(&self, frame: u32, instance: PhysicsInstance) {
-        todo!()
+    fn get_next_unknown_frame(&mut self) {
+        todo!("simulate frame");
+        self.current_frame = self.state_snapshots.len() as u32;
+        // self.process_skeleton(skeleton_id);
+        // self.process_remount();
+        self.state_snapshots.push(self.state.clone());
     }
 
-    fn process_bone(&mut self, bone_index: EntityRegistryIndex, remounting: bool) {
+    /** Jumps to a target instance by retrieving its snapshot and stepping forward if needed */
+    pub fn get_target_moment(&mut self, frame: u32, instance: PhysicsMoment) -> &EngineState {
+        while (self.state_snapshots.len() as u32) <= frame {
+            self.get_next_unknown_frame();
+        }
+        &self.state_snapshots[frame as usize]
+    }
+
+    fn process_bone(&mut self, bone_id: EntityBoneId, remounting: bool) {
         let bone = self
             .registry
-            .get_bone(bone_index)
+            .get_bone(bone_id)
             .get_snapshot(&self.registry, remounting);
         let adjustment = bone.get_adjustment();
-        let point_indices = self.registry.get_bone(bone_index).get_points();
+        let point_indices = self.registry.get_bone(bone_id).get_points();
         let p0 = self.registry.get_point_mut(point_indices.0);
         p0.update(
             p0.position() - adjustment.0,
@@ -148,18 +128,19 @@ impl Engine {
 
     fn process_collision(
         &mut self,
-        point_index: EntityRegistryIndex,
+        point_id: EntityPointId,
         new_position: Point,
         new_previous_position: Point,
     ) {
-        let mut_point = self.registry.get_point_mut(point_index);
+        let mut_point = self.registry.get_point_mut(point_id);
         mut_point.update(new_position, mut_point.velocity(), new_previous_position)
     }
 
-    fn process_skeleton(&mut self, skeleton: &mut EntitySkeleton) {
+    fn process_skeleton(&mut self, skeleton_id: EntitySkeletonId) {
         let mut dismounted_this_frame = false;
         let mut intact_this_frame = true;
-        let gravity = self.get_gravity_at_time(self.state.frame);
+        let gravity = self.get_gravity_at_time(self.current_frame);
+        let skeleton = self.registry.get_skeleton(skeleton_id);
 
         for point_index in skeleton.points() {
             let point = self.registry.get_point_mut(*point_index);
@@ -170,7 +151,6 @@ impl Engine {
         }
 
         for _ in 0..6 {
-            // TODO process other skeleton in mount's bones as well
             for bone_index in skeleton.bones() {
                 let bone = self
                     .registry
@@ -270,5 +250,7 @@ impl Engine {
         }
     }
 
-    fn update_remount_phases(&self) {}
+    fn process_remount(&mut self) {
+        todo!()
+    }
 }

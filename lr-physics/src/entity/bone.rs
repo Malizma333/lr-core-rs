@@ -2,9 +2,9 @@ use std::f64::INFINITY;
 
 use vector2d::Vector2Df;
 
-use crate::entity::entity_registry::{EntityRegistry, EntityRegistryIndex};
+use crate::entity::entity_registry::{EntityPointId, EntityPointTemplateId, EntityRegistry};
 
-pub struct EnityBoneProps {
+pub struct EntityBoneProps {
     bias: f64,
     initial_length_factor: f64,
     repel_only: bool,
@@ -15,13 +15,13 @@ pub struct EnityBoneProps {
 }
 
 pub struct EntityBone {
-    connected_points: (EntityRegistryIndex, EntityRegistryIndex),
+    connected_points: (EntityPointId, EntityPointId),
     initial_length: f64,
-    props: EnityBoneProps,
+    props: EntityBoneProps,
 }
 
-pub struct EntityBoneBuilder {
-    connected_points: Option<(EntityRegistryIndex, EntityRegistryIndex)>,
+pub struct EntityBoneTemplate {
+    connected_points: (EntityPointTemplateId, EntityPointTemplateId),
     bias: Option<f64>,
     initial_length_factor: Option<f64>,
     repel_only: bool,
@@ -31,15 +31,10 @@ pub struct EntityBoneBuilder {
     adjustment_strength_remount_factor: Option<f64>,
 }
 
-#[derive(Debug, Clone)]
-pub enum EntityBoneBuilderError {
-    MissingPoints,
-}
-
-impl EntityBoneBuilder {
-    pub fn new() -> EntityBoneBuilder {
-        EntityBoneBuilder {
-            connected_points: None,
+impl EntityBoneTemplate {
+    pub fn new(points: (EntityPointTemplateId, EntityPointTemplateId)) -> Self {
+        Self {
+            connected_points: points,
             bias: None,
             initial_length_factor: None,
             repel_only: false,
@@ -48,11 +43,6 @@ impl EntityBoneBuilder {
             endurance_remount_factor: None,
             adjustment_strength_remount_factor: None,
         }
-    }
-
-    pub fn points(&mut self, p1: EntityRegistryIndex, p2: EntityRegistryIndex) -> &mut Self {
-        self.connected_points = Some((p1, p2));
-        self
     }
 
     pub fn bias(&mut self, bias: f64) -> &mut Self {
@@ -90,27 +80,25 @@ impl EntityBoneBuilder {
         self
     }
 
-    pub fn build(&self, registry: &EntityRegistry) -> Result<EntityBone, EntityBoneBuilderError> {
-        if let Some(connected_points) = self.connected_points {
-            let bone_vector = registry.get_point(connected_points.1).position()
-                - registry.get_point(connected_points.0).position();
-            Ok(EntityBone {
-                connected_points,
-                initial_length: bone_vector.length(),
-                props: EnityBoneProps {
-                    bias: self.bias.unwrap_or(0.5),
-                    initial_length_factor: self.initial_length_factor.unwrap_or(1.0),
-                    repel_only: self.repel_only,
-                    endurance: self.endurance.unwrap_or(INFINITY),
-                    adjustment_strength: self.adjustment_strength.unwrap_or(1.0),
-                    endurance_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
-                    adjustment_strength_remount_factor: self
-                        .endurance_remount_factor
-                        .unwrap_or(1.0),
-                },
-            })
-        } else {
-            Err(EntityBoneBuilderError::MissingPoints)
+    pub fn build(&self, registry: &EntityRegistry) -> EntityBone {
+        let bone_vector = registry
+            .get_point_template(self.connected_points.1)
+            .position()
+            - registry
+                .get_point_template(self.connected_points.0)
+                .position();
+        EntityBone {
+            connected_points: self.connected_points,
+            initial_length: bone_vector.length(),
+            props: EntityBoneProps {
+                bias: self.bias.unwrap_or(0.5),
+                initial_length_factor: self.initial_length_factor.unwrap_or(1.0),
+                repel_only: self.repel_only,
+                endurance: self.endurance.unwrap_or(INFINITY),
+                adjustment_strength: self.adjustment_strength.unwrap_or(1.0),
+                endurance_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
+                adjustment_strength_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
+            },
         }
     }
 }
@@ -224,7 +212,7 @@ impl EntityBone {
         }
     }
 
-    pub fn get_points(&self) -> (EntityRegistryIndex, EntityRegistryIndex) {
+    pub fn get_points(&self) -> (EntityPointId, EntityPointId) {
         self.connected_points
     }
 }

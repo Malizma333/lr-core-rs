@@ -2,39 +2,27 @@ use vector2d::Vector2Df;
 
 use crate::entity::{
     bone::EntityBoneLogic,
-    entity_registry::{EntityRegistry, EntityRegistryIndex},
+    entity_registry::{EntityBoneId, EntityBoneTemplateId, EntityRegistry},
 };
 
 pub struct EntityJoint {
-    bones_involved: (EntityRegistryIndex, EntityRegistryIndex),
+    bones_involved: (EntityBoneId, EntityBoneId),
 }
 
-pub struct EntityJointBuilder {
-    bones_involved: Option<(EntityRegistryIndex, EntityRegistryIndex)>,
+pub struct EntityJointTemplate {
+    bones_involved: (EntityBoneTemplateId, EntityBoneTemplateId),
 }
 
-#[derive(Debug, Clone)]
-pub enum EntityJointBuilderError {
-    MissingBones,
-}
-
-impl EntityJointBuilder {
-    pub fn new() -> EntityJointBuilder {
-        EntityJointBuilder {
-            bones_involved: None,
-        }
+impl EntityJointTemplate {
+    pub fn new(
+        bones_involved: (EntityBoneTemplateId, EntityBoneTemplateId),
+    ) -> EntityJointTemplate {
+        EntityJointTemplate { bones_involved }
     }
 
-    pub fn bones(&mut self, bone1: EntityRegistryIndex, bone2: EntityRegistryIndex) -> &mut Self {
-        self.bones_involved = Some((bone1, bone2));
-        self
-    }
-
-    pub fn build(&self) -> Result<EntityJoint, EntityJointBuilderError> {
-        if let Some(bones_involved) = self.bones_involved {
-            Ok(EntityJoint { bones_involved })
-        } else {
-            Err(EntityJointBuilderError::MissingBones)
+    pub fn build(&self) -> EntityJoint {
+        EntityJoint {
+            bones_involved: self.bones_involved,
         }
     }
 }

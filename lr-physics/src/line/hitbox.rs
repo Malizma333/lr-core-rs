@@ -47,7 +47,7 @@ mod tests {
     use vector2d::Vector2Df;
 
     use crate::{
-        entity::point::{EntityPoint, EntityPointBuilder},
+        entity::point::{EntityPoint, EntityPointTemplate},
         line::{
             computed::{ComputedLineProperties, ComputedProperties},
             hitbox::Hitbox,
@@ -81,11 +81,7 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::one(), Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_some(),
@@ -102,11 +98,7 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::one(), -1.0 * Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_none(),
@@ -123,11 +115,7 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::new(0.0, -1.0), Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_none(),
@@ -144,11 +132,7 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(
             Point::new(0.0, -1.0),
             -1.0 * Vector2Df::one(),
@@ -169,11 +153,7 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::new(0.0, 12.0), Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_none(),
@@ -190,11 +170,7 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_none(),
@@ -211,11 +187,7 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_none(),
@@ -232,11 +204,7 @@ mod tests {
             true,
             false,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_some(),
@@ -253,11 +221,7 @@ mod tests {
             false,
             true,
         );
-        let mut contact_point = EntityPointBuilder::new()
-            .initial_position(Point::zero())
-            .contact()
-            .build()
-            .unwrap();
+        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
         contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
         assert!(
             line.check_interaction(&mut contact_point).is_some(),

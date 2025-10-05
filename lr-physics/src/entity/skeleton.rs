@@ -1,7 +1,24 @@
-use crate::entity::entity_registry::EntityRegistryIndex;
+use crate::entity::entity_registry::{
+    EntityBoneId, EntityBoneTemplateId, EntityJointId, EntityJointTemplateId, EntityPointId,
+    EntityPointTemplateId,
+};
 
 const REMOUNT_STRENGTH_FACTOR: f64 = 0.1;
 const LRA_REMOUNT_STRENGTH_FACTOR: f64 = 0.5;
+
+pub trait SkeletonTemplate {
+    fn frames_until_dismounted() -> u32 {
+        0
+    }
+
+    fn frames_until_remounting() -> u32 {
+        0
+    }
+
+    fn frames_until_remounted() -> u32 {
+        0
+    }
+}
 
 enum MountPhase {
     Mounted,
@@ -18,11 +35,7 @@ enum MountPhase {
 }
 
 pub struct EntitySkeletonState {
-    // TODO it should be clear that this should only have unstable indices
-    mount_bones: Vec<EntityRegistryIndex>,
-    mount_joints: Vec<EntityRegistryIndex>,
     mount_phase: MountPhase,
-    other_skeleton: Option<EntityRegistryIndex>,
 }
 
 impl Clone for EntitySkeletonState {
@@ -47,19 +60,15 @@ impl Clone for EntitySkeletonState {
         };
 
         EntitySkeletonState {
-            // TODO: these reference invalid bones + joints
-            mount_bones: self.mount_bones.clone(),
-            mount_joints: self.mount_joints.clone(),
             mount_phase: mount_phase_clone,
-            other_skeleton: self.other_skeleton,
         }
     }
 }
 
 pub struct EntitySkeleton {
-    points: Vec<EntityRegistryIndex>,
-    bones: Vec<EntityRegistryIndex>,
-    joints: Vec<EntityRegistryIndex>,
+    points: Vec<EntityPointId>,
+    bones: Vec<EntityBoneId>,
+    joints: Vec<EntityJointId>,
     remount_enabled: bool,
     dismounted_timer: u32,
     remounting_timer: u32,
@@ -67,11 +76,72 @@ pub struct EntitySkeleton {
     state: EntitySkeletonState,
 }
 
-pub struct EntitySkeletonBuilder {}
+pub struct EntitySkeletonTemplate {
+    points: Vec<EntityPointTemplateId>,
+    bones: Vec<EntityBoneTemplateId>,
+    joints: Vec<EntityJointTemplateId>,
+    remount_enabled: bool,
+    dismounted_timer: Option<u32>,
+    remounting_timer: Option<u32>,
+    remounted_timer: Option<u32>,
+}
 
-pub enum EntitySkeletonBuilderError {}
+impl EntitySkeletonTemplate {
+    pub fn new() -> EntitySkeletonTemplate {
+        EntitySkeletonTemplate {
+            points: Vec::new(),
+            bones: Vec::new(),
+            joints: Vec::new(),
+            remount_enabled: false,
+            dismounted_timer: None,
+            remounting_timer: None,
+            remounted_timer: None,
+        }
+    }
 
-impl EntitySkeletonBuilder {}
+    pub fn add_point(&mut self, id: EntityPointTemplateId) {
+        self.points.push(id);
+    }
+
+    pub fn add_bone(&mut self, id: EntityBoneTemplateId) {
+        self.bones.push(id);
+    }
+
+    pub fn add_joint(&mut self, id: EntityJointTemplateId) {
+        self.joints.push(id);
+    }
+
+    pub fn enable_remount(&mut self) {
+        self.remount_enabled = true;
+    }
+
+    pub fn time_until_dismounted(&mut self, limit: u32) {
+        self.dismounted_timer = Some(limit);
+    }
+
+    pub fn time_until_remounting(&mut self, limit: u32) {
+        self.remounting_timer = Some(limit);
+    }
+
+    pub fn time_until_remounted(&mut self, limit: u32) {
+        self.remounted_timer = Some(limit);
+    }
+
+    pub fn build(&self) -> EntitySkeleton {
+        EntitySkeleton {
+            points: self.points,
+            bones: self.bones,
+            joints: self.joints,
+            remount_enabled: self.remount_enabled,
+            dismounted_timer: self.dismounted_timer.unwrap_or(0),
+            remounting_timer: self.remounting_timer.unwrap_or(0),
+            remounted_timer: self.remounted_timer.unwrap_or(0),
+            state: EntitySkeletonState {
+                mount_phase: MountPhase::Mounted,
+            },
+        }
+    }
+}
 
 impl EntitySkeleton {
     pub fn is_remounting(&self) -> bool {
@@ -91,23 +161,15 @@ impl EntitySkeleton {
         todo!()
     }
 
-    pub fn points(&self) -> &Vec<EntityRegistryIndex> {
+    pub fn points(&self) -> &Vec<EntityPointId> {
         &self.points
     }
 
-    pub fn bones(&self) -> &Vec<EntityRegistryIndex> {
+    pub fn bones(&self) -> &Vec<EntityBoneId> {
         &self.bones
     }
 
-    pub fn joints(&self) -> &Vec<EntityRegistryIndex> {
+    pub fn joints(&self) -> &Vec<EntityJointId> {
         &self.joints
-    }
-
-    pub fn mount_bones(&self) -> &Vec<EntityRegistryIndex> {
-        &self.state.mount_bones
-    }
-
-    pub fn mount_joints(&self) -> &Vec<EntityRegistryIndex> {
-        &self.state.mount_joints
     }
 }

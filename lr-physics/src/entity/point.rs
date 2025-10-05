@@ -2,7 +2,6 @@ use geometry::Point;
 use vector2d::Vector2Df;
 
 pub struct EntityPointProps {
-    initial_position: Point,
     contact: bool,
     contact_friction: f64,
     air_friction: f64,
@@ -29,31 +28,21 @@ pub struct EntityPoint {
     state: EntityPointState,
 }
 
-pub struct EntityPointBuilder {
-    initial_position: Option<Point>,
+pub struct EntityPointTemplate {
+    initial_position: Point,
     contact: bool,
     contact_friction: Option<f64>,
     air_friction: Option<f64>,
 }
 
-#[derive(Debug, Clone)]
-pub enum EntityPointBuilderError {
-    MissingInitialPosition,
-}
-
-impl EntityPointBuilder {
-    pub fn new() -> EntityPointBuilder {
-        EntityPointBuilder {
-            initial_position: None,
+impl EntityPointTemplate {
+    pub fn new(initial_position: Point) -> EntityPointTemplate {
+        EntityPointTemplate {
+            initial_position,
             contact: false,
             contact_friction: None,
             air_friction: None,
         }
-    }
-
-    pub fn initial_position(&mut self, position: Point) -> &mut Self {
-        self.initial_position = Some(position);
-        self
     }
 
     pub fn contact(&mut self) -> &mut Self {
@@ -71,23 +60,18 @@ impl EntityPointBuilder {
         self
     }
 
-    pub fn build(&self) -> Result<EntityPoint, EntityPointBuilderError> {
-        if let Some(initial_position) = self.initial_position {
-            Ok(EntityPoint {
-                state: EntityPointState {
-                    position: initial_position,
-                    velocity: Vector2Df::zero(),
-                    previous_position: initial_position,
-                },
-                props: EntityPointProps {
-                    initial_position,
-                    contact: self.contact,
-                    contact_friction: self.contact_friction.unwrap_or(0.0),
-                    air_friction: self.air_friction.unwrap_or(0.0),
-                },
-            })
-        } else {
-            Err(EntityPointBuilderError::MissingInitialPosition)
+    pub fn build(&self) -> EntityPoint {
+        EntityPoint {
+            state: EntityPointState {
+                position: self.initial_position,
+                velocity: Vector2Df::zero(),
+                previous_position: self.initial_position,
+            },
+            props: EntityPointProps {
+                contact: self.contact,
+                contact_friction: self.contact_friction.unwrap_or(0.0),
+                air_friction: self.air_friction.unwrap_or(0.0),
+            },
         }
     }
 }
