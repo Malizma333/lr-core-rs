@@ -225,14 +225,14 @@ impl Engine {
             }
         }
 
-        if skeleton.is_mounted() {
-            for joint_index in skeleton.mount_joints() {
-                let joint = self.registry.get_joint(*joint_index);
-                if !joint.get_snapshot(&self.registry).is_intact() && !dismounted_this_frame {
-                    dismounted_this_frame = true;
-                }
-            }
-        }
+        // if skeleton.is_mounted() {
+        //     for joint_index in skeleton.mount_joints() {
+        //         let joint = self.registry.get_joint(*joint_index);
+        //         if !joint.get_snapshot(&self.registry).is_intact() && !dismounted_this_frame {
+        //             dismounted_this_frame = true;
+        //         }
+        //     }
+        // }
 
         for joint_index in skeleton.joints() {
             let joint = self.registry.get_joint(*joint_index);
@@ -246,11 +246,8 @@ impl Engine {
         }
 
         if !intact_this_frame {
-            todo!("set intact to false")
+            skeleton.dismount();
+            skeleton.destroy();
         }
-    }
-
-    fn process_remount(&mut self) {
-        todo!()
     }
 }

@@ -36,6 +36,7 @@ enum MountPhase {
 
 pub struct EntitySkeletonState {
     mount_phase: MountPhase,
+    intact: bool,
 }
 
 impl Clone for EntitySkeletonState {
@@ -61,6 +62,7 @@ impl Clone for EntitySkeletonState {
 
         EntitySkeletonState {
             mount_phase: mount_phase_clone,
+            intact: self.intact,
         }
     }
 }
@@ -138,6 +140,7 @@ impl EntitySkeletonTemplate {
             remounted_timer: self.remounted_timer.unwrap_or(0),
             state: EntitySkeletonState {
                 mount_phase: MountPhase::Mounted,
+                intact: true,
             },
         }
     }
@@ -158,7 +161,16 @@ impl EntitySkeleton {
     }
 
     pub fn dismount(&mut self) {
-        todo!()
+        // Currently does the same thing as destroy
+        self.state.mount_phase = MountPhase::Dismounted {
+            frames_until_can_remount: None,
+        }
+    }
+
+    pub fn destroy(&mut self) {
+        self.state.mount_phase = MountPhase::Dismounted {
+            frames_until_can_remount: None,
+        }
     }
 
     pub fn points(&self) -> &Vec<EntityPointId> {
