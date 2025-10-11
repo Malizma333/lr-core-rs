@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::entity::entity_registry::{
     EntityBoneId, EntityBoneTemplateId, EntityJointId, EntityJointTemplateId, EntityPointId,
     EntityPointTemplateId,
@@ -5,20 +7,6 @@ use crate::entity::entity_registry::{
 
 const REMOUNT_STRENGTH_FACTOR: f64 = 0.1;
 const LRA_REMOUNT_STRENGTH_FACTOR: f64 = 0.5;
-
-pub trait SkeletonTemplate {
-    fn frames_until_dismounted() -> u32 {
-        0
-    }
-
-    fn frames_until_remounting() -> u32 {
-        0
-    }
-
-    fn frames_until_remounted() -> u32 {
-        0
-    }
-}
 
 enum MountPhase {
     Mounted,
@@ -129,11 +117,40 @@ impl EntitySkeletonTemplate {
         self.remounted_timer = Some(limit);
     }
 
-    pub fn build(&self) -> EntitySkeleton {
+    pub(super) fn points(&self) -> &Vec<EntityPointTemplateId> {
+        &self.points
+    }
+
+    pub(super) fn bones(&self) -> &Vec<EntityBoneTemplateId> {
+        &self.bones
+    }
+
+    pub(super) fn joints(&self) -> &Vec<EntityJointTemplateId> {
+        &self.joints
+    }
+
+    pub fn build(
+        &self,
+        point_map: &HashMap<EntityPointTemplateId, EntityPointId>,
+        bone_map: &HashMap<EntityBoneTemplateId, EntityBoneId>,
+        joint_map: &HashMap<EntityJointTemplateId, EntityJointId>,
+    ) -> EntitySkeleton {
         EntitySkeleton {
-            points: self.points,
-            bones: self.bones,
-            joints: self.joints,
+            points: self
+                .points
+                .iter()
+                .map(|point_template_id| point_map[point_template_id])
+                .collect(),
+            bones: self
+                .bones
+                .iter()
+                .map(|bone_template_id| bone_map[bone_template_id])
+                .collect(),
+            joints: self
+                .joints
+                .iter()
+                .map(|joint_template_id| joint_map[joint_template_id])
+                .collect(),
             remount_enabled: self.remount_enabled,
             dismounted_timer: self.dismounted_timer.unwrap_or(0),
             remounting_timer: self.remounting_timer.unwrap_or(0),
@@ -183,5 +200,13 @@ impl EntitySkeleton {
 
     pub fn joints(&self) -> &Vec<EntityJointId> {
         &self.joints
+    }
+
+    pub fn mount_bones(&self) -> &Vec<EntityBoneId> {
+        todo!()
+    }
+
+    pub fn mount_joints(&self) -> &Vec<EntityJointId> {
+        todo!()
     }
 }

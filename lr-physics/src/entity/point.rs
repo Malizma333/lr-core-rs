@@ -1,6 +1,8 @@
 use geometry::Point;
 use vector2d::Vector2Df;
 
+use crate::entity::logic::point::EntityPointLogic;
+
 pub struct EntityPointProps {
     contact: bool,
     contact_friction: f64,
@@ -76,39 +78,39 @@ impl EntityPointTemplate {
     }
 }
 
-impl EntityPoint {
-    pub fn update(
+impl EntityPointLogic for EntityPoint {
+    fn air_friction(&self) -> f64 {
+        self.props.air_friction
+    }
+
+    fn contact_friction(&self) -> f64 {
+        self.props.contact_friction
+    }
+
+    fn is_contact(&self) -> bool {
+        self.props.contact
+    }
+
+    fn position(&self) -> Point {
+        self.state.position
+    }
+
+    fn previous_position(&self) -> Point {
+        self.state.previous_position
+    }
+
+    fn velocity(&self) -> Vector2Df {
+        self.state.velocity
+    }
+
+    fn update_state(
         &mut self,
         new_position: Point,
         new_velocity: Vector2Df,
-        new_previous_position: Point,
+        new_previous_position: Vector2Df,
     ) {
         self.state.position = new_position;
         self.state.velocity = new_velocity;
         self.state.previous_position = new_previous_position;
-    }
-
-    pub fn position(&self) -> Point {
-        self.state.position
-    }
-
-    pub fn velocity(&self) -> Vector2Df {
-        self.state.velocity
-    }
-
-    pub fn previous_position(&self) -> Point {
-        self.state.previous_position
-    }
-
-    pub fn friction(&self) -> f64 {
-        self.props.contact_friction
-    }
-
-    pub fn air_friction(&self) -> f64 {
-        self.props.air_friction
-    }
-
-    pub fn is_contact(&self) -> bool {
-        self.props.contact
     }
 }

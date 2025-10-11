@@ -1,8 +1,11 @@
 use geometry::Point;
 
-use crate::line::{
-    computed::{ComputedLineProperties, ComputedProperties},
-    hitbox::Hitbox,
+use crate::{
+    entity::logic::point::EntityPointLogic,
+    line::{
+        computed::{ComputedLineProperties, ComputedProperties},
+        hitbox::Hitbox,
+    },
 };
 
 pub struct NormalLine {
@@ -33,7 +36,7 @@ impl Hitbox for NormalLine {
         let new_position = point.position() - (self.normal_unit() * distance_from_line_top);
 
         let mut friction_vector =
-            (self.normal_unit().rotate_cw() * point.friction()) * distance_from_line_top;
+            (self.normal_unit().rotate_cw() * point.contact_friction()) * distance_from_line_top;
 
         if point.previous_position().x >= new_position.x {
             friction_vector.x *= -1.0;

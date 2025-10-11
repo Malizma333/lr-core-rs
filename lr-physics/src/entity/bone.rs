@@ -1,8 +1,11 @@
-use std::f64::INFINITY;
+use std::{collections::HashMap, f64::INFINITY};
 
 use vector2d::Vector2Df;
 
-use crate::entity::entity_registry::{EntityPointId, EntityPointTemplateId, EntityRegistry};
+use crate::entity::{
+    entity_registry::{EntityPointId, EntityPointTemplateId, EntityRegistry},
+    logic::{bone::EntityBoneLogic, point::EntityPointLogic},
+};
 
 pub struct EntityBoneProps {
     bias: f64,
@@ -80,16 +83,22 @@ impl EntityBoneTemplate {
         self
     }
 
-    pub fn build(&self, registry: &EntityRegistry) -> EntityBone {
-        let bone_vector = registry
-            .get_point_template(self.connected_points.1)
-            .position()
-            - registry
-                .get_point_template(self.connected_points.0)
-                .position();
+    pub fn build(
+        &self,
+        registry: &EntityRegistry,
+        mapping: &HashMap<EntityPointTemplateId, EntityPointId>,
+    ) -> EntityBone {
+        let point_ids = (
+            mapping[&self.connected_points.0],
+            mapping[&self.connected_points.1],
+        );
+        let points = (
+            registry.get_point(point_ids.0),
+            registry.get_point(point_ids.1),
+        );
         EntityBone {
-            connected_points: self.connected_points,
-            initial_length: bone_vector.length(),
+            connected_points: point_ids,
+            initial_length: Vector2Df::distance(points.0.position(), points.1.position()),
             props: EntityBoneProps {
                 bias: self.bias.unwrap_or(0.5),
                 initial_length_factor: self.initial_length_factor.unwrap_or(1.0),
@@ -100,43 +109,6 @@ impl EntityBoneTemplate {
                 adjustment_strength_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
             },
         }
-    }
-}
-
-pub trait EntityBoneLogic {
-    fn vector(&self) -> Vector2Df;
-    fn rest_length(&self) -> f64;
-    fn is_repel(&self) -> bool;
-    fn adjustment_strength(&self) -> f64;
-    fn endurance(&self) -> f64;
-    fn bias(&self) -> f64;
-
-    fn get_percent_adjustment(&self) -> f64 {
-        let bone_vector = self.vector();
-        let current_length = bone_vector.length();
-        let should_repel = current_length < self.rest_length();
-
-        if current_length == 0.0 || (self.is_repel() && !should_repel) {
-            0.0
-        } else {
-            (current_length - self.rest_length()) / current_length
-        }
-    }
-
-    fn get_adjustment(&self) -> (Vector2Df, Vector2Df) {
-        let bone_vector = self.vector();
-        let percent_adjustment = self.get_percent_adjustment();
-        let adjustment_strength = self.adjustment_strength();
-        (
-            -1.0 * bone_vector * adjustment_strength * percent_adjustment * (1.0 - self.bias()),
-            -1.0 * bone_vector * adjustment_strength * percent_adjustment * self.bias(),
-        )
-    }
-
-    fn get_intact(&self) -> bool {
-        let percent_adjustment = self.get_percent_adjustment();
-        let endurance = self.endurance();
-        percent_adjustment <= endurance * self.rest_length()
     }
 }
 
@@ -214,140 +186,5 @@ impl EntityBone {
 
     pub fn get_points(&self) -> (EntityPointId, EntityPointId) {
         self.connected_points
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::f64::INFINITY;
-
-    use vector2d::Vector2Df;
-
-    use crate::entity::bone::EntityBoneLogic;
-
-    struct PureBone(pub Vector2Df, pub f64, pub f64, pub f64, pub f64, pub bool);
-
-    impl EntityBoneLogic for PureBone {
-        fn vector(&self) -> Vector2Df {
-            self.0
-        }
-
-        fn adjustment_strength(&self) -> f64 {
-            self.1
-        }
-
-        fn bias(&self) -> f64 {
-            self.2
-        }
-
-        fn endurance(&self) -> f64 {
-            self.3
-        }
-
-        fn rest_length(&self) -> f64 {
-            self.4
-        }
-
-        fn is_repel(&self) -> bool {
-            self.5
-        }
-    }
-
-    #[test]
-    fn get_percent_adjustment() {
-        let bone = PureBone(Vector2Df::zero(), 1.0, 1.0, 1.0, 1.0, false);
-        assert!(
-            bone.get_percent_adjustment() == 0.0,
-            "bone of length zero should have no adjustment"
-        );
-        let bone = PureBone(Vector2Df::up() * 2.0, 1.0, 1.0, 1.0, 1.0, false);
-        assert!(
-            bone.get_percent_adjustment() == 0.5,
-            "bone adjustment should be correct"
-        );
-        let bone = PureBone(Vector2Df::up() * 0.5, 1.0, 1.0, 1.0, 1.0, true);
-        assert!(
-            bone.get_percent_adjustment() != 0.0,
-            "repel bone should repel when under rest length"
-        );
-        let bone = PureBone(Vector2Df::up() * 2.0, 1.0, 1.0, 1.0, 1.0, true);
-        assert!(
-            bone.get_percent_adjustment() == 0.0,
-            "repel bone should not repel when over rest length"
-        );
-        let bone = PureBone(Vector2Df::up(), 1.0, 1.0, 1.0, 5.0, false);
-        assert!(
-            bone.get_percent_adjustment() == -4.0,
-            "large rest length factor should give correct result"
-        );
-        let bone = PureBone(Vector2Df::up(), 1.0, 1.0, 1.0, 0.25, false);
-        assert!(
-            bone.get_percent_adjustment() == 0.75,
-            "small rest length factor should give correct result"
-        );
-    }
-
-    #[test]
-    fn get_adjustment() {
-        let bone = PureBone(Vector2Df::up() * 2.0, 1.0, 0.5, 1.0, 1.0, false);
-        assert!(
-            bone.get_adjustment() == (-0.5 * Vector2Df::up(), -0.5 * Vector2Df::up()),
-            "bone with half bias should adjust both equally"
-        );
-        let bone = PureBone(Vector2Df::up() * 2.0, 1.0, 0.0, 1.0, 1.0, false);
-        assert!(
-            bone.get_adjustment() == (-1.0 * Vector2Df::up(), 0.0 * Vector2Df::up()),
-            "bone with zero bias should only adjust first value"
-        );
-        let bone = PureBone(Vector2Df::up() * 2.0, 1.0, 1.0, 1.0, 1.0, false);
-        assert!(
-            bone.get_adjustment() == (0.0 * Vector2Df::up(), -1.0 * Vector2Df::up()),
-            "bone with one bias should only adjust second value"
-        );
-        let bone = PureBone(Vector2Df::zero(), 1.0, 1.0, 1.0, 1.0, false);
-        assert!(
-            bone.get_adjustment() == (Vector2Df::zero(), Vector2Df::zero()),
-            "bone with current length 0 should have no adjustment"
-        );
-        let bone = PureBone(Vector2Df::up() * 2.0, 1.0, 1.0, 1.0, 1.0, true);
-        assert!(
-            bone.get_adjustment() == (Vector2Df::zero(), Vector2Df::zero()),
-            "repel bone over rest length should not have adjustment"
-        );
-        let bone = PureBone(Vector2Df::up(), 1.0, 1.0, 1.0, 1.0, false);
-        assert!(
-            bone.get_adjustment() == (Vector2Df::zero(), Vector2Df::zero()),
-            "repel bone over rest length should not have adjustment"
-        );
-        let bone = PureBone(Vector2Df::up(), 1.0, 0.5, 1.0, 5.0, false);
-        assert!(
-            bone.get_adjustment() == (2.0 * Vector2Df::up(), 2.0 * Vector2Df::up()),
-            "large rest length factor should give correct result"
-        );
-        let bone = PureBone(Vector2Df::up(), 1.0, 0.5, 1.0, 0.25, false);
-        assert!(
-            bone.get_adjustment() == (-0.375 * Vector2Df::up(), -0.375 * Vector2Df::up()),
-            "small rest length factor should give correct result"
-        );
-        let bone = PureBone(Vector2Df::up() * 2.0, 6.0, 0.5, 1.0, 1.0, false);
-        assert!(
-            bone.get_adjustment() == (-3.0 * Vector2Df::up(), -3.0 * Vector2Df::up()),
-            "adjustment strength should scale adjustment"
-        );
-    }
-
-    #[test]
-    fn get_intact() {
-        let bone = PureBone(Vector2Df::zero(), 1.0, 0.5, 1.0, 1.0, false);
-        assert!(bone.get_intact(), "length 0 bone should be intact");
-        let bone = PureBone(Vector2Df::one() * 2.0, 1.0, 0.5, 1.0, 1.0, true);
-        assert!(
-            bone.get_intact(),
-            "repel bone over rest length should be intact"
-        );
-        let bone = PureBone(Vector2Df::one() * 5.0, 1.0, 0.5, INFINITY, 1.0, false);
-        assert!(bone.get_intact(), "infinite endurance should be intact");
-        let bone = PureBone(Vector2Df::one() * 5.0, 1.0, 0.5, 0.25, 1.0, false);
-        assert!(!bone.get_intact(), "small endurance should not be intact");
     }
 }

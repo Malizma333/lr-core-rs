@@ -5,9 +5,8 @@ use vector2d::Vector2Df;
 
 use crate::{
     entity::{
-        bone::EntityBoneLogic,
         entity_registry::{EntityBoneId, EntityPointId, EntityRegistry, EntitySkeletonId},
-        joint::EntityJointLogic,
+        logic::{bone::EntityBoneLogic, joint::EntityJointLogic, point::EntityPointLogic},
         point::EntityPointState,
     },
     grid::{Grid, GridVersion, LineId},
@@ -90,10 +89,11 @@ impl Engine {
 
     /** Generates the next frame by advancing the current physics state of the entity registry */
     fn get_next_unknown_frame(&mut self) {
-        todo!("simulate frame");
         self.current_frame = self.state_snapshots.len() as u32;
-        // self.process_skeleton(skeleton_id);
-        // self.process_remount();
+        for skeleton_id in self.registry.list_skeletons() {
+            self.process_skeleton(skeleton_id);
+        }
+        self.process_remount();
         self.state_snapshots.push(self.state.clone());
     }
 
@@ -113,13 +113,13 @@ impl Engine {
         let adjustment = bone.get_adjustment();
         let point_indices = self.registry.get_bone(bone_id).get_points();
         let p0 = self.registry.get_point_mut(point_indices.0);
-        p0.update(
+        p0.update_state(
             p0.position() - adjustment.0,
             p0.velocity(),
             p0.previous_position(),
         );
         let p1 = self.registry.get_point_mut(point_indices.1);
-        p1.update(
+        p1.update_state(
             p1.position() - adjustment.1,
             p1.velocity(),
             p1.previous_position(),
@@ -133,7 +133,7 @@ impl Engine {
         new_previous_position: Point,
     ) {
         let mut_point = self.registry.get_point_mut(point_id);
-        mut_point.update(new_position, mut_point.velocity(), new_previous_position)
+        mut_point.update_state(new_position, mut_point.velocity(), new_previous_position)
     }
 
     fn process_skeleton(&mut self, skeleton_id: EntitySkeletonId) {
@@ -147,7 +147,7 @@ impl Engine {
             let computed_velocity = point.position() - point.previous_position();
             let new_velocity = (computed_velocity * (1.0 - point.air_friction())) + gravity;
             let new_position = point.position() + new_velocity;
-            point.update(new_position, new_velocity, point.position());
+            point.update_state(new_position, new_velocity, point.position());
         }
 
         for _ in 0..6 {
@@ -225,18 +225,18 @@ impl Engine {
             }
         }
 
-        // if skeleton.is_mounted() {
-        //     for joint_index in skeleton.mount_joints() {
-        //         let joint = self.registry.get_joint(*joint_index);
-        //         if !joint.get_snapshot(&self.registry).is_intact() && !dismounted_this_frame {
-        //             dismounted_this_frame = true;
-        //         }
-        //     }
-        // }
+        if skeleton.is_mounted() {
+            for joint_index in skeleton.mount_joints() {
+                let joint = self.registry.get_joint(*joint_index);
+                if joint.get_snapshot(&self.registry).should_break() && !dismounted_this_frame {
+                    dismounted_this_frame = true;
+                }
+            }
+        }
 
         for joint_index in skeleton.joints() {
             let joint = self.registry.get_joint(*joint_index);
-            if !joint.get_snapshot(&self.registry).is_intact() && !dismounted_this_frame {
+            if joint.get_snapshot(&self.registry).should_break() && !dismounted_this_frame {
                 intact_this_frame = false;
             }
         }
@@ -249,5 +249,9 @@ impl Engine {
             skeleton.dismount();
             skeleton.destroy();
         }
+    }
+
+    fn process_remount(&mut self) {
+        todo!()
     }
 }
