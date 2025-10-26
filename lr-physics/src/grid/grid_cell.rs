@@ -1,7 +1,8 @@
 use geometry::Point;
 use vector2d::{Vector2Df, Vector2Di};
 
-use crate::grid::{CELL_SIZE, CellKey};
+pub(super) const CELL_SIZE: f64 = 14.0;
+pub(super) type CellKey = i32;
 
 pub(super) struct GridCell {
     position: Vector2Di,
@@ -62,7 +63,7 @@ mod tests {
     use geometry::Point;
     use std::collections::HashMap;
 
-    use crate::grid::{CELL_SIZE, grid_cell::GridCell};
+    use crate::grid::grid_cell::{CELL_SIZE, GridCell};
 
     #[test]
     fn unique_hash() {

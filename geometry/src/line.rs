@@ -23,6 +23,10 @@ impl Line {
         Line(point1, point2)
     }
 
+    pub fn from_tuple(points: (Point, Point)) -> Line {
+        Line(points.0, points.1)
+    }
+
     pub fn p0(&self) -> Point {
         self.0
     }

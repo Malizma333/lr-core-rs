@@ -1,11 +1,22 @@
-use crate::grid::{CELL_SIZE, CellKey, GridVersion, LineId, grid_cell::GridCell};
+use crate::grid::grid_cell::{CELL_SIZE, CellKey, GridCell};
 use geometry::{Line, Point};
 use std::collections::{BTreeSet, HashMap};
 use vector2d::Vector2Df;
 
-pub(crate) struct Grid {
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct LineId(u32);
+
+#[derive(Clone)]
+pub enum GridVersion {
+    V6_0,
+    V6_1,
+    V6_2,
+}
+
+pub struct Grid {
     version: GridVersion,
     cells: HashMap<CellKey, BTreeSet<LineId>>,
+    ids: BTreeSet<LineId>,
 }
 
 impl Grid {
@@ -13,7 +24,19 @@ impl Grid {
         Grid {
             version,
             cells: HashMap::new(),
+            ids: BTreeSet::new(),
         }
+    }
+
+    fn get_next_id(&mut self) -> LineId {
+        let last_id = self.ids.last().unwrap_or(&LineId(0));
+        let next_id = last_id.0 + 1;
+        self.ids.insert(LineId(next_id));
+        LineId(next_id)
+    }
+
+    fn free_id(&mut self, id: LineId) {
+        self.ids.remove(&id);
     }
 
     fn register(&mut self, line_id: LineId, position: &GridCell) {
@@ -31,14 +54,17 @@ impl Grid {
         }
     }
 
-    pub fn add_line(&mut self, id: LineId, endpoints: &Line) {
+    pub fn add_line(&mut self, endpoints: &Line) -> LineId {
+        let id = self.get_next_id();
         let cell_positions = self.get_cell_positions_along(&endpoints);
         for position in cell_positions {
             self.register(id, &position);
         }
+        id
     }
 
     pub fn remove_line(&mut self, id: LineId, endpoints: &Line) {
+        self.free_id(id);
         let cell_positions = self.get_cell_positions_along(&endpoints);
         for position in cell_positions {
             self.unregister(id, &position);
@@ -238,35 +264,35 @@ mod tests {
 
         assert!(grid.cells.is_empty(), "new grid should have no cells");
 
-        grid.add_line(0, &line0);
-        grid.add_line(1, &line0);
+        let line0_id = grid.add_line(&line0);
+        let line1_id = grid.add_line(&line0);
 
         assert!(
             grid.cells
                 .get(&cell_key)
-                .is_some_and(|cell| cell.contains(&0) && cell.contains(&1)),
+                .is_some_and(|cell| cell.contains(&line0_id) && cell.contains(&line1_id)),
             "first cell should have both line ids"
         );
 
-        grid.remove_line(1, &line0);
+        grid.remove_line(line1_id, &line0);
 
         assert!(
             grid.cells
                 .get(&cell_key)
-                .is_some_and(|cell| cell.contains(&0) && !cell.contains(&1)),
+                .is_some_and(|cell| cell.contains(&line0_id) && !cell.contains(&line1_id)),
             "first cell should only have one line ids after remove"
         );
 
-        grid.move_line(0, &line0, &line1);
+        grid.move_line(line0_id, &line0, &line1);
 
         assert!(
             grid.cells
                 .get(&cell_key)
-                .is_some_and(|cell| !cell.contains(&0) && !cell.contains(&1)),
+                .is_some_and(|cell| !cell.contains(&line0_id) && !cell.contains(&line1_id)),
             "first cell should have no line ids after move"
         );
 
-        grid.remove_line(0, &line1);
+        grid.remove_line(line0_id, &line1);
 
         assert!(
             !grid.cells.is_empty(),
@@ -277,30 +303,34 @@ mod tests {
     #[test]
     fn select_near_point() {
         let mut grid = Grid::new(super::GridVersion::V6_2);
-        let line1 = Line::new(Point::new(10.0, 10.0), Point::new(17.0, 10.0));
-        let line2 = Line::new(Point::new(10.0, 10.0), Point::new(10.0, 17.0));
-        let line3 = Line::new(Point::new(34.0, 34.0), Point::new(50.0, 36.0));
-        grid.add_line(0, &line1);
-        grid.add_line(1, &line2);
-        grid.add_line(2, &line3);
+        let line0 = Line::new(Point::new(10.0, 10.0), Point::new(17.0, 10.0));
+        let line1 = Line::new(Point::new(10.0, 10.0), Point::new(10.0, 17.0));
+        let line2 = Line::new(Point::new(34.0, 34.0), Point::new(50.0, 36.0));
+        let line0_id = grid.add_line(&line0);
+        let line1_id = grid.add_line(&line1);
+        let line2_id = grid.add_line(&line2);
         let lines_near_point = grid.get_lines_near_point(Point::new(-3.0, -1.0));
-        assert_eq!(lines_near_point, vec![1, 0], "line order should match");
+        assert_eq!(
+            lines_near_point,
+            vec![line1_id, line0_id],
+            "line order should match"
+        );
         let lines_near_point = grid.get_lines_near_point(Point::new(50.0, 23.0));
         assert_eq!(
             lines_near_point,
-            vec![2, 2],
+            vec![line2_id, line2_id],
             "list should contain duplicates"
         );
         let lines_near_point = grid.get_lines_near_point(Point::new(7.0, 8.0));
         assert_eq!(
             lines_near_point,
-            vec![1, 0, 1, 0],
+            vec![line1_id, line0_id, line1_id, line0_id],
             "cell processing order should match"
         );
         let lines_near_point = grid.get_lines_near_point(Point::new(17.0, 19.0));
         assert_eq!(
             lines_near_point,
-            vec![1, 0, 1, 0, 2],
+            vec![line1_id, line0_id, line1_id, line0_id, line2_id],
             "all lines in 3x3 should be included"
         );
     }

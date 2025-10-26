@@ -2,6 +2,7 @@ mod engine;
 mod entity;
 mod grid;
 mod line;
-mod premade;
+pub mod premade;
 
-pub use engine::Engine;
+pub use engine::{Engine, EngineBuilder};
+pub use grid::GridVersion;

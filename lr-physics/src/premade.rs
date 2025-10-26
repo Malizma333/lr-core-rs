@@ -1,6 +1,12 @@
-pub mod acceleration_line;
-pub mod normal_line;
-pub mod rider;
-pub mod scenery_line;
-pub mod sled;
-pub mod sled_rider;
+mod acceleration_line;
+mod normal_line;
+mod rider;
+mod scenery_line;
+mod sled;
+mod sled_rider;
+pub use acceleration_line::AccelerationLine;
+pub use normal_line::NormalLine;
+pub use rider::Rider;
+pub use scenery_line::SceneryLine;
+pub use sled::Sled;
+pub use sled_rider::SledRider;
