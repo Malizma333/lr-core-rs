@@ -14,6 +14,8 @@ mod state;
 pub use builder::EngineBuilder;
 pub use moment::PhysicsMoment;
 
+const GRAVITY_MULTIPLIER: f64 = 0.175;
+
 pub struct Engine {
     grid: Grid,
     line_lookup: HashMap<LineId, Box<dyn Hitbox>>,

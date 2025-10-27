@@ -1,38 +1,23 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    hash::Hash,
+use std::collections::{BTreeMap, HashMap};
+
+use crate::{
+    entity::{
+        bone::{EntityBone, template::EntityBoneTemplate},
+        joint::{EntityJoint, template::EntityJointTemplate},
+        point::{EntityPoint, template::EntityPointTemplate},
+        skeleton::{EntitySkeleton, template::EntitySkeletonTemplate},
+    },
+    registry_id,
 };
 
-use crate::entity::{
-    bone::{EntityBone, template::EntityBoneTemplate},
-    joint::{EntityJoint, template::EntityJointTemplate},
-    point::{EntityPoint, template::EntityPointTemplate},
-    skeleton::{EntitySkeleton, template::EntitySkeletonTemplate},
-};
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct EntityPointId(usize);
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct EntityBoneId(usize);
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct EntityJointId(usize);
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct EntitySkeletonId(usize);
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct EntityPointTemplateId(usize);
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct EntityBoneTemplateId(usize);
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct EntityJointTemplateId(usize);
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct EntitySkeletonTemplateId(usize);
+registry_id!(EntityPointId);
+registry_id!(EntityPointTemplateId);
+registry_id!(EntityBoneId);
+registry_id!(EntityBoneTemplateId);
+registry_id!(EntityJointId);
+registry_id!(EntityJointTemplateId);
+registry_id!(EntitySkeletonId);
+registry_id!(EntitySkeletonTemplateId);
 
 pub struct EntityRegistry {
     points: BTreeMap<EntityPointId, EntityPoint>,
@@ -127,44 +112,45 @@ impl EntityRegistry {
     }
 
     pub fn create_skeleton(&mut self, id: EntitySkeletonTemplateId) {
-        let target_skeleton_template = &self.skeleton_templates[&id];
-
-        let mut point_template_mapping: HashMap<EntityPointTemplateId, EntityPointId> =
-            HashMap::new();
-        let mut bone_template_mapping: HashMap<EntityBoneTemplateId, EntityBoneId> = HashMap::new();
-        let mut joint_template_mapping: HashMap<EntityJointTemplateId, EntityJointId> =
-            HashMap::new();
-
-        for point_template_id in target_skeleton_template.points() {
-            let new_point = self.get_point_template(*point_template_id).build();
-            let new_point_id = self.add_point(new_point);
-            point_template_mapping.insert(point_template_id.clone(), new_point_id);
-        }
-
-        for bone_template_id in target_skeleton_template.bones() {
-            let new_bone = self
-                .get_bone_template(*bone_template_id)
-                .build(self, &point_template_mapping);
-            let new_bone_id = self.add_bone(new_bone);
-            bone_template_mapping.insert(bone_template_id.clone(), new_bone_id);
-        }
-
-        for joint_template_id in target_skeleton_template.joints() {
-            let new_joint = self
-                .get_joint_template(*joint_template_id)
-                .build(&bone_template_mapping);
-            let new_joint_id = self.add_joint(new_joint);
-            joint_template_mapping.insert(joint_template_id.clone(), new_joint_id);
-        }
-
-        let new_skeleton = target_skeleton_template.build(
-            &point_template_mapping,
-            &bone_template_mapping,
-            &joint_template_mapping,
-        );
-
-        let id = EntitySkeletonId(self.skeletons.len());
-        self.skeletons.insert(id, new_skeleton);
+        todo!();
+        //         let target_skeleton_template = &self.skeleton_templates[&id];
+        //
+        //         let mut point_template_mapping: HashMap<EntityPointTemplateId, EntityPointId> =
+        //             HashMap::new();
+        //         let mut bone_template_mapping: HashMap<EntityBoneTemplateId, EntityBoneId> = HashMap::new();
+        //         let mut joint_template_mapping: HashMap<EntityJointTemplateId, EntityJointId> =
+        //             HashMap::new();
+        //
+        //         for point_template_id in target_skeleton_template.points() {
+        //             let new_point = self.get_point_template(*point_template_id).build();
+        //             let new_point_id = self.add_point(new_point);
+        //             point_template_mapping.insert(point_template_id.clone(), new_point_id);
+        //         }
+        //
+        //         for bone_template_id in target_skeleton_template.bones() {
+        //             let new_bone = self
+        //                 .get_bone_template(*bone_template_id)
+        //                 .build(self, &point_template_mapping);
+        //             let new_bone_id = self.add_bone(new_bone);
+        //             bone_template_mapping.insert(bone_template_id.clone(), new_bone_id);
+        //         }
+        //
+        //         for joint_template_id in target_skeleton_template.joints() {
+        //             let new_joint = self
+        //                 .get_joint_template(*joint_template_id)
+        //                 .build(&bone_template_mapping);
+        //             let new_joint_id = self.add_joint(new_joint);
+        //             joint_template_mapping.insert(joint_template_id.clone(), new_joint_id);
+        //         }
+        //
+        //         let new_skeleton = target_skeleton_template.build(
+        //             &point_template_mapping,
+        //             &bone_template_mapping,
+        //             &joint_template_mapping,
+        //         );
+        //
+        //         let id = EntitySkeletonId(self.skeletons.len());
+        //         self.skeletons.insert(id, new_skeleton);
     }
 
     pub fn get_skeleton(&self, id: EntitySkeletonId) -> &EntitySkeleton {

@@ -1,4 +1,6 @@
-use crate::entity::point::{snapshot::EntityPointSnapshot, state::EntityPointState};
+use vector2d::Vector2Df;
+
+use crate::entity::point::snapshot::EntityPointSnapshot;
 
 pub(crate) mod snapshot;
 pub(crate) mod state;
@@ -12,10 +14,11 @@ pub(crate) struct EntityPoint {
 
 impl EntityPoint {
     pub fn get_snapshot(&self) -> EntityPointSnapshot {
+        // TODO
         EntityPointSnapshot::new(
-            position,
-            velocity,
-            previous_position,
+            Vector2Df::zero(),
+            Vector2Df::zero(),
+            Vector2Df::zero(),
             self.contact_friction,
             self.air_friction,
             self.contact,

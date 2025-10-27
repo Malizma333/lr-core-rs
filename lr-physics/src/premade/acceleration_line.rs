@@ -1,7 +1,8 @@
 use geometry::Point;
 
 use crate::{
-    ComputedLineProperties, ComputedProperties, Hitbox, entity::point::logic::EntityPointLogic,
+    ComputedLineProperties, ComputedProperties, Hitbox,
+    entity::point::snapshot::EntityPointSnapshot,
 };
 
 const ACCELERATION_FACTOR: f64 = 0.1;
@@ -28,7 +29,7 @@ impl ComputedLineProperties for AccelerationLine {
 impl Hitbox for AccelerationLine {
     fn interact(
         &self,
-        point: &crate::entity::point::EntityPoint,
+        point: &EntityPointSnapshot,
         distance_from_line_top: f64,
         _position_between_ends: f64,
     ) -> Option<(Point, Point)> {

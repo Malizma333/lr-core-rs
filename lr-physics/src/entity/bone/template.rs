@@ -77,8 +77,8 @@ impl EntityBoneTemplate {
             mapping[&self.connected_points.1],
         );
         let points = (
-            registry.get_point(point_ids.0),
-            registry.get_point(point_ids.1),
+            registry.get_point(point_ids.0).get_snapshot(),
+            registry.get_point(point_ids.1).get_snapshot(),
         );
         EntityBone {
             connected_points: point_ids,

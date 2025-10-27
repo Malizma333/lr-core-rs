@@ -1,7 +1,8 @@
 use geometry::Point;
 
 use crate::{
-    ComputedLineProperties, ComputedProperties, Hitbox, entity::point::logic::EntityPointLogic,
+    ComputedLineProperties, ComputedProperties, Hitbox,
+    entity::point::snapshot::EntityPointSnapshot,
 };
 
 pub struct NormalLine {
@@ -25,7 +26,7 @@ impl ComputedLineProperties for NormalLine {
 impl Hitbox for NormalLine {
     fn interact(
         &self,
-        point: &crate::entity::point::EntityPoint,
+        point: &EntityPointSnapshot,
         distance_from_line_top: f64,
         _position_between_ends: f64,
     ) -> Option<(Point, Point)> {

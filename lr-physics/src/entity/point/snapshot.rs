@@ -11,7 +11,7 @@ pub(crate) struct EntityPointSnapshot {
 }
 
 impl EntityPointSnapshot {
-    pub(super) fn new(
+    pub fn new(
         position: Point,
         velocity: Vector2Df,
         previous_position: Point,
@@ -33,15 +33,31 @@ impl EntityPointSnapshot {
         self.contact
     }
 
+    pub fn contact_friction(&self) -> f64 {
+        self.contact_friction
+    }
+
+    pub fn air_friction(&self) -> f64 {
+        self.air_friction
+    }
+
     pub fn position(&self) -> Point {
         self.position
     }
 
-    fn process_initial_step(&mut self, gravity: Vector2Df) {
-        let computed_velocity = self.position() - self.previous_position;
+    pub fn velocity(&self) -> Vector2Df {
+        self.velocity
+    }
+
+    pub fn previous_position(&self) -> Point {
+        self.previous_position
+    }
+
+    fn get_initial_step(&self, gravity: Vector2Df) -> (Point, Vector2Df, Point) {
+        let computed_velocity = self.position - self.previous_position;
         let new_velocity = computed_velocity * (1.0 - self.air_friction) + gravity;
-        let new_position = self.position() + new_velocity;
-        self.update(new_position, new_velocity, self.position);
+        let new_position = self.position + new_velocity;
+        (new_position, new_velocity, self.position)
     }
 }
 
@@ -53,8 +69,8 @@ mod tests {
     use crate::entity::point::snapshot::EntityPointSnapshot;
 
     #[test]
-    fn initial_step() {
-        let mut point = EntityPointSnapshot::new(
+    fn initial_step_zero_gravity() {
+        let point = EntityPointSnapshot::new(
             Point::zero(),
             Vector2Df::zero(),
             Vector2Df::zero(),
@@ -62,54 +78,48 @@ mod tests {
             0.0,
             true,
         );
-        point.process_initial_step(Vector2Df::zero());
-        assert!(point.position == Point::zero(), "Position should be zero");
+        let result = point.get_initial_step(Vector2Df::zero());
+        assert!(result.0 == Point::zero(), "Position should be zero");
+        assert!(result.1 == Vector2Df::zero(), "Velocity should be zero");
         assert!(
-            point.velocity == Vector2Df::zero(),
-            "Velocity should be zero"
+            result.2 == Vector2Df::zero(),
+            "Previous should copy last position"
         );
-        assert!(
-            point.previous_position == Vector2Df::zero(),
-            "Previous position should be zero"
-        );
-        let mut point =
+
+        let point =
             EntityPointSnapshot::new(Point::up(), Point::up(), Point::zero(), 0.0, 0.0, true);
-        point.process_initial_step(Vector2Df::zero());
+        let result = point.get_initial_step(Vector2Df::zero());
+        assert!(result.0 == Point::up() * 2.0, "Position should increase");
+        assert!(result.1 == Vector2Df::up(), "Velocity should stay the same");
         assert!(
-            point.position == Point::up() * 2.0,
-            "Position should increase"
+            result.2 == Vector2Df::up(),
+            "Previous should copy last position"
         );
-        assert!(
-            point.velocity == Vector2Df::up(),
-            "Velocity should stay the same"
-        );
-        assert!(
-            point.previous_position == Vector2Df::up(),
-            "Previous position should be the last position"
-        );
-        let mut point =
+    }
+
+    #[test]
+    fn initial_step_normal_gravity() {
+        let point =
             EntityPointSnapshot::new(Point::up(), Point::up(), Point::zero(), 0.0, 0.0, true);
-        point.process_initial_step(Vector2Df::up() * 0.5);
-        assert!(point.position == Point::zero(), "Position should be zero");
+        let result = point.get_initial_step(Vector2Df::down());
+        assert!(result.0 == Point::up(), "Position should be the same");
+        assert!(result.1 == Vector2Df::zero(), "Velocity should be zero");
         assert!(
-            point.velocity == Vector2Df::zero(),
-            "Velocity should be zero"
+            result.2 == Vector2Df::up(),
+            "Previous should copy last position"
         );
+    }
+
+    #[test]
+    fn initial_step_air_friction() {
+        let point =
+            EntityPointSnapshot::new(Point::up(), Point::up(), Point::down(), 0.0, 0.5, true);
+        let result = point.get_initial_step(Vector2Df::down());
+        assert!(result.0 == Point::up(), "Position should be the same");
+        assert!(result.1 == Vector2Df::zero(), "Velocity should be zero");
         assert!(
-            point.previous_position == Vector2Df::zero(),
-            "Previous position should be zero"
-        );
-        let mut point =
-            EntityPointSnapshot::new(Point::up(), Point::up(), Point::zero(), 0.5, 0.0, true);
-        point.process_initial_step(Vector2Df::zero());
-        assert!(point.position == Point::zero(), "Position should be zero");
-        assert!(
-            point.velocity == Vector2Df::zero(),
-            "Velocity should be zero"
-        );
-        assert!(
-            point.previous_position == Vector2Df::zero(),
-            "Previous position should be zero"
+            result.2 == Vector2Df::up(),
+            "Previous position should copy last position"
         );
     }
 }

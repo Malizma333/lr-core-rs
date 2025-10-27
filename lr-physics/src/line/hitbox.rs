@@ -1,10 +1,7 @@
 use geometry::Point;
 use vector2d::Vector2Df;
 
-use crate::{
-    entity::point::{EntityPoint, logic::EntityPointLogic},
-    line::computed::ComputedLineProperties,
-};
+use crate::{entity::point::snapshot::EntityPointSnapshot, line::computed::ComputedLineProperties};
 
 pub(crate) const HITBOX_HEIGHT: f64 = 10.0;
 
@@ -15,12 +12,12 @@ pub trait Hitbox: ComputedLineProperties {
     */
     fn interact(
         &self,
-        point: &EntityPoint,
+        point: &EntityPointSnapshot,
         distance_from_line_top: f64,
         position_between_ends: f64,
     ) -> Option<(Point, Point)>;
 
-    fn check_interaction(&self, point: &EntityPoint) -> Option<(Point, Point)> {
+    fn check_interaction(&self, point: &EntityPointSnapshot) -> Option<(Point, Point)> {
         if !point.is_contact() {
             return None;
         }
@@ -50,7 +47,7 @@ mod tests {
     use vector2d::Vector2Df;
 
     use crate::{
-        entity::point::{EntityPoint, logic::EntityPointLogic, template::EntityPointTemplate},
+        entity::point::snapshot::EntityPointSnapshot,
         line::{
             computed::{ComputedLineProperties, ComputedProperties},
             hitbox::Hitbox,
@@ -67,7 +64,7 @@ mod tests {
     impl Hitbox for SimpleStruct {
         fn interact(
             &self,
-            _point: &EntityPoint,
+            _point: &EntityPointSnapshot,
             _distance_from_line_top: f64,
             _position_between_ends: f64,
         ) -> Option<(Point, Point)> {
@@ -84,10 +81,16 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::one(), Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::one(),
+            Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_some(),
+            line.check_interaction(&contact_point).is_some(),
             "Contact point moving into line within hitbox should interact"
         );
     }
@@ -101,10 +104,16 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::one(), -1.0 * Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::one(),
+            -1.0 * Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_none(),
+            line.check_interaction(&contact_point).is_none(),
             "Contact point moving out of line should not interact"
         );
     }
@@ -118,10 +127,16 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::new(0.0, -1.0), Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::new(0.0, -1.0),
+            Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_none(),
+            line.check_interaction(&contact_point).is_none(),
             "Contact point moving above line should not interact"
         );
     }
@@ -135,14 +150,16 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(
+        let contact_point = EntityPointSnapshot::new(
             Point::new(0.0, -1.0),
             -1.0 * Vector2Df::one(),
             Point::zero(),
+            0.0,
+            0.0,
+            true,
         );
         assert!(
-            line.check_interaction(&mut contact_point).is_some(),
+            line.check_interaction(&contact_point).is_some(),
             "Contact point moving above flipped line should interact"
         );
     }
@@ -156,10 +173,16 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::new(0.0, 12.0), Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::new(0.0, 12.0),
+            Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_none(),
+            line.check_interaction(&contact_point).is_none(),
             "Contact point moving below line should not interact"
         );
     }
@@ -173,10 +196,16 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::new(-11.0, 5.0),
+            Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_none(),
+            line.check_interaction(&contact_point).is_none(),
             "Contact point moving left of line should not interact"
         );
     }
@@ -190,10 +219,16 @@ mod tests {
             false,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::new(11.0, 5.0),
+            Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_none(),
+            line.check_interaction(&contact_point).is_none(),
             "Contact point moving right of line should not interact"
         );
     }
@@ -207,10 +242,16 @@ mod tests {
             true,
             false,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::new(-11.0, 5.0), Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::new(-11.0, 5.0),
+            Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_some(),
+            line.check_interaction(&contact_point).is_some(),
             "Contact point moving left of line with extension should interact"
         );
     }
@@ -224,10 +265,16 @@ mod tests {
             false,
             true,
         );
-        let mut contact_point = EntityPointTemplate::new(Point::zero()).contact().build();
-        contact_point.update(Point::new(11.0, 5.0), Vector2Df::one(), Point::zero());
+        let contact_point = EntityPointSnapshot::new(
+            Point::new(11.0, 5.0),
+            Vector2Df::one(),
+            Point::zero(),
+            0.0,
+            0.0,
+            true,
+        );
         assert!(
-            line.check_interaction(&mut contact_point).is_some(),
+            line.check_interaction(&contact_point).is_some(),
             "Contact point moving right of line with extension should interact"
         );
     }

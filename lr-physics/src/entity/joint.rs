@@ -22,8 +22,6 @@ impl EntityJoint {
                 .get_bone(self.bones_involved.0)
                 .get_snapshot(registry, remounting),
         );
-        EntityJointSnapshot {
-            bone_vectors: (bones.0.vector(), bones.1.vector()),
-        }
+        EntityJointSnapshot::new((bones.0.vector(), bones.1.vector()))
     }
 }
