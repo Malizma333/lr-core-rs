@@ -2,10 +2,13 @@ use std::collections::{BTreeMap, HashMap};
 
 use crate::{
     entity::{
-        bone::{EntityBone, template::EntityBoneTemplate},
-        joint::{EntityJoint, template::EntityJointTemplate},
-        point::{EntityPoint, template::EntityPointTemplate},
-        skeleton::{EntitySkeleton, template::EntitySkeletonTemplate},
+        bone::{entity::EntityBone, template::EntityBoneTemplate},
+        joint::{entity::EntityJoint, template::EntityJointTemplate},
+        point::{entity::EntityPoint, template::EntityPointTemplate},
+        skeleton::{
+            builder::EntitySkeletonBuilder, entity::EntitySkeleton,
+            template::EntitySkeletonTemplate,
+        },
     },
     registry_id,
 };
@@ -46,122 +49,122 @@ impl EntityRegistry {
         }
     }
 
-    pub(super) fn get_point_template(&self, id: EntityPointTemplateId) -> &EntityPointTemplate {
-        &self.point_templates[&id]
+    pub(super) fn get_point(&self, id: EntityPointId) -> &EntityPoint {
+        &self.points[&id]
     }
 
-    pub(super) fn get_bone_template(&self, id: EntityBoneTemplateId) -> &EntityBoneTemplate {
-        &self.bone_templates[&id]
+    pub(super) fn get_point_mut(&mut self, id: EntityPointId) -> &mut EntityPoint {
+        self.points.get_mut(&id).unwrap()
     }
 
-    pub(super) fn get_joint_template(&self, id: EntityJointTemplateId) -> &EntityJointTemplate {
-        &self.joint_templates[&id]
+    pub(super) fn get_bone(&self, id: EntityBoneId) -> &EntityBone {
+        &self.bones[&id]
     }
 
-    pub(super) fn add_point(&mut self, point: EntityPoint) -> EntityPointId {
+    pub(super) fn get_joint(&self, id: EntityJointId) -> &EntityJoint {
+        &self.joints[&id]
+    }
+
+    pub(super) fn add_point_template(
+        &mut self,
+        point_template: EntityPointTemplate,
+    ) -> EntityPointTemplateId {
+        let id = EntityPointTemplateId(self.point_templates.len());
+        self.point_templates.insert(id, point_template);
+        id
+    }
+
+    pub(super) fn add_bone_template(
+        &mut self,
+        bone_template: EntityBoneTemplate,
+    ) -> EntityBoneTemplateId {
+        let id = EntityBoneTemplateId(self.bone_templates.len());
+        self.bone_templates.insert(id, bone_template);
+        id
+    }
+
+    pub(super) fn add_joint_template(
+        &mut self,
+        joint_template: EntityJointTemplate,
+    ) -> EntityJointTemplateId {
+        let id = EntityJointTemplateId(self.joint_templates.len());
+        self.joint_templates.insert(id, joint_template);
+        id
+    }
+
+    pub(super) fn add_skeleton_template(
+        &mut self,
+        skeleton_template: EntitySkeletonTemplate,
+    ) -> EntitySkeletonTemplateId {
+        let id = EntitySkeletonTemplateId(self.skeleton_templates.len());
+        self.skeleton_templates.insert(id, skeleton_template);
+        id
+    }
+
+    fn create_point(&mut self, point_id: &EntityPointTemplateId) -> EntityPointId {
+        let target_point_template = &self.point_templates[point_id];
+        let point = target_point_template.build();
         let id = EntityPointId(self.points.len());
         self.points.insert(id, point);
         id
     }
 
-    pub(super) fn add_bone(&mut self, bone: EntityBone) -> EntityBoneId {
+    fn create_bone(
+        &mut self,
+        bone_id: &EntityBoneTemplateId,
+        point_mapping: &HashMap<EntityPointTemplateId, EntityPointId>,
+    ) -> EntityBoneId {
+        let target_bone_template = &self.bone_templates[bone_id];
+        let bone = target_bone_template.build(point_mapping);
         let id = EntityBoneId(self.bones.len());
         self.bones.insert(id, bone);
         id
     }
 
-    pub(super) fn add_joint(&mut self, joint: EntityJoint) -> EntityJointId {
+    fn create_joint(
+        &mut self,
+        joint_id: &EntityJointTemplateId,
+        bone_mapping: &HashMap<EntityBoneTemplateId, EntityBoneId>,
+    ) -> EntityJointId {
+        let target_joint_template = &self.joint_templates[joint_id];
+        let joint = target_joint_template.build(bone_mapping);
         let id = EntityJointId(self.joints.len());
         self.joints.insert(id, joint);
         id
     }
 
-    pub(super) fn add_skeleton(&mut self, skeleton: EntitySkeleton) -> EntitySkeletonId {
+    pub fn create_skeleton(&mut self, skeleton_id: &EntitySkeletonTemplateId) -> EntitySkeletonId {
+        let points = self.skeleton_templates[skeleton_id].points().clone();
+        let mut point_mapping = HashMap::<EntityPointTemplateId, EntityPointId>::new();
+        for point_id in points {
+            point_mapping.insert(point_id, self.create_point(&point_id));
+        }
+
+        let bones = self.skeleton_templates[skeleton_id].bones().clone();
+        let mut bone_mapping = HashMap::<EntityBoneTemplateId, EntityBoneId>::new();
+        for bone_id in bones {
+            bone_mapping.insert(bone_id, self.create_bone(&bone_id, &point_mapping));
+        }
+
+        let joints = self.skeleton_templates[skeleton_id].joints().clone();
+        let mut joint_mapping = HashMap::<EntityJointTemplateId, EntityJointId>::new();
+        for joint_id in joints {
+            joint_mapping.insert(joint_id, self.create_joint(&joint_id, &bone_mapping));
+        }
+
+        let target_skeleton_template = &self.skeleton_templates[skeleton_id];
+        let skeleton =
+            target_skeleton_template.build(&point_mapping, &bone_mapping, &joint_mapping);
         let id = EntitySkeletonId(self.skeletons.len());
         self.skeletons.insert(id, skeleton);
         id
     }
 
-    pub fn get_point(&self, id: EntityPointId) -> &EntityPoint {
-        &self.points[&id]
+    pub fn skeleton_template_builder(&mut self) -> EntitySkeletonBuilder {
+        EntitySkeletonBuilder::new(self)
     }
 
-    pub fn get_point_mut(&mut self, id: EntityPointId) -> &mut EntityPoint {
-        self.points.get_mut(&id).unwrap()
-    }
-
-    pub fn get_bone(&self, id: EntityBoneId) -> &EntityBone {
-        &self.bones[&id]
-    }
-
-    pub fn get_joint(&self, id: EntityJointId) -> &EntityJoint {
-        &self.joints[&id]
-    }
-
-    pub fn add_skeleton_template(
-        &mut self,
-        template: EntitySkeletonTemplate,
-    ) -> EntitySkeletonTemplateId {
-        let id = EntitySkeletonTemplateId(self.skeleton_templates.len());
-        self.skeleton_templates.insert(id, template);
-        id
-    }
-
-    pub fn get_skeleton_template(&self, id: EntitySkeletonTemplateId) -> &EntitySkeletonTemplate {
-        &self.skeleton_templates[&id]
-    }
-
-    pub fn create_skeleton(&mut self, id: EntitySkeletonTemplateId) {
-        todo!();
-        //         let target_skeleton_template = &self.skeleton_templates[&id];
-        //
-        //         let mut point_template_mapping: HashMap<EntityPointTemplateId, EntityPointId> =
-        //             HashMap::new();
-        //         let mut bone_template_mapping: HashMap<EntityBoneTemplateId, EntityBoneId> = HashMap::new();
-        //         let mut joint_template_mapping: HashMap<EntityJointTemplateId, EntityJointId> =
-        //             HashMap::new();
-        //
-        //         for point_template_id in target_skeleton_template.points() {
-        //             let new_point = self.get_point_template(*point_template_id).build();
-        //             let new_point_id = self.add_point(new_point);
-        //             point_template_mapping.insert(point_template_id.clone(), new_point_id);
-        //         }
-        //
-        //         for bone_template_id in target_skeleton_template.bones() {
-        //             let new_bone = self
-        //                 .get_bone_template(*bone_template_id)
-        //                 .build(self, &point_template_mapping);
-        //             let new_bone_id = self.add_bone(new_bone);
-        //             bone_template_mapping.insert(bone_template_id.clone(), new_bone_id);
-        //         }
-        //
-        //         for joint_template_id in target_skeleton_template.joints() {
-        //             let new_joint = self
-        //                 .get_joint_template(*joint_template_id)
-        //                 .build(&bone_template_mapping);
-        //             let new_joint_id = self.add_joint(new_joint);
-        //             joint_template_mapping.insert(joint_template_id.clone(), new_joint_id);
-        //         }
-        //
-        //         let new_skeleton = target_skeleton_template.build(
-        //             &point_template_mapping,
-        //             &bone_template_mapping,
-        //             &joint_template_mapping,
-        //         );
-        //
-        //         let id = EntitySkeletonId(self.skeletons.len());
-        //         self.skeletons.insert(id, new_skeleton);
-    }
-
-    pub fn get_skeleton(&self, id: EntitySkeletonId) -> &EntitySkeleton {
-        &self.skeletons[&id]
-    }
-
-    pub fn list_skeletons(&self) -> Vec<EntitySkeletonId> {
-        self.skeletons.keys().cloned().collect()
-    }
-
-    pub fn remove_skeleton(&mut self, id: EntitySkeletonId) {
+    pub fn delete_skeleton(&mut self, id: EntitySkeletonId) {
         let skeleton = self.skeletons.remove(&id).unwrap();
 
         for joint in skeleton.joints() {

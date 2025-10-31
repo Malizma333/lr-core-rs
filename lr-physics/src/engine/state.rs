@@ -1,9 +1,16 @@
 use std::collections::HashMap;
 
-use crate::entity::{point::state::EntityPointState, registry::EntityPointId};
+use crate::{
+    engine::state::{point::EntityPointState, skeleton::EntitySkeletonState},
+    entity::registry::{EntityPointId, EntitySkeletonId},
+};
 
-pub(super) struct EngineState {
+mod point;
+mod skeleton;
+
+pub struct EngineState {
     point_states: HashMap<EntityPointId, EntityPointState>,
+    skeleton_states: HashMap<EntitySkeletonId, EntitySkeletonState>,
 }
 
 impl Clone for EngineState {
@@ -11,6 +18,7 @@ impl Clone for EngineState {
         Self {
             // hashmap clone is implemented as a deep copy
             point_states: self.point_states.clone(),
+            skeleton_states: self.skeleton_states.clone(),
         }
     }
 }
@@ -19,6 +27,7 @@ impl EngineState {
     pub fn new() -> Self {
         Self {
             point_states: HashMap::new(),
+            skeleton_states: HashMap::new(),
         }
     }
 }
