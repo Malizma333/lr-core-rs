@@ -37,49 +37,49 @@ impl<'a> EntitySkeletonBuilder<'a> {
     }
 
     pub(crate) fn add_point(
-        &'a mut self,
+        mut self,
         point_template: EntityPointTemplate,
-    ) -> EntityPointTemplateId {
+    ) -> (Self, EntityPointTemplateId) {
         let id = self.registry.add_point_template(point_template);
         self.points.push(id);
-        id
+        (self, id)
     }
 
     pub(crate) fn add_bone(
-        &'a mut self,
+        mut self,
         bone_template: EntityBoneTemplate,
-    ) -> EntityBoneTemplateId {
+    ) -> (Self, EntityBoneTemplateId) {
         let id = self.registry.add_bone_template(bone_template);
         self.bones.push(id);
-        id
+        (self, id)
     }
 
     pub(crate) fn add_joint(
-        &'a mut self,
+        mut self,
         joint_template: EntityJointTemplate,
-    ) -> EntityJointTemplateId {
+    ) -> (Self, EntityJointTemplateId) {
         let id = self.registry.add_joint_template(joint_template);
         self.joints.push(id);
-        id
+        (self, id)
     }
 
-    pub fn point(&'a mut self, initial_position: Vector2Df) -> EntityPointBuilder<'a, '_> {
+    pub fn point(self, initial_position: Vector2Df) -> EntityPointBuilder<'a> {
         EntityPointBuilder::new(self, initial_position)
     }
 
     pub fn bone(
-        &'a mut self,
+        self,
         p1: EntityPointTemplateId,
         p2: EntityPointTemplateId,
-    ) -> EntityBoneBuilder<'a, '_> {
+    ) -> EntityBoneBuilder<'a> {
         EntityBoneBuilder::new(self, p1, p2)
     }
 
     pub fn joint(
-        &'a mut self,
+        self,
         b1: EntityBoneTemplateId,
         b2: EntityBoneTemplateId,
-    ) -> EntityJointBuilder<'a, '_> {
+    ) -> EntityJointBuilder<'a> {
         EntityJointBuilder::new(self, b1, b2)
     }
 
@@ -113,7 +113,6 @@ impl<'a> EntitySkeletonBuilder<'a> {
             remounting_timer: self.remounting_timer.unwrap_or(0),
             remounted_timer: self.remounted_timer.unwrap_or(0),
         };
-        let id = self.registry.add_skeleton_template(skeleton_template);
-        id
+        self.registry.add_skeleton_template(skeleton_template)
     }
 }

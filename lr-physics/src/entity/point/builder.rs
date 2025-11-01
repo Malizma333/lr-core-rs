@@ -6,8 +6,8 @@ use crate::entity::{
     skeleton::builder::EntitySkeletonBuilder,
 };
 
-pub struct EntityPointBuilder<'a, 'b> {
-    skeleton: &'a mut EntitySkeletonBuilder<'b>,
+pub struct EntityPointBuilder<'a> {
+    skeleton: EntitySkeletonBuilder<'a>,
     initial_position: Point,
     initial_velocity: Option<Vector2Df>,
     contact: bool,
@@ -15,11 +15,11 @@ pub struct EntityPointBuilder<'a, 'b> {
     air_friction: Option<f64>,
 }
 
-impl<'a: 'b, 'b> EntityPointBuilder<'a, 'b> {
+impl<'a> EntityPointBuilder<'a> {
     pub(crate) fn new(
-        skeleton: &'a mut EntitySkeletonBuilder<'b>,
+        skeleton: EntitySkeletonBuilder<'a>,
         initial_position: Point,
-    ) -> EntityPointBuilder<'a, 'b> {
+    ) -> EntityPointBuilder<'a> {
         Self {
             skeleton,
             initial_position,
@@ -30,27 +30,27 @@ impl<'a: 'b, 'b> EntityPointBuilder<'a, 'b> {
         }
     }
 
-    pub fn initial_velocity(&mut self, velocity: Vector2Df) -> &mut Self {
+    pub fn initial_velocity(mut self, velocity: Vector2Df) -> Self {
         self.initial_velocity = Some(velocity);
         self
     }
 
-    pub fn contact(&mut self) -> &mut Self {
+    pub fn contact(mut self) -> Self {
         self.contact = true;
         self
     }
 
-    pub fn contact_friction(&mut self, friction: f64) -> &mut Self {
+    pub fn contact_friction(mut self, friction: f64) -> Self {
         self.contact_friction = Some(friction);
         self
     }
 
-    pub fn air_friction(&mut self, friction: f64) -> &mut Self {
+    pub fn air_friction(mut self, friction: f64) -> Self {
         self.air_friction = Some(friction);
         self
     }
 
-    pub fn build(self) -> EntityPointTemplateId {
+    pub fn build(self) -> (EntitySkeletonBuilder<'a>, EntityPointTemplateId) {
         let template = EntityPointTemplate {
             initial_position: self.initial_position,
             initial_velocity: self.initial_velocity.unwrap_or(Vector2Df::zero()),
@@ -58,7 +58,6 @@ impl<'a: 'b, 'b> EntityPointBuilder<'a, 'b> {
             contact_friction: self.contact_friction.unwrap_or(0.0),
             air_friction: self.air_friction.unwrap_or(0.0),
         };
-        let id = self.skeleton.add_point(template);
-        id
+        self.skeleton.add_point(template)
     }
 }

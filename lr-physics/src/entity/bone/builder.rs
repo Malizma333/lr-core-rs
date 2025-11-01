@@ -6,8 +6,8 @@ use crate::entity::{
     skeleton::builder::EntitySkeletonBuilder,
 };
 
-pub struct EntityBoneBuilder<'a, 'b> {
-    skeleton: &'a mut EntitySkeletonBuilder<'b>,
+pub struct EntityBoneBuilder<'a> {
+    skeleton: EntitySkeletonBuilder<'a>,
     connected_points: (EntityPointTemplateId, EntityPointTemplateId),
     bias: Option<f64>,
     initial_length_factor: Option<f64>,
@@ -18,12 +18,12 @@ pub struct EntityBoneBuilder<'a, 'b> {
     adjustment_strength_remount_factor: Option<f64>,
 }
 
-impl<'a: 'b, 'b> EntityBoneBuilder<'a, 'b> {
+impl<'a> EntityBoneBuilder<'a> {
     pub fn new(
-        skeleton: &'a mut EntitySkeletonBuilder<'b>,
+        skeleton: EntitySkeletonBuilder<'a>,
         p1: EntityPointTemplateId,
         p2: EntityPointTemplateId,
-    ) -> EntityBoneBuilder<'a, 'b> {
+    ) -> EntityBoneBuilder<'a> {
         Self {
             skeleton,
             connected_points: (p1, p2),
@@ -37,42 +37,42 @@ impl<'a: 'b, 'b> EntityBoneBuilder<'a, 'b> {
         }
     }
 
-    pub fn bias(&mut self, bias: f64) -> &mut Self {
+    pub fn bias(mut self, bias: f64) -> Self {
         self.bias = Some(bias);
         self
     }
 
-    pub fn initial_length_factor(&mut self, rest_length_factor: f64) -> &mut Self {
+    pub fn initial_length_factor(mut self, rest_length_factor: f64) -> Self {
         self.initial_length_factor = Some(rest_length_factor);
         self
     }
 
-    pub fn repel(&mut self) -> &mut Self {
+    pub fn repel(mut self) -> Self {
         self.repel_only = true;
         self
     }
 
-    pub fn endurance(&mut self, endurance: f64) -> &mut Self {
+    pub fn endurance(mut self, endurance: f64) -> Self {
         self.endurance = Some(endurance);
         self
     }
 
-    pub fn adjustment_strength(&mut self, strength: f64) -> &mut Self {
+    pub fn adjustment_strength(mut self, strength: f64) -> Self {
         self.adjustment_strength = Some(strength);
         self
     }
 
-    pub fn endurance_remount_factor(&mut self, factor: f64) -> &mut Self {
+    pub fn endurance_remount_factor(mut self, factor: f64) -> Self {
         self.endurance_remount_factor = Some(factor);
         self
     }
 
-    pub fn adjustment_strength_remount_factor(&mut self, factor: f64) -> &mut Self {
+    pub fn adjustment_strength_remount_factor(mut self, factor: f64) -> Self {
         self.adjustment_strength_remount_factor = Some(factor);
         self
     }
 
-    pub fn build(self) -> EntityBoneTemplateId {
+    pub fn build(self) -> (EntitySkeletonBuilder<'a>, EntityBoneTemplateId) {
         let bone_template = EntityBoneTemplate {
             connected_points: self.connected_points,
             bias: self.bias.unwrap_or(0.5),
@@ -83,7 +83,6 @@ impl<'a: 'b, 'b> EntityBoneBuilder<'a, 'b> {
             endurance_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
             adjustment_strength_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
         };
-        let id = self.skeleton.add_bone(bone_template);
-        id
+        self.skeleton.add_bone(bone_template)
     }
 }
