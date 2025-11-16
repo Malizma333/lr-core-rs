@@ -23,7 +23,7 @@ pub struct EntitySkeletonBuilder<'a> {
 }
 
 impl<'a> EntitySkeletonBuilder<'a> {
-    pub(crate) fn new(registry: &'a mut EntityRegistry) -> EntitySkeletonBuilder {
+    pub(crate) fn new(registry: &'a mut EntityRegistry) -> EntitySkeletonBuilder<'a> {
         EntitySkeletonBuilder {
             registry,
             points: Vec::new(),

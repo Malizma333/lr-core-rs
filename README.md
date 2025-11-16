@@ -1,6 +1,14 @@
-# Line Rider Studio
+# Line Rider Core (Rust)
 
-A free and open source Line Rider desktop client. Created as a modern successor to both [linerider.com](https://www.linerider.com/) and [Line Rider Overhaul](https://github.com/LunaKampling/LROverhaul).
+An extendable version of the line rider physics engine, written in rust.
+
+## Current Features
+
+- Premade classic physics entities (normal and acceleration lines, rider and sled skeletons, and the rider-skeleton mount)
+- Builders for custom line types, skeleton types, and mount types
+- Timeline seeking (with iteration and subiteration views available)
+- Timeline-based functions to modify physics parameter (such as gravity)
+- Test fixtures borrowed from [lr-core-py]() to ensure compatibility with existing engines
 
 ## Getting Started
 
@@ -13,7 +21,7 @@ A free and open source Line Rider desktop client. Created as a modern successor 
 Clone this repository
 
 ```sh
-git clone git@github.com:Malizma333/line-rider-studio.git
+git clone git@github.com:Malizma333/lr-core-rs.git
 ```
 
 Install dependencies
@@ -22,10 +30,10 @@ Install dependencies
 make install
 ```
 
-Run the project in development mode
+Run tests
 
 ```sh
-make dev
+make test
 ```
 
 See other helpful commands
@@ -34,26 +42,6 @@ See other helpful commands
 make help
 ```
 
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-See also the list of [contributors](https://github.com/Malizma333/line-rider-studio/contributors) who participated in this project.
-
-## Versioning
-
-This software uses [Semantic Versioning](http://semver.org/) for versioning. For the versions available, see the [release tags](https://github.com/Malizma333/line-rider-studio/tags).
-
 ## License
 
 This project is licensed under [GPL v3.0](LICENSE).
-
-## Acknowledgments
-
-- [Linerider.com](https://www.linerider.com/)
-- [Line Rider Advanced](https://github.com/jealouscloud/linerider-advanced)
-- [The Line Rider community](https://discord.gg/KqsTrwqjxV)
-
-##
-
-_Based off of README template created by [Billie Thompson](https://github.com/PurpleBooth/a-good-readme-template)_

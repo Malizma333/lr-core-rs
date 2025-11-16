@@ -15,7 +15,7 @@ pub(crate) struct EntitySkeletonSnapshot {
 }
 
 impl EntitySkeletonSnapshot {
-    pub(crate) fn is_remounting(&self) -> bool {
+    fn is_remounting(&self) -> bool {
         matches!(
             self.mount_phase,
             MountPhase::Remounting {
@@ -24,7 +24,7 @@ impl EntitySkeletonSnapshot {
         )
     }
 
-    pub(crate) fn is_mounted(&self) -> bool {
+    fn is_mounted(&self) -> bool {
         matches!(self.mount_phase, MountPhase::Mounted)
     }
 }

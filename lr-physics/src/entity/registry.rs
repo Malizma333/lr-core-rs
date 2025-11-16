@@ -160,7 +160,7 @@ impl EntityRegistry {
         id
     }
 
-    pub fn skeleton_template_builder(&mut self) -> EntitySkeletonBuilder {
+    pub fn skeleton_template_builder(&mut self) -> EntitySkeletonBuilder<'_> {
         EntitySkeletonBuilder::new(self)
     }
 

@@ -12,6 +12,22 @@ pub struct NormalLine {
     right_extension: bool,
 }
 
+impl NormalLine {
+    pub fn new(
+        endpoints: (Point, Point),
+        flipped: bool,
+        left_extension: bool,
+        right_extension: bool,
+    ) -> Self {
+        NormalLine {
+            endpoints,
+            flipped,
+            left_extension,
+            right_extension,
+        }
+    }
+}
+
 impl ComputedLineProperties for NormalLine {
     fn properties(&self) -> ComputedProperties {
         ComputedProperties::new(

@@ -81,7 +81,9 @@ impl<'a> EntityBoneBuilder<'a> {
             endurance: self.endurance.unwrap_or(INFINITY),
             adjustment_strength: self.adjustment_strength.unwrap_or(1.0),
             endurance_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
-            adjustment_strength_remount_factor: self.endurance_remount_factor.unwrap_or(1.0),
+            adjustment_strength_remount_factor: self
+                .adjustment_strength_remount_factor
+                .unwrap_or(1.0),
         };
         self.skeleton.add_bone(bone_template)
     }

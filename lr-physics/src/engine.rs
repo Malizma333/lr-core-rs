@@ -11,8 +11,10 @@ mod builder;
 mod defaults;
 mod moment;
 mod state;
+mod version;
 pub use builder::EngineBuilder;
 pub use moment::PhysicsMoment;
+pub use version::EngineVersion;
 
 const GRAVITY_MULTIPLIER: f64 = 0.175;
 
@@ -77,7 +79,6 @@ impl Engine {
         }
     }
 
-    // TODO better api for registry modifications
     pub fn registry(&mut self) -> &mut EntityRegistry {
         &mut self.registry
     }
@@ -108,11 +109,12 @@ impl Engine {
 
 #[cfg(test)]
 mod tests {
+    use geometry::Point;
+    use lr_formatter_rs::{formats::json, track::GridVersion};
     use serde::Deserialize;
     use std::fs;
-    use vector2d::Vector2Df;
 
-    use crate::{Engine, EngineBuilder};
+    use crate::{AccelerationLine, EngineBuilder, Hitbox, NormalLine, engine::state::EngineState};
 
     #[derive(Deserialize)]
     struct EngineTestCaseEntity {
@@ -143,10 +145,51 @@ mod tests {
             serde_json::from_str(&data).expect("Failed to parse JSON");
 
         for test in test_cases {
-            let file_name = format!("tests/fixtures/{}.json", test.file);
-            let file = fs::read_to_string(file_name).expect("Failed to read JSON file");
-            let engine = EngineBuilder::new(crate::GridVersion::V6_2);
-            engine.build();
+            let file_name = format!("tests/fixtures/{}.track.json", test.file);
+            let file = fs::read(file_name).expect("Failed to read JSON file");
+            let track = json::read(file).expect("Failed to parse track file");
+            // TODO there's a lot of duplication going on here across libraries
+
+            let version = match track.metadata().grid_version() {
+                GridVersion::V6_0 => crate::GridVersion::V6_0,
+                GridVersion::V6_1 => crate::GridVersion::V6_1,
+                GridVersion::V6_2 => crate::GridVersion::V6_2,
+            };
+            let mut engine = EngineBuilder::new(version).build();
+            for line in track.line_group().acceleration_lines() {
+                let acceleration_line = AccelerationLine::new(
+                    (
+                        Point::new(line.x1(), line.y1()),
+                        Point::new(line.x2(), line.y2()),
+                    ),
+                    line.flipped(),
+                    line.left_extension(),
+                    line.right_extension(),
+                    line.multiplier().unwrap_or(1.0),
+                );
+                engine.create_line(Box::new(acceleration_line));
+            }
+
+            for line in track.line_group().standard_lines() {
+                let normal_line = NormalLine::new(
+                    (
+                        Point::new(line.x1(), line.y1()),
+                        Point::new(line.x2(), line.y2()),
+                    ),
+                    line.flipped(),
+                    line.left_extension(),
+                    line.right_extension(),
+                );
+                engine.create_line(Box::new(normal_line));
+            }
+
+            let frame_data = engine.view_frame(test.frame);
+
+            compare_states(frame_data, &test.state);
         }
+    }
+
+    fn compare_states(current: &EngineState, expected: &EngineTestCaseState) {
+        todo!("Compare entity states and positions")
     }
 }

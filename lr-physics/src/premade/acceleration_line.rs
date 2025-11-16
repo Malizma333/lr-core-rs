@@ -15,6 +15,24 @@ pub struct AccelerationLine {
     acceleration: f64,
 }
 
+impl AccelerationLine {
+    pub fn new(
+        endpoints: (Point, Point),
+        flipped: bool,
+        left_extension: bool,
+        right_extension: bool,
+        acceleration: f64,
+    ) -> Self {
+        AccelerationLine {
+            endpoints,
+            flipped,
+            left_extension,
+            right_extension,
+            acceleration,
+        }
+    }
+}
+
 impl ComputedLineProperties for AccelerationLine {
     fn properties(&self) -> ComputedProperties {
         ComputedProperties::new(
