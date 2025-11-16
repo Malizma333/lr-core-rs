@@ -1,18 +1,20 @@
 use std::collections::{BTreeMap, HashMap};
 
-use crate::{
-    entity::{
-        bone::{entity::EntityBone, template::EntityBoneTemplate},
-        joint::{entity::EntityJoint, template::EntityJointTemplate},
-        point::{entity::EntityPoint, template::EntityPointTemplate},
-        skeleton::{
-            builder::EntitySkeletonBuilder, entity::EntitySkeleton,
-            template::EntitySkeletonTemplate,
-        },
+use crate::entity::{
+    bone::{entity::EntityBone, template::EntityBoneTemplate},
+    joint::{entity::EntityJoint, template::EntityJointTemplate},
+    point::{entity::EntityPoint, template::EntityPointTemplate},
+    skeleton::{
+        builder::EntitySkeletonBuilder, entity::EntitySkeleton, template::EntitySkeletonTemplate,
     },
-    registry_id,
 };
 
+macro_rules! registry_id {
+    ($name:ident) => {
+        #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+        pub struct $name(usize);
+    };
+}
 registry_id!(EntityPointId);
 registry_id!(EntityPointTemplateId);
 registry_id!(EntityBoneId);

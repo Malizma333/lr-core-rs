@@ -236,14 +236,15 @@ impl Grid {
 
 #[cfg(test)]
 mod tests {
-    use crate::grid::{
-        grid_cell::GridCell,
-        line_grid::{CELL_SIZE, Grid},
-    };
     use geometry::{Line, Point};
     use serde::Deserialize;
     use std::fs;
     use vector2d::Vector2Df;
+
+    use crate::grid::{
+        Grid,
+        grid_cell::{CELL_SIZE, GridCell},
+    };
 
     #[derive(Deserialize)]
     struct GridTestCase {

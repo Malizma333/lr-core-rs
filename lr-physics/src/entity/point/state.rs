@@ -1,7 +1,7 @@
 use geometry::Point;
 use vector2d::Vector2Df;
 
-pub(super) struct EntityPointState {
+pub struct EntityPointState {
     position: Point,
     velocity: Vector2Df,
     previous_position: Point,

@@ -1,11 +1,14 @@
 use vector2d::Vector2Df;
 
-use crate::entity::skeleton::MountPhase;
+use crate::entity::{
+    bone::snapshot::EntityBoneSnapshot, joint::snapshot::EntityJointSnapshot,
+    point::snapshot::EntityPointSnapshot, skeleton::MountPhase,
+};
 
 pub(crate) struct EntitySkeletonSnapshot {
-    pub(super) points: Vec<Vector2Df>,
-    pub(super) bones: Vec<usize>,
-    pub(super) joints: Vec<usize>,
+    pub(super) points: Vec<EntityPointSnapshot>,
+    pub(super) bones: Vec<EntityBoneSnapshot>,
+    pub(super) joints: Vec<EntityJointSnapshot>,
     pub(super) remount_enabled: bool,
     pub(super) dismounted_timer: u32,
     pub(super) remounting_timer: u32,

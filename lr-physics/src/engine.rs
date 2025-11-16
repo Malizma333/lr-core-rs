@@ -1,5 +1,4 @@
 use crate::{
-    engine::state::EngineState,
     entity::registry::{EntityRegistry, EntitySkeletonId},
     grid::{Grid, LineId},
     line::Hitbox,
@@ -14,6 +13,7 @@ mod state;
 mod version;
 pub use builder::EngineBuilder;
 pub use moment::PhysicsMoment;
+pub use state::EngineState;
 pub use version::EngineVersion;
 
 const GRAVITY_MULTIPLIER: f64 = 0.175;
@@ -23,7 +23,7 @@ pub struct Engine {
     line_lookup: HashMap<LineId, Box<dyn Hitbox>>,
     registry: EntityRegistry,
     initial_state: EngineState,
-    state_snapshots: Vec<EngineState>, // use .truncate when clearing cache
+    state_snapshots: Vec<EngineState>,
     get_gravity_at_time: fn(u32) -> Vector2Df,
     get_skeleton_frozen_at_time: fn(EntitySkeletonId, u32) -> bool,
 }
@@ -58,7 +58,8 @@ impl Engine {
         let line_points = &Line::from_tuple(line.properties().endpoints());
         let id = self.grid.add_line(line_points);
         self.line_lookup.insert(id, line);
-        todo!("Invalidate frames");
+        self.invalidate_frames();
+        id
     }
 
     pub fn move_line(&mut self, line_id: LineId, new_points: Line) {
@@ -66,7 +67,7 @@ impl Engine {
         if let Some(line) = line {
             let line_points = &Line::from_tuple(line.properties().endpoints());
             self.grid.move_line(line_id, line_points, &new_points);
-            todo!("Invalidate frames")
+            self.invalidate_frames();
         }
     }
 
@@ -75,8 +76,13 @@ impl Engine {
         if let Some(line) = line {
             let line_points = &Line::from_tuple(line.properties().endpoints());
             self.grid.remove_line(line_id, line_points);
-            todo!("Invalidate frames")
+            self.invalidate_frames();
         }
+    }
+
+    // TODO this could be more sophisticated, but for now just reset to initial frame
+    fn invalidate_frames(&mut self) {
+        self.state_snapshots.truncate(1);
     }
 
     pub fn registry(&mut self) -> &mut EntityRegistry {
@@ -104,92 +110,5 @@ impl Engine {
         moment: Option<PhysicsMoment>,
     ) -> EngineState {
         todo!("transform the current state of entities to the next state by simulating a frame")
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use geometry::Point;
-    use lr_formatter_rs::{formats::json, track::GridVersion};
-    use serde::Deserialize;
-    use std::fs;
-
-    use crate::{AccelerationLine, EngineBuilder, Hitbox, NormalLine, engine::state::EngineState};
-
-    #[derive(Deserialize)]
-    struct EngineTestCaseEntity {
-        points: Vec<(String, String, String, String)>,
-        mount_state: Option<String>,
-        sled_state: Option<String>,
-        rider_state: Option<String>,
-    }
-
-    #[derive(Deserialize)]
-    struct EngineTestCaseState {
-        entities: Vec<EngineTestCaseEntity>,
-    }
-
-    #[derive(Deserialize)]
-    struct EngineTestCase {
-        test: String,
-        frame: u32,
-        file: String,
-        state: EngineTestCaseState,
-    }
-
-    #[test]
-    fn engine_fixtures() {
-        let data =
-            fs::read_to_string("tests/fixture_tests.json").expect("Failed to read JSON file");
-        let test_cases: Vec<EngineTestCase> =
-            serde_json::from_str(&data).expect("Failed to parse JSON");
-
-        for test in test_cases {
-            let file_name = format!("tests/fixtures/{}.track.json", test.file);
-            let file = fs::read(file_name).expect("Failed to read JSON file");
-            let track = json::read(file).expect("Failed to parse track file");
-            // TODO there's a lot of duplication going on here across libraries
-
-            let version = match track.metadata().grid_version() {
-                GridVersion::V6_0 => crate::GridVersion::V6_0,
-                GridVersion::V6_1 => crate::GridVersion::V6_1,
-                GridVersion::V6_2 => crate::GridVersion::V6_2,
-            };
-            let mut engine = EngineBuilder::new(version).build();
-            for line in track.line_group().acceleration_lines() {
-                let acceleration_line = AccelerationLine::new(
-                    (
-                        Point::new(line.x1(), line.y1()),
-                        Point::new(line.x2(), line.y2()),
-                    ),
-                    line.flipped(),
-                    line.left_extension(),
-                    line.right_extension(),
-                    line.multiplier().unwrap_or(1.0),
-                );
-                engine.create_line(Box::new(acceleration_line));
-            }
-
-            for line in track.line_group().standard_lines() {
-                let normal_line = NormalLine::new(
-                    (
-                        Point::new(line.x1(), line.y1()),
-                        Point::new(line.x2(), line.y2()),
-                    ),
-                    line.flipped(),
-                    line.left_extension(),
-                    line.right_extension(),
-                );
-                engine.create_line(Box::new(normal_line));
-            }
-
-            let frame_data = engine.view_frame(test.frame);
-
-            compare_states(frame_data, &test.state);
-        }
-    }
-
-    fn compare_states(current: &EngineState, expected: &EngineTestCaseState) {
-        todo!("Compare entity states and positions")
     }
 }

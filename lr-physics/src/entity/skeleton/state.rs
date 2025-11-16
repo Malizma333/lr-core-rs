@@ -1,6 +1,6 @@
 use crate::entity::skeleton::MountPhase;
 
-pub(super) struct EntitySkeletonState {
+pub struct EntitySkeletonState {
     mount_phase: MountPhase,
     intact: bool,
 }
@@ -30,5 +30,11 @@ impl Clone for EntitySkeletonState {
             mount_phase: mount_phase_clone,
             intact: self.intact,
         }
+    }
+}
+
+impl EntitySkeletonState {
+    pub fn mount_phase(&self) -> MountPhase {
+        self.mount_phase
     }
 }

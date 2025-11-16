@@ -1,6 +1,7 @@
 pub(crate) mod builder;
 pub(crate) mod entity;
 pub(crate) mod snapshot;
+pub(crate) mod state;
 pub(crate) mod template;
 
 const REMOUNT_STRENGTH_FACTOR: f64 = 0.1;
@@ -19,3 +20,28 @@ pub enum MountPhase {
         frames_until_remounted: u32,
     },
 }
+
+impl Clone for MountPhase {
+    fn clone(&self) -> Self {
+        match self {
+            MountPhase::Mounted => MountPhase::Mounted,
+            MountPhase::Remounting {
+                frames_until_remounted,
+            } => MountPhase::Remounting {
+                frames_until_remounted: *frames_until_remounted,
+            },
+            MountPhase::Dismounted {
+                frames_until_can_remount,
+            } => MountPhase::Dismounted {
+                frames_until_can_remount: *frames_until_can_remount,
+            },
+            MountPhase::Dismounting {
+                frames_until_dismounted,
+            } => MountPhase::Dismounting {
+                frames_until_dismounted: *frames_until_dismounted,
+            },
+        }
+    }
+}
+
+impl Copy for MountPhase {}
