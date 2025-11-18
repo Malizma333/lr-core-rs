@@ -7,6 +7,7 @@ use crate::entity::{
 
 pub(crate) struct EntityJointTemplate {
     pub(super) bones_involved: (EntityBoneTemplateId, EntityBoneTemplateId),
+    pub(super) mount: bool,
 }
 
 impl EntityJointTemplate {
@@ -16,6 +17,7 @@ impl EntityJointTemplate {
                 bone_mapping[&self.bones_involved.0],
                 bone_mapping[&self.bones_involved.1],
             ),
+            mount: self.mount,
         }
     }
 }

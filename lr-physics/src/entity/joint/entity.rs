@@ -7,6 +7,7 @@ use crate::entity::{
 
 pub(crate) struct EntityJoint {
     pub(super) bones_involved: (EntityBoneId, EntityBoneId),
+    pub(super) mount: bool,
 }
 
 impl EntityJoint {

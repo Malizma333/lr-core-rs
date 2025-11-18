@@ -7,6 +7,7 @@ use crate::entity::{
 pub struct EntityJointBuilder<'a> {
     skeleton: EntitySkeletonBuilder<'a>,
     bones_involved: (EntityBoneTemplateId, EntityBoneTemplateId),
+    mount: bool,
 }
 
 impl<'a> EntityJointBuilder<'a> {
@@ -18,12 +19,19 @@ impl<'a> EntityJointBuilder<'a> {
         Self {
             skeleton,
             bones_involved: (b1, b2),
+            mount: false,
         }
+    }
+
+    pub fn mount(mut self) -> Self {
+        self.mount = true;
+        self
     }
 
     pub fn build(self) -> (EntitySkeletonBuilder<'a>, EntityJointTemplateId) {
         let joint_template = EntityJointTemplate {
             bones_involved: self.bones_involved,
+            mount: self.mount,
         };
         self.skeleton.add_joint(joint_template)
     }
