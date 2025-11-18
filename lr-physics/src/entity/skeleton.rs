@@ -4,9 +4,6 @@ pub(crate) mod snapshot;
 pub(crate) mod state;
 pub(crate) mod template;
 
-const REMOUNT_STRENGTH_FACTOR: f64 = 0.1;
-const LRA_REMOUNT_STRENGTH_FACTOR: f64 = 0.5;
-
 pub enum MountPhase {
     Mounted,
     Dismounting {

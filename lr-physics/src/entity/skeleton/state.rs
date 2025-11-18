@@ -1,8 +1,10 @@
+use vector2d::Vector2Df;
+
 use crate::entity::skeleton::MountPhase;
 
 pub struct EntitySkeletonState {
     mount_phase: MountPhase,
-    intact: bool,
+    sled_intact: bool,
 }
 
 impl Clone for EntitySkeletonState {
@@ -28,7 +30,7 @@ impl Clone for EntitySkeletonState {
 
         EntitySkeletonState {
             mount_phase: mount_phase_clone,
-            intact: self.intact,
+            sled_intact: self.sled_intact,
         }
     }
 }
@@ -36,5 +38,13 @@ impl Clone for EntitySkeletonState {
 impl EntitySkeletonState {
     pub fn mount_phase(&self) -> MountPhase {
         self.mount_phase
+    }
+
+    pub fn sled_intact(&self) -> bool {
+        self.sled_intact
+    }
+
+    pub fn points(&self) -> Vec<(Vector2Df, Vector2Df)> {
+        todo!("Get points from somewhere?")
     }
 }

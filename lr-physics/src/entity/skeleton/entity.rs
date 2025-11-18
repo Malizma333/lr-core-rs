@@ -37,7 +37,7 @@ impl EntitySkeleton {
             remounting_timer: self.remounting_timer,
             remounted_timer: self.remounted_timer,
             mount_phase: MountPhase::Mounted,
-            intact: true,
+            sled_intact: true,
         }
     }
 }

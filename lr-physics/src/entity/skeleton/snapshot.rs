@@ -1,5 +1,3 @@
-use vector2d::Vector2Df;
-
 use crate::entity::{
     bone::snapshot::EntityBoneSnapshot, joint::snapshot::EntityJointSnapshot,
     point::snapshot::EntityPointSnapshot, skeleton::MountPhase,
@@ -14,7 +12,7 @@ pub(crate) struct EntitySkeletonSnapshot {
     pub(super) remounting_timer: u32,
     pub(super) remounted_timer: u32,
     pub(super) mount_phase: MountPhase,
-    pub(super) intact: bool,
+    pub(super) sled_intact: bool,
 }
 
 impl EntitySkeletonSnapshot {

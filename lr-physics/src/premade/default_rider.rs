@@ -1,9 +1,6 @@
 use vector2d::Vector2Df;
 
-use crate::{
-    engine::EngineVersion,
-    entity::{registry::EntityRegistry, skeleton},
-};
+use crate::{engine::EngineVersion, entity::registry::EntityRegistry};
 
 pub fn build_default_rider(registry: &mut EntityRegistry, version: EngineVersion) {
     let repel_length_factor = 0.5;
