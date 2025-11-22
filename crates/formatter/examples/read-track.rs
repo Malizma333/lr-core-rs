@@ -1,4 +1,4 @@
-use lr_formatter_rs::formats::trk;
+use formatter::formats::trk;
 use std::{fs::File, io::Read};
 
 fn main() {

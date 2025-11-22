@@ -1,7 +1,0 @@
-[workspace]
-members = [
-  "vector2d",
-  "geometry",
-  "lr-physics"
-]
-resolver = "3"

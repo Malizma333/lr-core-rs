@@ -1,4 +1,4 @@
-use lr_formatter_rs::{
+use formatter::{
     formats::json,
     track::{GridVersion, TrackBuilder},
 };
