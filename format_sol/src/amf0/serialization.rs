@@ -7,9 +7,7 @@ use byteorder::{BigEndian, WriteBytesExt};
 use std::collections::HashMap;
 
 // Serializes values into an amf0 encoded vector of bytes
-pub(in crate::formats::sol) fn serialize(
-    values: &Vec<Amf0Value>,
-) -> Result<Vec<u8>, Amf0SerializationError> {
+pub(crate) fn serialize(values: &Vec<Amf0Value>) -> Result<Vec<u8>, Amf0SerializationError> {
     let mut bytes = vec![];
     for value in values {
         serialize_value(value, &mut bytes)?;

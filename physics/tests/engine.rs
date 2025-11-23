@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use format_core::{formats::json, track::GridVersion};
+    use format_core::track::GridVersion;
+    use format_json;
     use geometry::Point;
     use physics::{
         AccelerationLine as PhysicsAccelerationLine, EngineBuilder, EngineState,
@@ -42,7 +43,7 @@ mod tests {
 
             let file_name = format!("tests/fixtures/{}.track.json", test.file);
             let file = fs::read(file_name).expect("Failed to read JSON file");
-            let track = json::read(file).expect("Failed to parse track file");
+            let track = format_json::read(file).expect("Failed to parse track file");
 
             // TODO duplication across libraries
             let version = match track.metadata().grid_version() {

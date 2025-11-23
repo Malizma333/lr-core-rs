@@ -6,9 +6,9 @@ mod deserialization;
 mod errors;
 mod serialization;
 
-pub(super) use deserialization::deserialize;
+pub(crate) use deserialization::deserialize;
 pub use errors::{Amf0DeserializationError, Amf0SerializationError};
-pub(super) use serialization::serialize;
+pub(crate) use serialization::serialize;
 
 use std::collections::HashMap;
 

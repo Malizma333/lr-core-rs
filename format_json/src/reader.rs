@@ -1,11 +1,13 @@
-use crate::{
-    formats::json::{FaultyBool, FaultyU32, JsonReadError, JsonTrack, LRAJsonArrayLine},
-    track::{
-        BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, GridVersion, LineColorEvent,
-        LineHitTrigger, LineType, RGBColor, RemountVersion, Track, TrackBuilder, Vec2,
-    },
-    util::scale_factor::from_lra_zoom,
+use format_core::track::{
+    BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, GridVersion, LineColorEvent,
+    LineHitTrigger, LineType, RGBColor, RemountVersion, Track, TrackBuilder, Vec2,
 };
+
+fn from_lra_zoom(zoom: f32) -> f64 {
+    f64::log(f64::from(zoom), 2.0)
+}
+
+use crate::{FaultyBool, FaultyU32, JsonReadError, JsonTrack, LRAJsonArrayLine};
 
 pub fn read(data: Vec<u8>) -> Result<Track, JsonReadError> {
     let track_builder = &mut TrackBuilder::default();

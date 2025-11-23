@@ -13,7 +13,7 @@ struct ObjectProperty {
 }
 
 // Turns any readable byte stream and converts it into an array of AMF0 values
-pub(in crate::formats::sol) fn deserialize<R: Read>(
+pub(crate) fn deserialize<R: Read>(
     bytes: &mut R,
 ) -> Result<Vec<Amf0Value>, Amf0DeserializationError> {
     let mut references = vec![];

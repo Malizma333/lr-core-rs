@@ -6,23 +6,29 @@ use std::{
 use byteorder::{LittleEndian, ReadBytesExt};
 
 use crate::{
-    formats::trk::{
-        FEATURE_6_1, FEATURE_BACKGROUND_COLOR_B, FEATURE_BACKGROUND_COLOR_G,
-        FEATURE_BACKGROUND_COLOR_R, FEATURE_FRICTIONLESS, FEATURE_GRAVITY_WELL_SIZE,
-        FEATURE_IGNORABLE_TRIGGER, FEATURE_LINE_COLOR_B, FEATURE_LINE_COLOR_G,
-        FEATURE_LINE_COLOR_R, FEATURE_RED_MULTIPLIER, FEATURE_REMOUNT, FEATURE_SCENERY_WIDTH,
-        FEATURE_SONG_INFO, FEATURE_START_ZOOM, FEATURE_TRIGGERS, FEATURE_X_GRAVITY,
-        FEATURE_Y_GRAVITY, FEATURE_ZERO_START, TrkReadError,
-    },
+    FEATURE_6_1, FEATURE_BACKGROUND_COLOR_B, FEATURE_BACKGROUND_COLOR_G,
+    FEATURE_BACKGROUND_COLOR_R, FEATURE_FRICTIONLESS, FEATURE_GRAVITY_WELL_SIZE,
+    FEATURE_IGNORABLE_TRIGGER, FEATURE_LINE_COLOR_B, FEATURE_LINE_COLOR_G, FEATURE_LINE_COLOR_R,
+    FEATURE_RED_MULTIPLIER, FEATURE_REMOUNT, FEATURE_SCENERY_WIDTH, FEATURE_SONG_INFO,
+    FEATURE_START_ZOOM, FEATURE_TRIGGERS, FEATURE_X_GRAVITY, FEATURE_Y_GRAVITY, FEATURE_ZERO_START,
+    TrkReadError,
+};
+
+use format_core::{
     track::{
         BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, GridVersion, LineColorEvent,
         LineHitTrigger, LineType, RGBColor, Track, TrackBuilder, Vec2,
     },
-    util::{
-        StringLength, bytes_to_hex_string, parse_string,
-        scale_factor::{from_lra_scenery_width, from_lra_zoom},
-    },
+    util::{StringLength, bytes_to_hex_string, parse_string},
 };
+
+fn from_lra_scenery_width(width: u8) -> f64 {
+    f64::from(width) / 10.0
+}
+
+fn from_lra_zoom(zoom: f32) -> f64 {
+    f64::log(f64::from(zoom), 2.0)
+}
 
 pub fn read(data: Vec<u8>) -> Result<Track, TrkReadError> {
     let track_builder = &mut TrackBuilder::default();

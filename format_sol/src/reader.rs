@@ -1,8 +1,9 @@
 use byteorder::{BigEndian, ReadBytesExt};
 use std::io::{Cursor, Read};
 
-use crate::{
-    formats::sol::{SolReadError, amf0::deserialize},
+use crate::{SolReadError, amf0::deserialize};
+
+use format_core::{
     track::{GridVersion, LineType, Track, TrackBuilder, Vec2},
     util::{StringLength, bytes_to_hex_string, parse_string},
 };

@@ -1,7 +1,9 @@
 use anyhow::{Context, Result, bail};
 use clap::Parser;
 use dialoguer::Input;
-use lr_formatter_rs::formats::{json, sol, trk};
+use format_json;
+use format_sol;
+use format_trk;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
@@ -29,14 +31,14 @@ enum Format {
 
 fn convert(input: Vec<u8>, from: Format, to: Format) -> Result<Vec<u8>> {
     let internal_format = match from {
-        Format::Json => json::read(input)?,
-        Format::TRK => trk::read(input)?,
-        Format::SOL(track_index) => sol::read(input, track_index)?,
+        Format::Json => format_json::read(input)?,
+        Format::TRK => format_trk::read(input)?,
+        Format::SOL(track_index) => format_sol::read(input, track_index)?,
     };
 
     let output_bytes = match to {
-        Format::Json => json::write(&internal_format)?,
-        Format::SOL(_) => sol::write(&internal_format)?,
+        Format::Json => format_json::write(&internal_format)?,
+        Format::SOL(_) => format_sol::write(&internal_format)?,
         _ => bail!("Unsupported to format. Must be one of: json, sol"),
     };
 
@@ -78,7 +80,7 @@ fn run() -> Result<()> {
     let mut sol_index = None;
 
     if input_extension == "sol" {
-        let max_index = sol::get_track_count(&input_data) - 1;
+        let max_index = format_sol::get_track_count(&input_data) - 1;
         if max_index > 0 {
             sol_index = Some(
                 Input::new()

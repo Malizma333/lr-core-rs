@@ -5,12 +5,11 @@ use std::{
 };
 
 use crate::{
-    formats::sol::{
-        SolWriteError,
-        amf0::{Amf0Value, serialize},
-    },
-    track::{GridVersion, Track, Vec2},
+    SolWriteError,
+    amf0::{Amf0Value, serialize},
 };
+
+use format_core::track::{GridVersion, Track, Vec2};
 
 pub fn write(track: &Track) -> Result<Vec<u8>, SolWriteError> {
     let mut cursor = Cursor::new(Vec::new());

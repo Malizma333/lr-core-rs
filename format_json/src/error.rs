@@ -6,7 +6,7 @@ use std::{
 
 use thiserror::Error;
 
-use crate::{
+use format_core::{
     track::{
         TrackBuilderError, layer::layer_group::LayerGroupBuilderError,
         line::line_group::LineGroupBuilderError, rider::rider_group::RiderGroupBuilderError,

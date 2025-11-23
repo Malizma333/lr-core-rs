@@ -5,8 +5,9 @@ use std::{
 
 use thiserror::Error;
 
-use crate::{
-    formats::sol::{Amf0DeserializationError, Amf0SerializationError},
+use crate::{Amf0DeserializationError, Amf0SerializationError};
+
+use format_core::{
     track::{
         TrackBuilderError, layer::layer_group::LayerGroupBuilderError,
         line::line_group::LineGroupBuilderError, rider::rider_group::RiderGroupBuilderError,

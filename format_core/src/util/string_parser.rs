@@ -22,7 +22,7 @@ pub enum StringLength {
 }
 
 /// Generalized function for reading binary length-prefixed strings
-pub(crate) fn parse_string<B: ByteOrder>(
+pub fn parse_string<B: ByteOrder>(
     cursor: &mut io::Cursor<Vec<u8>>,
     length_type: StringLength,
 ) -> Result<String, ParseLengthPrefixedStringError> {

@@ -1,10 +1,8 @@
 use crate::{
-    formats::json::{
-        FaultyBool, FaultyU32, JsonLayer, JsonLine, JsonReadError, JsonRider, JsonTrack,
-        LAYER_TYPE_FOLDER, LAYER_TYPE_LAYER, V2,
-    },
-    track::{GridVersion, RemountVersion, Track},
+    FaultyBool, FaultyU32, JsonLayer, JsonLine, JsonReadError, JsonRider, JsonTrack,
+    LAYER_TYPE_FOLDER, LAYER_TYPE_LAYER, V2,
 };
+use format_core::track::{GridVersion, RemountVersion, Track};
 
 pub fn write(track: &Track) -> Result<Vec<u8>, JsonReadError> {
     let version = match track.metadata().grid_version() {

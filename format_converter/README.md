@@ -1,4 +1,4 @@
-# Line Rider Format Converter, in Rust
+# Line Rider Format Converter
 
 > [!WARNING]
 > This project is in an unfinished state. Use at your own risk.

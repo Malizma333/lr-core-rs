@@ -1,3 +1,12 @@
 [workspace]
-members = ["vector2d", "geometry", "physics", "format_core", "format_json", "format_trk", "format_sol"]
+members = [
+  "vector2d",
+  "geometry",
+  "physics",
+  "format_core",
+  "format_json",
+  "format_trk",
+  "format_sol",
+  "format_converter",
+]
 resolver = "3"
