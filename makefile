@@ -29,5 +29,9 @@ lint: ## Lint files with clippy
 	cargo clippy --all-targets --all-features -- -Aclippy::style
 
 .PHONY: test
-test: ## Run unit tests
-	cargo test --workspace
+test: ## Run unit tests (set PACKAGE for specific crate)
+	@if [ -z $(PACKAGE) ]; then\
+		cargo test --workspace;\
+	else\
+		cargo test -p $(PACKAGE);\
+	fi

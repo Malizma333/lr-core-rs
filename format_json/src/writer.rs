@@ -123,6 +123,8 @@ pub fn write(track: &Track) -> Result<Vec<u8>, JsonReadError> {
         });
     }
 
+    let zero_start = track.metadata().zero_velocity_start_riders();
+
     if let Some(rider_group) = track.rider_group() {
         for rider in rider_group.riders() {
             let start_position = V2 {
@@ -135,6 +137,8 @@ pub fn write(track: &Track) -> Result<Vec<u8>, JsonReadError> {
                     x: start_vel.x(),
                     y: start_vel.y(),
                 }
+            } else if zero_start {
+                V2 { x: 0.0, y: 0.0 }
             } else {
                 V2 { x: 0.4, y: 0.0 }
             };
@@ -161,9 +165,15 @@ pub fn write(track: &Track) -> Result<Vec<u8>, JsonReadError> {
             });
         }
     } else {
+        let start_vel = if zero_start {
+            V2 { x: 0.0, y: 0.0 }
+        } else {
+            V2 { x: 0.4, y: 0.0 }
+        };
+
         riders.push(JsonRider {
             start_pos: V2 { x: 0.0, y: 0.0 },
-            start_vel: V2 { x: 0.4, y: 0.0 },
+            start_vel,
             angle: Some(0.0),
             remountable: Some(FaultyBool::IntRep(1)),
         });
