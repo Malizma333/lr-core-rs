@@ -53,7 +53,6 @@ impl Engine {
         self.get_skeleton_frozen_at_time = function;
     }
 
-    // TODO transaction api for batch line updates
     pub fn create_line(&mut self, line: Box<dyn Hitbox>) -> LineId {
         let line_points = &Line::from_tuple(line.properties().endpoints());
         let id = self.grid.add_line(line_points);
@@ -80,7 +79,6 @@ impl Engine {
         }
     }
 
-    // TODO this could be more sophisticated, but for now just reset to initial frame
     fn invalidate_frames(&mut self) {
         self.state_snapshots.truncate(1);
     }
@@ -103,7 +101,6 @@ impl Engine {
         }
     }
 
-    // TODO multithreading multirider support
     fn get_next_state(
         &self,
         current_state: EngineState,

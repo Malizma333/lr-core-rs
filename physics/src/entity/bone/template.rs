@@ -27,7 +27,7 @@ impl EntityBoneTemplate {
             point_mapping[&self.connected_points.0],
             point_mapping[&self.connected_points.1],
         );
-        // TODO
+        // TODO use state
         let rest_length =
             Vector2Df::distance(Vector2Df::zero(), Vector2Df::zero()) * self.initial_length_factor;
 
@@ -39,7 +39,7 @@ impl EntityBoneTemplate {
             endurance: self.endurance,
             adjustment_strength: self.adjustment_strength,
             endurance_remount_factor: self.endurance_remount_factor,
-            adjustment_strength_remount_factor: self.endurance_remount_factor,
+            adjustment_strength_remount_factor: self.adjustment_strength_remount_factor,
         }
     }
 }

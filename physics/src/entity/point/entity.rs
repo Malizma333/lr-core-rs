@@ -10,7 +10,7 @@ pub(crate) struct EntityPoint {
 
 impl EntityPoint {
     pub(crate) fn get_snapshot(&self) -> EntityPointSnapshot {
-        // TODO resolve state
+        // TODO use state
         EntityPointSnapshot {
             position: Vector2Df::zero(),
             velocity: Vector2Df::zero(),

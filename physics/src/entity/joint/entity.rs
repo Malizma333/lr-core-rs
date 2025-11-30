@@ -22,7 +22,7 @@ impl EntityJoint {
                 .get_bone(self.bones_involved.0)
                 .get_snapshot(registry, remounting),
         );
-        // TODO
+        // TODO use state
         EntityJointSnapshot {
             bone_vectors: (Vector2Df::zero(), Vector2Df::zero()),
         }

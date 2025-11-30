@@ -27,7 +27,7 @@ impl EntitySkeleton {
     }
 
     pub(crate) fn snapshot(&self) -> EntitySkeletonSnapshot {
-        // TODO
+        // TODO use state
         EntitySkeletonSnapshot {
             points: Vec::new(),
             bones: Vec::new(),

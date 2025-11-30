@@ -42,7 +42,6 @@ impl ComputedProperties {
     }
 }
 
-// TODO the results of these should be cached somewhere until props change
 pub trait ComputedLineProperties {
     fn properties(&self) -> ComputedProperties;
 

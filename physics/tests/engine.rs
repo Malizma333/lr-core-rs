@@ -46,7 +46,6 @@ mod tests {
             let file = fs::read(file_name).expect("Failed to read JSON file");
             let track = format_json::read(file).expect("Failed to parse track file");
 
-            // TODO duplication across libraries
             let version = match track.metadata().grid_version() {
                 FormatGridVersion::V6_0 => PhysicsGridVersion::V6_0,
                 FormatGridVersion::V6_1 => PhysicsGridVersion::V6_1,

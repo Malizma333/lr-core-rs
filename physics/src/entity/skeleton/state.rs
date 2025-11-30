@@ -45,6 +45,6 @@ impl EntitySkeletonState {
     }
 
     pub fn points(&self) -> Vec<(Vector2Df, Vector2Df)> {
-        todo!("Get points from somewhere?")
+        todo!("Get point positions from somewhere")
     }
 }

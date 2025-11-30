@@ -64,7 +64,6 @@ impl Hitbox for AccelerationLine {
             friction_vector.y *= -1.0;
         }
 
-        // TODO: allow extending computed properties to include custom fields?
         let acceleration_vector = self.unit() * (self.acceleration * ACCELERATION_FACTOR);
 
         let new_previous_position =

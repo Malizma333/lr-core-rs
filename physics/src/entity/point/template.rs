@@ -13,7 +13,7 @@ pub(crate) struct EntityPointTemplate {
 
 impl EntityPointTemplate {
     pub(crate) fn build(&self) -> EntityPoint {
-        // TODO initial state
+        // TODO define initial state
         // position: self.initial_position,
         // velocity: self.initial_velocity,
         // previous_position: self.initial_position,
