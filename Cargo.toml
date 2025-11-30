@@ -2,6 +2,11 @@
 members = [
   "vector2d",
   "geometry",
-  "lr-physics"
+  "physics",
+  "format_core",
+  "format_json",
+  "format_trk",
+  "format_sol",
+  "format_converter",
 ]
 resolver = "3"

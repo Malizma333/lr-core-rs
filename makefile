@@ -4,22 +4,21 @@
 help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: new-lib
-new-lib: ## Create a new library to use throughout the project
+.PHONY: init-lib
+init-lib: ## Create a new library crate
 	@if [ -n "$(NAME)" ]; then \
 		cargo init --lib --vcs none $(NAME); \
 	else \
-		echo "Usage: make new-lib NAME=[name]"; \
+		echo "Usage: make init-lib NAME=[name]"; \
 	fi
 
-.PHONY: install
-install: ## Install dependencies
-
-.PHONY: dev
-dev: ## Run the application in development mode
-
-.PHONY: build
-build: ## Build the optimized, product-ready application
+.PHONY: init-app
+init-app: ## Create a new application crate
+	@if [ -n "$(NAME)" ]; then \
+		cargo init --vcs none $(NAME); \
+	else \
+		echo "Usage: make init-app NAME=[name]"; \
+	fi
 
 .PHONY: format
 format: ## Format files with rustfmt
@@ -30,5 +29,9 @@ lint: ## Lint files with clippy
 	cargo clippy --all-targets --all-features -- -Aclippy::style
 
 .PHONY: test
-test: ## Run unit tests
-	cargo test --workspace
+test: ## Run unit tests (set PACKAGE for specific crate)
+	@if [ -z $(PACKAGE) ]; then\
+		cargo test --workspace;\
+	else\
+		cargo test -p $(PACKAGE);\
+	fi
