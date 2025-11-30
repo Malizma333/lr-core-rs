@@ -1,19 +1,33 @@
-use std::io::{self, Read};
+use std::error::Error;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::io::{Cursor, Error as IoError, Read};
 use std::string::FromUtf8Error;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum ParseLengthPrefixedStringError {
-    #[error("IO error while reading string: {0}")]
-    Io(#[from] io::Error),
-
-    #[error("Invalid UTF-8 while parsing string of length {length}: {source}")]
-    Utf8 {
+    IoError(IoError),
+    Utf8Error {
         length: usize,
-        #[source]
         source: FromUtf8Error,
     },
 }
+
+impl Display for ParseLengthPrefixedStringError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match &self {
+            ParseLengthPrefixedStringError::IoError(source) => {
+                write!(f, "IO error while reading string: {}", source)
+            }
+            ParseLengthPrefixedStringError::Utf8Error { length, source } => write!(
+                f,
+                "Invalid UTF-8 while parsing string of length {}: {}",
+                length, source
+            ),
+        }
+    }
+}
+
+impl Error for ParseLengthPrefixedStringError {}
 
 pub enum StringLength {
     U16,
@@ -27,14 +41,16 @@ pub enum Endianness {
 
 /// Generalized function for reading binary length-prefixed strings
 pub fn parse_string(
-    cursor: &mut io::Cursor<Vec<u8>>,
+    cursor: &mut Cursor<Vec<u8>>,
     length_type: StringLength,
     length_endianness: Endianness,
 ) -> Result<String, ParseLengthPrefixedStringError> {
     let length = match length_type {
         StringLength::U16 => {
             let mut length_bytes: [u8; 2] = [0, 0];
-            cursor.read_exact(&mut length_bytes)?;
+            cursor
+                .read_exact(&mut length_bytes)
+                .map_err(|source| ParseLengthPrefixedStringError::IoError(source))?;
             let size = match length_endianness {
                 Endianness::Big => u16::from_be_bytes(length_bytes),
                 Endianness::Little => u16::from_le_bytes(length_bytes),
@@ -45,9 +61,11 @@ pub fn parse_string(
     };
 
     let mut buffer = vec![0; length];
-    cursor.read_exact(&mut buffer)?;
+    cursor
+        .read_exact(&mut buffer)
+        .map_err(|source| ParseLengthPrefixedStringError::IoError(source))?;
     let string = String::from_utf8(buffer)
-        .map_err(|e| ParseLengthPrefixedStringError::Utf8 { length, source: e })?;
+        .map_err(|source| ParseLengthPrefixedStringError::Utf8Error { length, source })?;
 
     Ok(string)
 }

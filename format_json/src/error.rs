@@ -4,6 +4,7 @@ use std::{
     string::FromUtf8Error,
 };
 
+use format_core::util::ParseLengthPrefixedStringError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -18,14 +19,6 @@ pub enum JsonReadError {
     FloatConversion(#[from] ParseFloatError),
     #[error("{0}")]
     StringParsing(#[from] ParseLengthPrefixedStringError),
-    #[error("{0}")]
-    TrackGroup(#[from] TrackBuilderError),
-    #[error("{0}")]
-    LineGroup(#[from] LineGroupBuilderError),
-    #[error("{0}")]
-    RiderGroup(#[from] RiderGroupBuilderError),
-    #[error("{0}")]
-    LayerGroup(#[from] LayerGroupBuilderError),
     #[error("Invalid value for `{name}`: {value}")]
     InvalidData { name: &'static str, value: String },
     #[error("{0}")]

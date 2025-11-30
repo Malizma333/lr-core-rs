@@ -25,7 +25,7 @@ impl Track {
     }
 }
 
-struct TrackBuilder {
+pub struct TrackBuilder {
     metadata: MetadataBuilder,
 }
 
