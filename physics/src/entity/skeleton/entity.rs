@@ -1,6 +1,6 @@
-use crate::entity::{
-    registry::{EntityBoneId, EntityJointId, EntityPointId},
-    skeleton::{MountPhase, snapshot::EntitySkeletonSnapshot},
+use crate::{
+    MountPhase,
+    entity::registry::{EntityBoneId, EntityJointId, EntityPointId},
 };
 
 pub(crate) struct EntitySkeleton {
@@ -11,6 +11,7 @@ pub(crate) struct EntitySkeleton {
     pub(super) dismounted_timer: u32,
     pub(super) remounting_timer: u32,
     pub(super) remounted_timer: u32,
+    pub(super) use_initial_mount_phase_during_bones: bool,
 }
 
 impl EntitySkeleton {
@@ -26,18 +27,41 @@ impl EntitySkeleton {
         &self.joints
     }
 
-    pub(crate) fn snapshot(&self) -> EntitySkeletonSnapshot {
-        // TODO use state
-        EntitySkeletonSnapshot {
-            points: Vec::new(),
-            bones: Vec::new(),
-            joints: Vec::new(),
-            remount_enabled: self.remount_enabled,
-            dismounted_timer: self.dismounted_timer,
-            remounting_timer: self.remounting_timer,
-            remounted_timer: self.remounted_timer,
-            mount_phase: MountPhase::Mounted,
-            sled_intact: true,
+    pub(crate) fn remount_enabled(&self) -> bool {
+        self.remount_enabled
+    }
+
+    pub(crate) fn dismounted_timer(&self) -> u32 {
+        self.dismounted_timer
+    }
+
+    pub(crate) fn remounting_timer(&self) -> u32 {
+        self.remounting_timer
+    }
+
+    pub(crate) fn remounted_timer(&self) -> u32 {
+        self.remounted_timer
+    }
+
+    pub(crate) fn use_initial_mount_phase_during_bones(&self) -> bool {
+        self.use_initial_mount_phase_during_bones
+    }
+
+    pub(crate) fn get_phase_after_dismount(&self, current_mount_phase: MountPhase) -> MountPhase {
+        if !self.remount_enabled {
+            MountPhase::Dismounted {
+                frames_until_can_remount: None,
+            }
+        } else if current_mount_phase.mounted() {
+            MountPhase::Dismounting {
+                frames_until_dismounted: self.dismounted_timer,
+            }
+        } else if current_mount_phase.remounting() {
+            MountPhase::Dismounted {
+                frames_until_can_remount: Some(self.remounting_timer),
+            }
+        } else {
+            current_mount_phase
         }
     }
 }

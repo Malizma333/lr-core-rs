@@ -16,6 +16,7 @@ pub(crate) struct EntitySkeletonTemplate {
     pub(super) dismounted_timer: u32,
     pub(super) remounting_timer: u32,
     pub(super) remounted_timer: u32,
+    pub(super) use_initial_mount_phase_during_bones: bool,
 }
 
 impl EntitySkeletonTemplate {
@@ -57,6 +58,7 @@ impl EntitySkeletonTemplate {
             dismounted_timer: self.dismounted_timer,
             remounting_timer: self.remounting_timer,
             remounted_timer: self.remounted_timer,
+            use_initial_mount_phase_during_bones: self.use_initial_mount_phase_during_bones,
         }
     }
 }

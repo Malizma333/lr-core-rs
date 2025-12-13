@@ -51,20 +51,32 @@ impl EntityRegistry {
         }
     }
 
-    pub(super) fn get_point(&self, id: EntityPointId) -> &EntityPoint {
+    pub(crate) fn get_point(&self, id: EntityPointId) -> &EntityPoint {
         &self.points[&id]
     }
 
-    pub(super) fn get_point_mut(&mut self, id: EntityPointId) -> &mut EntityPoint {
-        self.points.get_mut(&id).unwrap()
-    }
-
-    pub(super) fn get_bone(&self, id: EntityBoneId) -> &EntityBone {
+    pub(crate) fn get_bone(&self, id: EntityBoneId) -> &EntityBone {
         &self.bones[&id]
     }
 
-    pub(super) fn get_joint(&self, id: EntityJointId) -> &EntityJoint {
+    pub(crate) fn get_joint(&self, id: EntityJointId) -> &EntityJoint {
         &self.joints[&id]
+    }
+
+    pub(super) fn get_point_template(&self, id: EntityPointTemplateId) -> &EntityPointTemplate {
+        &self.point_templates[&id]
+    }
+
+    pub(super) fn get_bone_template(&self, id: EntityBoneTemplateId) -> &EntityBoneTemplate {
+        &self.bone_templates[&id]
+    }
+
+    pub(super) fn get_joint_template(&self, id: EntityJointTemplateId) -> &EntityJointTemplate {
+        &self.joint_templates[&id]
+    }
+
+    pub(crate) fn skeletons(&self) -> &BTreeMap<EntitySkeletonId, EntitySkeleton> {
+        &self.skeletons
     }
 
     pub(super) fn add_point_template(
@@ -113,11 +125,11 @@ impl EntityRegistry {
 
     fn create_bone(
         &mut self,
-        bone_id: &EntityBoneTemplateId,
+        bone_id: EntityBoneTemplateId,
         point_mapping: &HashMap<EntityPointTemplateId, EntityPointId>,
     ) -> EntityBoneId {
-        let target_bone_template = &self.bone_templates[bone_id];
-        let bone = target_bone_template.build(point_mapping);
+        let target_bone_template = &self.bone_templates[&bone_id];
+        let bone = target_bone_template.build(point_mapping, &self);
         let id = EntityBoneId(self.bones.len());
         self.bones.insert(id, bone);
         id
@@ -125,36 +137,36 @@ impl EntityRegistry {
 
     fn create_joint(
         &mut self,
-        joint_id: &EntityJointTemplateId,
+        joint_id: EntityJointTemplateId,
         bone_mapping: &HashMap<EntityBoneTemplateId, EntityBoneId>,
     ) -> EntityJointId {
-        let target_joint_template = &self.joint_templates[joint_id];
+        let target_joint_template = &self.joint_templates[&joint_id];
         let joint = target_joint_template.build(bone_mapping);
         let id = EntityJointId(self.joints.len());
         self.joints.insert(id, joint);
         id
     }
 
-    pub fn create_skeleton(&mut self, skeleton_id: &EntitySkeletonTemplateId) -> EntitySkeletonId {
-        let points = self.skeleton_templates[skeleton_id].points().clone();
+    pub fn create_skeleton(&mut self, skeleton_id: EntitySkeletonTemplateId) -> EntitySkeletonId {
+        let points = self.skeleton_templates[&skeleton_id].points().clone();
         let mut point_mapping = HashMap::<EntityPointTemplateId, EntityPointId>::new();
         for point_id in points {
             point_mapping.insert(point_id, self.create_point(&point_id));
         }
 
-        let bones = self.skeleton_templates[skeleton_id].bones().clone();
+        let bones = self.skeleton_templates[&skeleton_id].bones().clone();
         let mut bone_mapping = HashMap::<EntityBoneTemplateId, EntityBoneId>::new();
         for bone_id in bones {
-            bone_mapping.insert(bone_id, self.create_bone(&bone_id, &point_mapping));
+            bone_mapping.insert(bone_id, self.create_bone(bone_id, &point_mapping));
         }
 
-        let joints = self.skeleton_templates[skeleton_id].joints().clone();
+        let joints = self.skeleton_templates[&skeleton_id].joints().clone();
         let mut joint_mapping = HashMap::<EntityJointTemplateId, EntityJointId>::new();
         for joint_id in joints {
-            joint_mapping.insert(joint_id, self.create_joint(&joint_id, &bone_mapping));
+            joint_mapping.insert(joint_id, self.create_joint(joint_id, &bone_mapping));
         }
 
-        let target_skeleton_template = &self.skeleton_templates[skeleton_id];
+        let target_skeleton_template = &self.skeleton_templates[&skeleton_id];
         let skeleton =
             target_skeleton_template.build(&point_mapping, &bone_mapping, &joint_mapping);
         let id = EntitySkeletonId(self.skeletons.len());

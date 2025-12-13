@@ -20,6 +20,7 @@ pub struct EntitySkeletonBuilder<'a> {
     dismounted_timer: Option<u32>,
     remounting_timer: Option<u32>,
     remounted_timer: Option<u32>,
+    use_initial_mount_phase_during_bones: bool,
 }
 
 impl<'a> EntitySkeletonBuilder<'a> {
@@ -33,7 +34,12 @@ impl<'a> EntitySkeletonBuilder<'a> {
             dismounted_timer: None,
             remounting_timer: None,
             remounted_timer: None,
+            use_initial_mount_phase_during_bones: false,
         }
+    }
+
+    pub(crate) fn registry(&'a self) -> &'a EntityRegistry {
+        &self.registry
     }
 
     pub(crate) fn add_point(
@@ -83,23 +89,28 @@ impl<'a> EntitySkeletonBuilder<'a> {
         EntityJointBuilder::new(self, b1, b2)
     }
 
-    pub fn enable_remount(&mut self) -> &mut Self {
+    pub fn enable_remount(mut self) -> Self {
         self.remount_enabled = true;
         self
     }
 
-    pub fn dismounted_timer(&mut self, duration: u32) -> &mut Self {
+    pub fn dismounted_timer(mut self, duration: u32) -> Self {
         self.dismounted_timer = Some(duration);
         self
     }
 
-    pub fn remounting_timer(&mut self, duration: u32) -> &mut Self {
+    pub fn remounting_timer(mut self, duration: u32) -> Self {
         self.remounting_timer = Some(duration);
         self
     }
 
-    pub fn remounted_timer(&mut self, duration: u32) -> &mut Self {
+    pub fn remounted_timer(mut self, duration: u32) -> Self {
         self.remounted_timer = Some(duration);
+        self
+    }
+
+    pub fn use_initial_mount_phase_during_bones(mut self, use_init: bool) -> Self {
+        self.use_initial_mount_phase_during_bones = use_init;
         self
     }
 
@@ -112,6 +123,7 @@ impl<'a> EntitySkeletonBuilder<'a> {
             dismounted_timer: self.dismounted_timer.unwrap_or(0),
             remounting_timer: self.remounting_timer.unwrap_or(0),
             remounted_timer: self.remounted_timer.unwrap_or(0),
+            use_initial_mount_phase_during_bones: self.use_initial_mount_phase_during_bones,
         };
         self.registry.add_skeleton_template(skeleton_template)
     }

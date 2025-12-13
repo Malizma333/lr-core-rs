@@ -13,7 +13,7 @@ pub(crate) struct EntityJointTemplate {
 impl EntityJointTemplate {
     pub fn build(&self, bone_mapping: &HashMap<EntityBoneTemplateId, EntityBoneId>) -> EntityJoint {
         EntityJoint {
-            bones_involved: (
+            bones: (
                 bone_mapping[&self.bones_involved.0],
                 bone_mapping[&self.bones_involved.1],
             ),

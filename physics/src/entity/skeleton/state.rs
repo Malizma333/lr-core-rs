@@ -1,6 +1,4 @@
-use vector2d::Vector2Df;
-
-use crate::entity::skeleton::MountPhase;
+use crate::MountPhase;
 
 pub struct EntitySkeletonState {
     mount_phase: MountPhase,
@@ -9,42 +7,36 @@ pub struct EntitySkeletonState {
 
 impl Clone for EntitySkeletonState {
     fn clone(&self) -> Self {
-        let mount_phase_clone = match self.mount_phase {
-            MountPhase::Mounted => MountPhase::Mounted,
-            MountPhase::Dismounting {
-                frames_until_dismounted,
-            } => MountPhase::Dismounting {
-                frames_until_dismounted,
-            },
-            MountPhase::Dismounted {
-                frames_until_can_remount,
-            } => MountPhase::Dismounted {
-                frames_until_can_remount,
-            },
-            MountPhase::Remounting {
-                frames_until_remounted,
-            } => MountPhase::Remounting {
-                frames_until_remounted,
-            },
-        };
-
         EntitySkeletonState {
-            mount_phase: mount_phase_clone,
+            mount_phase: self.mount_phase,
             sled_intact: self.sled_intact,
         }
     }
 }
 
 impl EntitySkeletonState {
-    pub fn mount_phase(&self) -> MountPhase {
+    pub(crate) fn new(mount_phase: MountPhase, sled_intact: bool) -> Self {
+        EntitySkeletonState {
+            mount_phase,
+            sled_intact,
+        }
+    }
+}
+
+impl EntitySkeletonState {
+    pub(crate) fn mount_phase(&self) -> MountPhase {
         self.mount_phase
     }
 
-    pub fn sled_intact(&self) -> bool {
+    pub(crate) fn sled_intact(&self) -> bool {
         self.sled_intact
     }
 
-    pub fn points(&self) -> Vec<(Vector2Df, Vector2Df)> {
-        todo!("Get point positions from somewhere")
+    pub(crate) fn set_mount_phase(&mut self, mount_phase: MountPhase) {
+        self.mount_phase = mount_phase;
+    }
+
+    pub(crate) fn set_sled_intact(&mut self, sled_intact: bool) {
+        self.sled_intact = sled_intact;
     }
 }

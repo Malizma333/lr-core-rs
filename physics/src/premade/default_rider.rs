@@ -1,23 +1,50 @@
 use vector2d::Vector2Df;
 
-use crate::{engine::EngineVersion, entity::registry::EntityRegistry};
+use crate::entity::registry::{EntityRegistry, EntitySkeletonTemplateId};
 
-pub fn build_default_rider(registry: &mut EntityRegistry, version: EngineVersion) {
+pub enum RemountVersion {
+    None,
+    ComV1,
+    ComV2,
+    LRA,
+}
+
+pub fn build_default_rider(
+    registry: &mut EntityRegistry,
+    version: RemountVersion,
+) -> EntitySkeletonTemplateId {
     let repel_length_factor = 0.5;
     let scarf_friction = match version {
-        EngineVersion::Flash => 0.1,
-        EngineVersion::Com => 0.2,
-        EngineVersion::LRA => 0.1,
+        RemountVersion::None => 0.1,
+        RemountVersion::ComV1 => 0.2,
+        RemountVersion::ComV2 => 0.2,
+        RemountVersion::LRA => 0.1,
     };
     let mount_endurance = 0.057;
     let remount_endurance_factor = 2.0;
     let remount_strength_factor = match version {
-        EngineVersion::Flash => 0.0,
-        EngineVersion::Com => 0.1,
-        EngineVersion::LRA => 0.5,
+        RemountVersion::None => 0.0,
+        RemountVersion::ComV1 => 0.1,
+        RemountVersion::ComV2 => 0.1,
+        RemountVersion::LRA => 0.5,
+    };
+    // Adjustment strength when remounting affects all bones in LRA
+    let unbreakable_remount_strength_factor = match version {
+        RemountVersion::LRA => 0.5,
+        _ => 1.0,
     };
 
     let skeleton = registry.skeleton_template_builder();
+
+    let skeleton = match version {
+        RemountVersion::None => skeleton,
+        _ => skeleton
+            .enable_remount()
+            .dismounted_timer(30)
+            .remounting_timer(3)
+            .remounted_timer(3)
+            .use_initial_mount_phase_during_bones(matches!(version, RemountVersion::LRA)),
+    };
 
     let (skeleton, peg) = skeleton
         .point(Vector2Df::new(0.0, 0.0))
@@ -78,12 +105,30 @@ pub fn build_default_rider(registry: &mut EntityRegistry, version: EngineVersion
         .air_friction(scarf_friction)
         .build();
 
-    let (skeleton, sled_back) = skeleton.bone(peg, tail).build();
-    let (skeleton, _) = skeleton.bone(tail, nose).build();
-    let (skeleton, _) = skeleton.bone(nose, string).build();
-    let (skeleton, sled_front) = skeleton.bone(string, peg).build();
-    let (skeleton, _) = skeleton.bone(peg, nose).build();
-    let (skeleton, _) = skeleton.bone(string, tail).build();
+    let (skeleton, sled_back) = skeleton
+        .bone(peg, tail)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(tail, nose)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(nose, string)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, sled_front) = skeleton
+        .bone(string, peg)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(peg, nose)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(string, tail)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
     let (skeleton, _) = skeleton
         .bone(peg, butt)
         .endurance(mount_endurance)
@@ -102,12 +147,30 @@ pub fn build_default_rider(registry: &mut EntityRegistry, version: EngineVersion
         .endurance_remount_factor(remount_endurance_factor)
         .adjustment_strength_remount_factor(remount_strength_factor)
         .build();
-    let (skeleton, torso) = skeleton.bone(shoulder, butt).build();
-    let (skeleton, _) = skeleton.bone(shoulder, left_hand).build();
-    let (skeleton, _) = skeleton.bone(shoulder, right_hand).build();
-    let (skeleton, _) = skeleton.bone(butt, left_foot).build();
-    let (skeleton, _) = skeleton.bone(butt, right_foot).build();
-    let (skeleton, _) = skeleton.bone(shoulder, right_hand).build();
+    let (skeleton, torso) = skeleton
+        .bone(shoulder, butt)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(shoulder, left_hand)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(shoulder, right_hand)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(butt, left_foot)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(butt, right_foot)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
+    let (skeleton, _) = skeleton
+        .bone(shoulder, right_hand)
+        .adjustment_strength_remount_factor(unbreakable_remount_strength_factor)
+        .build();
     let (skeleton, _) = skeleton
         .bone(shoulder, peg)
         .endurance(mount_endurance)
@@ -160,5 +223,5 @@ pub fn build_default_rider(registry: &mut EntityRegistry, version: EngineVersion
     let (skeleton, _) = skeleton.joint(torso, sled_front).mount().build();
     let (skeleton, _) = skeleton.joint(sled_back, sled_front).build();
 
-    skeleton.build();
+    skeleton.build()
 }

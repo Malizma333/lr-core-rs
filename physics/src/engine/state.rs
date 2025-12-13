@@ -1,17 +1,13 @@
 use std::collections::BTreeMap;
 
 use crate::entity::{
-    bone::state::EntityBoneState,
-    joint::state::EntityJointState,
     point::state::EntityPointState,
-    registry::{EntityBoneId, EntityJointId, EntityPointId, EntitySkeletonId},
+    registry::{EntityPointId, EntitySkeletonId},
     skeleton::state::EntitySkeletonState,
 };
 
-pub struct EngineState {
+pub(super) struct EngineState {
     point_states: BTreeMap<EntityPointId, EntityPointState>,
-    bone_states: BTreeMap<EntityBoneId, EntityBoneState>,
-    joint_states: BTreeMap<EntityJointId, EntityJointState>,
     skeleton_states: BTreeMap<EntitySkeletonId, EntitySkeletonState>,
 }
 
@@ -19,26 +15,32 @@ impl Clone for EngineState {
     fn clone(&self) -> Self {
         Self {
             point_states: self.point_states.clone(),
-            bone_states: self.bone_states.clone(),
-            joint_states: self.joint_states.clone(),
             skeleton_states: self.skeleton_states.clone(),
         }
     }
 }
 
 impl EngineState {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             point_states: BTreeMap::new(),
-            bone_states: BTreeMap::new(),
-            joint_states: BTreeMap::new(),
             skeleton_states: BTreeMap::new(),
         }
     }
 
-    pub fn skeletons(&self) -> Vec<&EntitySkeletonState> {
-        self.skeleton_states
-            .values()
-            .collect::<Vec<&EntitySkeletonState>>()
+    pub(super) fn points(&self) -> &BTreeMap<EntityPointId, EntityPointState> {
+        &self.point_states
+    }
+
+    pub(super) fn points_mut(&mut self) -> &mut BTreeMap<EntityPointId, EntityPointState> {
+        &mut self.point_states
+    }
+
+    pub(super) fn skeletons(&self) -> &BTreeMap<EntitySkeletonId, EntitySkeletonState> {
+        &self.skeleton_states
+    }
+
+    pub(super) fn skeletons_mut(&mut self) -> &mut BTreeMap<EntitySkeletonId, EntitySkeletonState> {
+        &mut self.skeleton_states
     }
 }

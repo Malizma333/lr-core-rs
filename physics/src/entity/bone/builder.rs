@@ -73,8 +73,19 @@ impl<'a> EntityBoneBuilder<'a> {
     }
 
     pub fn build(self) -> (EntitySkeletonBuilder<'a>, EntityBoneTemplateId) {
+        let p0 = self
+            .skeleton
+            .registry()
+            .get_point_template(self.connected_points.0);
+        let p1 = self
+            .skeleton
+            .registry()
+            .get_point_template(self.connected_points.1);
+        let is_flutter = !(p0.is_contact() && p1.is_contact());
+
         let bone_template = EntityBoneTemplate {
             connected_points: self.connected_points,
+            is_flutter,
             bias: self.bias.unwrap_or(0.5),
             initial_length_factor: self.initial_length_factor.unwrap_or(1.0),
             repel_only: self.repel_only,

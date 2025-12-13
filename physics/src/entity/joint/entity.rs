@@ -1,30 +1,22 @@
 use vector2d::Vector2Df;
 
-use crate::entity::{
-    joint::snapshot::EntityJointSnapshot,
-    registry::{EntityBoneId, EntityRegistry},
-};
+use crate::entity::registry::EntityBoneId;
 
 pub(crate) struct EntityJoint {
-    pub(super) bones_involved: (EntityBoneId, EntityBoneId),
+    pub(super) bones: (EntityBoneId, EntityBoneId),
     pub(super) mount: bool,
 }
 
 impl EntityJoint {
-    pub(crate) fn get_snapshot(&self, registry: &EntityRegistry) -> EntityJointSnapshot {
-        // Don't care about remounting when getting joint snapshot
-        let remounting = false;
-        let bones = (
-            registry
-                .get_bone(self.bones_involved.0)
-                .get_snapshot(registry, remounting),
-            registry
-                .get_bone(self.bones_involved.0)
-                .get_snapshot(registry, remounting),
-        );
-        // TODO use state
-        EntityJointSnapshot {
-            bone_vectors: (Vector2Df::zero(), Vector2Df::zero()),
-        }
+    pub(crate) fn should_break(&self, bone_vectors: (Vector2Df, Vector2Df)) -> bool {
+        Vector2Df::cross(bone_vectors.0, bone_vectors.1) < 0.0
+    }
+
+    pub(crate) fn is_mount(&self) -> bool {
+        self.mount
+    }
+
+    pub(crate) fn bones(&self) -> (EntityBoneId, EntityBoneId) {
+        self.bones
     }
 }

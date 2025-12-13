@@ -4,8 +4,9 @@ mod tests {
     use format_json;
     use geometry::Point;
     use physics::{
-        AccelerationLine as PhysicsAccelerationLine, EngineBuilder, EngineState,
+        AccelerationLine as PhysicsAccelerationLine, EngineBuilder, EngineView,
         GridVersion as PhysicsGridVersion, MountPhase, NormalLine as PhysicsNormalLine,
+        premade::{RemountVersion, build_default_rider},
     };
     use serde::Deserialize;
     use std::fs;
@@ -31,7 +32,6 @@ mod tests {
         state: EngineTestCaseState,
     }
 
-    #[ignore = "engine not implemented"]
     #[test]
     fn engine_fixtures() {
         let data =
@@ -79,21 +79,37 @@ mod tests {
                 engine.create_line(Box::new(normal_line));
             }
 
-            let frame_data = engine.view_frame(test.frame);
+            // TODO figure out better versioning when reading track file
+            let remount_version = RemountVersion::None;
+            let default_skeleton_template_id =
+                build_default_rider(engine.registry(), remount_version);
 
-            compare_states(frame_data, &test.state);
+            if let Some(rider_group) = track.rider_group() {
+                // TODO apply rider props during creation
+                for rider in rider_group.riders() {
+                    engine
+                        .registry()
+                        .create_skeleton(default_skeleton_template_id);
+                }
+            } else {
+                engine
+                    .registry()
+                    .create_skeleton(default_skeleton_template_id);
+            }
+
+            compare_states(engine.view_frame(test.frame), &test.state);
         }
     }
 
-    fn compare_states(result_state: &EngineState, expected_state: &EngineTestCaseState) {
-        let expected_entities = &expected_state.entities;
-        let result_entities = result_state.skeletons();
+    fn compare_states(result: EngineView, expected: &EngineTestCaseState) {
+        let expected_entities = &expected.entities;
+        let result_entities = result.skeletons();
         assert!(
             result_entities.len() == expected_entities.len(),
             "entity count mismatch"
         );
         for (i, expected_entity) in expected_entities.iter().enumerate() {
-            let result_entity = result_entities[i];
+            let result_entity = &result_entities[i];
             if let Some(expected_mount_state) = &expected_entity.mount_state {
                 let result_mount_state = match result_entity.mount_phase() {
                     MountPhase::Mounted => "MOUNTED",
@@ -126,27 +142,33 @@ mod tests {
             }
 
             let expected_points = &expected_entity.points;
-            let result_points = result_entity.points();
+            let result_point_positions = result_entity.point_positions();
+            let result_point_velocities = result_entity.point_velocities();
 
             assert!(
-                result_points.len() >= expected_points.len(),
-                "rider {i} point count mismatch",
+                result_point_positions.len() >= expected_points.len(),
+                "rider {i} point position count mismatch",
+            );
+
+            assert!(
+                result_point_velocities.len() >= expected_points.len(),
+                "rider {i} point velocity count mismatch",
             );
 
             for (j, expected_point_data) in expected_points.iter().enumerate() {
                 let (expected_position, expected_velocity) =
                     convert_to_vectors(expected_point_data);
                 assert!(
-                    expected_position == result_points[j].0,
+                    expected_position == result_point_positions[j],
                     "rider {i} point {j} position mismatch: {:?} != {:?}",
                     expected_position,
-                    result_points[j].0,
+                    result_point_positions[j],
                 );
                 assert!(
-                    expected_velocity == result_points[j].1,
+                    expected_velocity == result_point_velocities[j],
                     "rider {i} point {j} velocity mismatch: {:?} != {:?}",
                     expected_position,
-                    result_points[j].1,
+                    result_point_velocities[j],
                 );
             }
         }

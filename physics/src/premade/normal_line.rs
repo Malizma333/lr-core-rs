@@ -2,7 +2,7 @@ use geometry::Point;
 
 use crate::{
     ComputedLineProperties, ComputedProperties, Hitbox,
-    entity::point::snapshot::EntityPointSnapshot,
+    entity::point::{entity::EntityPoint, state::EntityPointState},
 };
 
 pub struct NormalLine {
@@ -42,25 +42,26 @@ impl ComputedLineProperties for NormalLine {
 impl Hitbox for NormalLine {
     fn interact(
         &self,
-        point: &EntityPointSnapshot,
+        point: &EntityPoint,
+        point_state: &EntityPointState,
         distance_from_line_top: f64,
         _position_between_ends: f64,
-    ) -> Option<(Point, Point)> {
-        let new_position = point.position() - (self.normal_unit() * distance_from_line_top);
+    ) -> (Point, Point) {
+        let new_position = point_state.position() - (self.normal_unit() * distance_from_line_top);
 
         let mut friction_vector =
             (self.normal_unit().rotate_cw() * point.contact_friction()) * distance_from_line_top;
 
-        if point.previous_position().x >= new_position.x {
+        if point_state.previous_position().x >= new_position.x {
             friction_vector.x *= -1.0;
         }
 
-        if point.previous_position().y < new_position.y {
+        if point_state.previous_position().y < new_position.y {
             friction_vector.y *= -1.0;
         }
 
-        let new_previous_position = point.previous_position() + friction_vector;
+        let new_previous_position = point_state.previous_position() + friction_vector;
 
-        Some((new_position, new_previous_position))
+        (new_position, new_previous_position)
     }
 }

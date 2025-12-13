@@ -12,12 +12,14 @@ pub(crate) struct EntityPointTemplate {
 }
 
 impl EntityPointTemplate {
+    pub(crate) fn is_contact(&self) -> bool {
+        self.contact
+    }
+
     pub(crate) fn build(&self) -> EntityPoint {
-        // TODO define initial state
-        // position: self.initial_position,
-        // velocity: self.initial_velocity,
-        // previous_position: self.initial_position,
         EntityPoint {
+            initial_position: self.initial_position,
+            initial_velocity: self.initial_velocity,
             contact: self.contact,
             contact_friction: self.contact_friction,
             air_friction: self.air_friction,
