@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 
-use crate::entity::{
-    registry::{
-        EntityBoneId, EntityBoneTemplateId, EntityJointId, EntityJointTemplateId, EntityPointId,
-        EntityPointTemplateId,
+use crate::{
+    RemountVersion,
+    entity::{
+        registry::{
+            EntityBoneId, EntityBoneTemplateId, EntityJointId, EntityJointTemplateId,
+            EntityPointId, EntityPointTemplateId,
+        },
+        skeleton::entity::EntitySkeleton,
     },
-    skeleton::entity::EntitySkeleton,
 };
 
 pub(crate) struct EntitySkeletonTemplate {
@@ -15,8 +18,8 @@ pub(crate) struct EntitySkeletonTemplate {
     pub(super) remount_enabled: bool,
     pub(super) dismounted_timer: u32,
     pub(super) remounting_timer: u32,
-    pub(super) remounted_timer: u32,
-    pub(super) use_initial_mount_phase_during_bones: bool,
+    pub(super) mounted_timer: u32,
+    pub(super) remount_version: RemountVersion,
 }
 
 impl EntitySkeletonTemplate {
@@ -57,8 +60,8 @@ impl EntitySkeletonTemplate {
             remount_enabled: self.remount_enabled,
             dismounted_timer: self.dismounted_timer,
             remounting_timer: self.remounting_timer,
-            remounted_timer: self.remounted_timer,
-            use_initial_mount_phase_during_bones: self.use_initial_mount_phase_during_bones,
+            mounted_timer: self.mounted_timer,
+            remount_version: self.remount_version,
         }
     }
 }

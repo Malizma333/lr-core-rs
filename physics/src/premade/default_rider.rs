@@ -1,16 +1,9 @@
 use vector2d::Vector2Df;
 
-use crate::entity::registry::{EntityRegistry, EntitySkeletonTemplateId};
-
-pub enum RemountVersion {
-    None,
-    ComV1,
-    ComV2,
-    LRA,
-}
+use crate::{Engine, RemountVersion, entity::registry::EntitySkeletonTemplateId};
 
 pub fn build_default_rider(
-    registry: &mut EntityRegistry,
+    engine: &mut Engine,
     version: RemountVersion,
 ) -> EntitySkeletonTemplateId {
     let repel_length_factor = 0.5;
@@ -34,16 +27,15 @@ pub fn build_default_rider(
         _ => 1.0,
     };
 
-    let skeleton = registry.skeleton_template_builder();
+    let mut skeleton = engine.build_skeleton().remount_version(version);
 
-    let skeleton = match version {
+    skeleton = match version {
         RemountVersion::None => skeleton,
         _ => skeleton
             .enable_remount()
             .dismounted_timer(30)
             .remounting_timer(3)
-            .remounted_timer(3)
-            .use_initial_mount_phase_during_bones(matches!(version, RemountVersion::LRA)),
+            .mounted_timer(3),
     };
 
     let (skeleton, peg) = skeleton

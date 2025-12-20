@@ -63,16 +63,12 @@ impl EntityRegistry {
         &self.joints[&id]
     }
 
+    pub(crate) fn get_skeleton(&self, id: EntitySkeletonId) -> &EntitySkeleton {
+        &self.skeletons[&id]
+    }
+
     pub(super) fn get_point_template(&self, id: EntityPointTemplateId) -> &EntityPointTemplate {
         &self.point_templates[&id]
-    }
-
-    pub(super) fn get_bone_template(&self, id: EntityBoneTemplateId) -> &EntityBoneTemplate {
-        &self.bone_templates[&id]
-    }
-
-    pub(super) fn get_joint_template(&self, id: EntityJointTemplateId) -> &EntityJointTemplate {
-        &self.joint_templates[&id]
     }
 
     pub(crate) fn skeletons(&self) -> &BTreeMap<EntitySkeletonId, EntitySkeleton> {

@@ -31,7 +31,7 @@ impl EntityBoneTemplate {
         );
         let initial_positions = (
             registry.get_point(connected_points.0).initial_position(),
-            registry.get_point(connected_points.0).initial_position(),
+            registry.get_point(connected_points.1).initial_position(),
         );
         let rest_length = Vector2Df::distance(initial_positions.0, initial_positions.1)
             * self.initial_length_factor;

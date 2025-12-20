@@ -1,14 +1,17 @@
 use vector2d::Vector2Df;
 
-use crate::entity::{
-    bone::{builder::EntityBoneBuilder, template::EntityBoneTemplate},
-    joint::{builder::EntityJointBuilder, template::EntityJointTemplate},
-    point::{builder::EntityPointBuilder, template::EntityPointTemplate},
-    registry::{
-        EntityBoneTemplateId, EntityJointTemplateId, EntityPointTemplateId, EntityRegistry,
-        EntitySkeletonTemplateId,
+use crate::{
+    RemountVersion,
+    entity::{
+        bone::{builder::EntityBoneBuilder, template::EntityBoneTemplate},
+        joint::{builder::EntityJointBuilder, template::EntityJointTemplate},
+        point::{builder::EntityPointBuilder, template::EntityPointTemplate},
+        registry::{
+            EntityBoneTemplateId, EntityJointTemplateId, EntityPointTemplateId, EntityRegistry,
+            EntitySkeletonTemplateId,
+        },
+        skeleton::template::EntitySkeletonTemplate,
     },
-    skeleton::template::EntitySkeletonTemplate,
 };
 
 pub struct EntitySkeletonBuilder<'a> {
@@ -19,8 +22,8 @@ pub struct EntitySkeletonBuilder<'a> {
     remount_enabled: bool,
     dismounted_timer: Option<u32>,
     remounting_timer: Option<u32>,
-    remounted_timer: Option<u32>,
-    use_initial_mount_phase_during_bones: bool,
+    mounted_timer: Option<u32>,
+    remount_version: RemountVersion,
 }
 
 impl<'a> EntitySkeletonBuilder<'a> {
@@ -33,8 +36,8 @@ impl<'a> EntitySkeletonBuilder<'a> {
             remount_enabled: false,
             dismounted_timer: None,
             remounting_timer: None,
-            remounted_timer: None,
-            use_initial_mount_phase_during_bones: false,
+            mounted_timer: None,
+            remount_version: RemountVersion::None,
         }
     }
 
@@ -104,13 +107,13 @@ impl<'a> EntitySkeletonBuilder<'a> {
         self
     }
 
-    pub fn remounted_timer(mut self, duration: u32) -> Self {
-        self.remounted_timer = Some(duration);
+    pub fn mounted_timer(mut self, duration: u32) -> Self {
+        self.mounted_timer = Some(duration);
         self
     }
 
-    pub fn use_initial_mount_phase_during_bones(mut self, use_init: bool) -> Self {
-        self.use_initial_mount_phase_during_bones = use_init;
+    pub fn remount_version(mut self, remount_version: RemountVersion) -> Self {
+        self.remount_version = remount_version;
         self
     }
 
@@ -122,8 +125,8 @@ impl<'a> EntitySkeletonBuilder<'a> {
             remount_enabled: self.remount_enabled,
             dismounted_timer: self.dismounted_timer.unwrap_or(0),
             remounting_timer: self.remounting_timer.unwrap_or(0),
-            remounted_timer: self.remounted_timer.unwrap_or(0),
-            use_initial_mount_phase_during_bones: self.use_initial_mount_phase_during_bones,
+            mounted_timer: self.mounted_timer.unwrap_or(0),
+            remount_version: self.remount_version,
         };
         self.registry.add_skeleton_template(skeleton_template)
     }

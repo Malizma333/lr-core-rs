@@ -5,8 +5,8 @@ mod tests {
     use geometry::Point;
     use physics::{
         AccelerationLine as PhysicsAccelerationLine, EngineBuilder, EngineView,
-        GridVersion as PhysicsGridVersion, MountPhase, NormalLine as PhysicsNormalLine,
-        premade::{RemountVersion, build_default_rider},
+        EntitySkeletonInitialProperties, GridVersion as PhysicsGridVersion, MountPhase,
+        NormalLine as PhysicsNormalLine, RemountVersion, build_default_rider,
     };
     use serde::Deserialize;
     use std::fs;
@@ -81,20 +81,25 @@ mod tests {
 
             // TODO figure out better versioning when reading track file
             let remount_version = RemountVersion::None;
-            let default_skeleton_template_id =
-                build_default_rider(engine.registry(), remount_version);
+            let default_skeleton_template_id = build_default_rider(&mut engine, remount_version);
 
             if let Some(rider_group) = track.rider_group() {
-                // TODO apply rider props during creation
                 for rider in rider_group.riders() {
-                    engine
-                        .registry()
-                        .create_skeleton(default_skeleton_template_id);
+                    let mut initial_properties = EntitySkeletonInitialProperties::new();
+                    let id = engine.add_skeleton(default_skeleton_template_id);
+                    if let Some(initial_position) = rider.start_position() {
+                        initial_properties.set_start_position(initial_position);
+                    }
+                    if let Some(initial_velocity) = rider.start_velocity() {
+                        initial_properties.set_start_velocity(initial_velocity);
+                    }
+                    engine.set_skeleton_initial_properties(id, initial_properties);
                 }
             } else {
-                engine
-                    .registry()
-                    .create_skeleton(default_skeleton_template_id);
+                let mut initial_properties = EntitySkeletonInitialProperties::new();
+                let id = engine.add_skeleton(default_skeleton_template_id);
+                initial_properties.set_start_velocity(Vector2Df::new(0.4, 0.0));
+                engine.set_skeleton_initial_properties(id, initial_properties);
             }
 
             compare_states(engine.view_frame(test.frame), &test.state);
@@ -106,7 +111,9 @@ mod tests {
         let result_entities = result.skeletons();
         assert!(
             result_entities.len() == expected_entities.len(),
-            "entity count mismatch"
+            "entity count mismatch: {} != {}",
+            result_entities.len(),
+            expected_entities.len(),
         );
         for (i, expected_entity) in expected_entities.iter().enumerate() {
             let result_entity = &result_entities[i];
@@ -114,18 +121,20 @@ mod tests {
                 let result_mount_state = match result_entity.mount_phase() {
                     MountPhase::Mounted => "MOUNTED",
                     MountPhase::Dismounted {
-                        frames_until_can_remount: _,
+                        frames_until_remounting: _,
                     } => "DISMOUNTED",
                     MountPhase::Dismounting {
                         frames_until_dismounted: _,
                     } => "DISMOUNTING",
                     MountPhase::Remounting {
-                        frames_until_remounted: _,
+                        frames_until_mounted: _,
                     } => "REMOUNTING",
                 };
                 assert!(
-                    expected_mount_state == result_mount_state,
-                    "rider {i} mount state mismatch"
+                    result_mount_state == expected_mount_state,
+                    "rider {i} mount state mismatch: {} != {}",
+                    result_mount_state,
+                    expected_mount_state,
                 );
             }
 
@@ -136,8 +145,11 @@ mod tests {
                     "BROKEN"
                 };
                 assert!(
-                    expected_sled_state == result_sled_state,
-                    "rider {i} sled state mismatch"
+                    result_sled_state == expected_sled_state,
+                    "rider {} sled state mismatch: {} != {}",
+                    i,
+                    result_sled_state,
+                    expected_sled_state,
                 );
             }
 
@@ -147,28 +159,34 @@ mod tests {
 
             assert!(
                 result_point_positions.len() >= expected_points.len(),
-                "rider {i} point position count mismatch",
+                "rider {} point position count mismatch: {} >= {}",
+                i,
+                result_point_positions.len(),
+                expected_points.len(),
             );
 
             assert!(
                 result_point_velocities.len() >= expected_points.len(),
-                "rider {i} point velocity count mismatch",
+                "rider {} point velocity count mismatch: {} >= {}",
+                i,
+                result_point_velocities.len(),
+                expected_points.len(),
             );
 
             for (j, expected_point_data) in expected_points.iter().enumerate() {
                 let (expected_position, expected_velocity) =
                     convert_to_vectors(expected_point_data);
                 assert!(
-                    expected_position == result_point_positions[j],
+                    result_point_positions[j] == expected_position,
                     "rider {i} point {j} position mismatch: {:?} != {:?}",
-                    expected_position,
                     result_point_positions[j],
+                    expected_position,
                 );
                 assert!(
-                    expected_velocity == result_point_velocities[j],
+                    result_point_velocities[j] == expected_velocity,
                     "rider {i} point {j} velocity mismatch: {:?} != {:?}",
-                    expected_position,
                     result_point_velocities[j],
+                    expected_position,
                 );
             }
         }

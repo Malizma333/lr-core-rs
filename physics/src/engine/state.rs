@@ -6,6 +6,7 @@ use crate::entity::{
     skeleton::state::EntitySkeletonState,
 };
 
+#[derive(Debug)]
 pub(super) struct EngineState {
     point_states: BTreeMap<EntityPointId, EntityPointState>,
     skeleton_states: BTreeMap<EntitySkeletonId, EntitySkeletonState>,

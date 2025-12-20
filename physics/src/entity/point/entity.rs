@@ -3,10 +3,8 @@ use vector2d::Vector2Df;
 
 use crate::entity::point::state::EntityPointState;
 
-pub(crate) struct EntityPoint {
-    // TODO use these correctly
+pub struct EntityPoint {
     pub(super) initial_position: Point,
-    pub(super) initial_velocity: Vector2Df,
     pub(super) contact: bool,
     pub(super) contact_friction: f64,
     pub(super) air_friction: f64,
@@ -18,7 +16,6 @@ impl EntityPoint {
     pub(crate) fn new(contact_friction: f64, air_friction: f64, contact: bool) -> Self {
         Self {
             initial_position: Vector2Df::zero(),
-            initial_velocity: Vector2Df::zero(),
             contact_friction,
             air_friction,
             contact,
@@ -31,20 +28,12 @@ impl EntityPoint {
         self.initial_position
     }
 
-    pub(crate) fn initial_velocity(&self) -> Vector2Df {
-        self.initial_velocity
-    }
-
     pub(crate) fn is_contact(&self) -> bool {
         self.contact
     }
 
     pub(crate) fn contact_friction(&self) -> f64 {
         self.contact_friction
-    }
-
-    pub(crate) fn air_friction(&self) -> f64 {
-        self.air_friction
     }
 
     pub(crate) fn process_initial_step(&self, state: &mut EntityPointState, gravity: Vector2Df) {

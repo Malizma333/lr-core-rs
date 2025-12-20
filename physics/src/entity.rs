@@ -6,3 +6,4 @@ pub(crate) mod registry;
 pub(crate) mod skeleton;
 
 pub use mount_phase::MountPhase;
+pub use skeleton::EntitySkeletonInitialProperties;

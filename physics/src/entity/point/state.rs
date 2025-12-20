@@ -1,6 +1,7 @@
 use geometry::Point;
 use vector2d::Vector2Df;
 
+#[derive(Debug)]
 pub struct EntityPointState {
     position: Point,
     velocity: Vector2Df,

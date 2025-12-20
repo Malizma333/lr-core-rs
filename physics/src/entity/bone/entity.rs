@@ -44,8 +44,10 @@ impl EntityBone {
             self.adjustment_strength
         };
         (
-            -1.0 * bone_vector * adjustment_strength * percent_adjustment * (1.0 - self.bias),
-            -1.0 * bone_vector * adjustment_strength * percent_adjustment * self.bias,
+            point_states.0.position()
+                - bone_vector * adjustment_strength * percent_adjustment * (1.0 - self.bias),
+            point_states.1.position()
+                + bone_vector * adjustment_strength * percent_adjustment * self.bias,
         )
     }
 
