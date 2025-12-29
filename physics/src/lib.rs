@@ -1,3 +1,6 @@
+pub(crate) mod benchmark_timer;
+#[cfg(feature = "benchmark")]
+pub(crate) mod benchmark_timer_instance;
 mod engine;
 mod entity;
 mod grid;

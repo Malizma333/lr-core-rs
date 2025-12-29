@@ -35,3 +35,7 @@ test: ## Run unit tests (set PACKAGE for specific crate)
 	else\
 		cargo test -p $(PACKAGE) -- --no-capture;\
 	fi
+
+.PHONY: benchmark-physics
+benchmark-physics:
+	cargo test -p physics tests::engine_fixtures --features benchmark -- --no-capture;\

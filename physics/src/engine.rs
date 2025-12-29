@@ -1,5 +1,8 @@
+#[cfg(feature = "benchmark")]
+use crate::benchmark_timer_instance::BenchmarkTimerInstance;
 use crate::{
     EntitySkeletonInitialProperties, MountPhase, RemountVersion,
+    benchmark_timer::{BenchmarkTimer, NoopTimerInstance},
     engine::state::EngineState,
     entity::{
         joint::entity::EntityJoint,
@@ -55,7 +58,12 @@ impl Engine {
             .get(frame as usize)
             .unwrap_or(&self.initial_state)
             .clone();
-        let state = self.get_next_state(target_frame_state, frame, Some(moment));
+        let state = self.get_next_state(
+            target_frame_state,
+            frame,
+            Some(moment),
+            &mut NoopTimerInstance,
+        );
         EngineView::new(&self.registry, &state)
     }
 
@@ -164,6 +172,11 @@ impl Engine {
     }
 
     fn fill_snapshots_up_to_frame(&mut self, target_frame: u32) {
+        #[cfg(feature = "benchmark")]
+        let mut elapsed_times = BenchmarkTimerInstance::new();
+        #[cfg(not(feature = "benchmark"))]
+        let mut elapsed_times = NoopTimerInstance;
+
         let mut current_state = self
             .state_snapshots
             .last()
@@ -171,19 +184,26 @@ impl Engine {
             .clone();
 
         while (self.state_snapshots.len() as u32) < target_frame + 1 {
-            let next_state =
-                self.get_next_state(current_state, self.state_snapshots.len() as u32, None);
+            let next_state = self.get_next_state(
+                current_state,
+                self.state_snapshots.len() as u32,
+                None,
+                &mut elapsed_times,
+            );
             self.state_snapshots.push(next_state.clone());
             current_state = next_state.clone();
         }
+
+        elapsed_times.print_times();
     }
 
     // The main loop of the physics engine
-    fn get_next_state(
+    fn get_next_state<T: BenchmarkTimer>(
         &mut self,
         mut current_state: EngineState,
         frame: u32,
         _moment: Option<PhysicsMoment>,
+        benchmark_timer: &mut T,
     ) -> EngineState {
         let mut dismount_flags = Vec::new();
 
@@ -195,12 +215,14 @@ impl Engine {
             if !(self.get_skeleton_frozen_at_time)(*skeleton_id, frame) {
                 // momentum
                 for point_id in skeleton.points() {
+                    benchmark_timer.reset_timer();
                     let point = self.registry.get_point(*point_id);
                     let point_state = current_state.points_mut().get_mut(point_id).unwrap();
                     point.process_initial_step(
                         point_state,
                         GRAVITY_MULTIPLIER * (self.get_gravity_at_time)(frame),
                     );
+                    benchmark_timer.mark_timer("points");
                 }
 
                 let initial_mount_phase = current_state
@@ -211,8 +233,8 @@ impl Engine {
 
                 for _ in 0..6 {
                     // bones
-                    // TODO Fairly slow part
                     for bone_id in skeleton.bones() {
+                        benchmark_timer.reset_timer();
                         let bone = self.registry.get_bone(*bone_id);
 
                         if !bone.is_flutter() {
@@ -291,16 +313,18 @@ impl Engine {
                                 }
                             }
                         }
+                        benchmark_timer.mark_timer("bones");
                     }
 
                     // line collisions
                     for point_id in skeleton.points() {
                         let point = self.registry.get_point(*point_id);
                         let point_state = current_state.points_mut().get_mut(point_id).unwrap();
-                        // TODO Usually the slowest part
+                        benchmark_timer.reset_timer();
                         let interacting_lines =
                             self.grid.get_lines_near_point(point_state.position());
-                        // TODO Slowest part when there's a lot of lines being hit
+                        benchmark_timer.mark_timer("line lookup");
+                        benchmark_timer.reset_timer();
                         for line_id in interacting_lines {
                             let line = &self.line_lookup[&line_id];
                             if let Some((new_position, new_previous_position)) =
@@ -313,11 +337,13 @@ impl Engine {
                                 );
                             }
                         }
+                        benchmark_timer.mark_timer("line interaction");
                     }
                 }
 
                 // flutter bones
                 for bone_id in skeleton.bones() {
+                    benchmark_timer.reset_timer();
                     let bone = self.registry.get_bone(*bone_id);
                     if bone.is_flutter() {
                         let point_states = (
@@ -342,9 +368,11 @@ impl Engine {
                             .unwrap()
                             .update(Some(adjustment.1), None, None);
                     }
+                    benchmark_timer.mark_timer("bones");
                 }
 
                 // check dismount
+                benchmark_timer.reset_timer();
                 let mount_phase = current_state
                     .skeletons()
                     .get(skeleton_id)
@@ -430,6 +458,8 @@ impl Engine {
                         }
                     }
                 }
+
+                benchmark_timer.mark_timer("joints");
             }
 
             dismount_flags.push(dismounted_this_frame);
@@ -439,6 +469,7 @@ impl Engine {
 
         // Remount step
         for (skeleton_id, skeleton) in self.registry.skeletons() {
+            benchmark_timer.reset_timer();
             let dismounted_this_frame = dismount_flags[dismount_flag_index];
             dismount_flag_index += 1;
 
@@ -588,6 +619,7 @@ impl Engine {
                     .unwrap()
                     .set_mount_phase(next_mount_phase);
             }
+            benchmark_timer.mark_timer("remount state");
         }
 
         current_state
