@@ -11,7 +11,7 @@ use vector2d::Vector2Df;
 
 use crate::{FaultyBool, FaultyU32, JsonReadError, JsonTrack, LRAJsonArrayLine};
 
-pub fn read(data: Vec<u8>) -> Result<Track, JsonReadError> {
+pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
     let json_string = String::from_utf8(data.to_vec())?;
     let json_track: JsonTrack = serde_json::from_str(&json_string)?;
 
@@ -93,9 +93,7 @@ pub fn read(data: Vec<u8>) -> Result<Track, JsonReadError> {
                     }
                 }
                 LineType::Scenery => {
-                    let line_builder = track_builder
-                        .line_group()
-                        .add_scenery_line(line.id, endpoints);
+                    let line_builder = track_builder.line_group().add_scenery_line(endpoints);
                     if let Some(width) = line.width {
                         line_builder.width(width);
                     }
@@ -142,9 +140,9 @@ pub fn read(data: Vec<u8>) -> Result<Track, JsonReadError> {
                         .right_extension(right_extension)
                         .multiplier(f64::from(multiplier));
                 }
-                LRAJsonArrayLine::Scenery(id, x1, y1, x2, y2) => {
+                LRAJsonArrayLine::Scenery(_id, x1, y1, x2, y2) => {
                     let endpoints = (Vector2Df::new(x1, y1), Vector2Df::new(x2, y2));
-                    track_builder.line_group().add_scenery_line(id, endpoints);
+                    track_builder.line_group().add_scenery_line(endpoints);
                 }
             }
         }

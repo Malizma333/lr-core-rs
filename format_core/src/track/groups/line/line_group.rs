@@ -72,11 +72,9 @@ impl LineGroupBuilder {
 
     pub fn add_scenery_line(
         &mut self,
-        id: u32,
         endpoints: (Vector2Df, Vector2Df),
     ) -> &mut SceneryLineBuilder {
-        self.scenery_lines
-            .push(SceneryLineBuilder::new(id, endpoints));
+        self.scenery_lines.push(SceneryLineBuilder::new(endpoints));
         self.scenery_lines.last_mut().unwrap()
     }
 

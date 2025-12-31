@@ -74,7 +74,7 @@ pub fn write(track: &Track) -> Result<Vec<u8>, SolWriteError> {
         line_object.insert("5".to_string(), Amf0Value::Number(0.0));
         line_object.insert("6".to_string(), Amf0Value::Number(0.0));
         line_object.insert("7".to_string(), Amf0Value::Number(0.0));
-        line_object.insert("8".to_string(), Amf0Value::Number(f64::from(line.id())));
+        line_object.insert("8".to_string(), Amf0Value::Number(-1.0));
         line_object.insert("9".to_string(), Amf0Value::Number(2.0));
         lines_vec.push(line_object);
     }

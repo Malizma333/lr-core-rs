@@ -41,7 +41,7 @@ pub enum Endianness {
 
 /// Generalized function for reading binary length-prefixed strings
 pub fn parse_string(
-    cursor: &mut Cursor<Vec<u8>>,
+    cursor: &mut Cursor<&Vec<u8>>,
     length_type: StringLength,
     length_endianness: Endianness,
 ) -> Result<String, ParseLengthPrefixedStringError> {

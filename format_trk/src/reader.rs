@@ -27,7 +27,7 @@ use format_core::{
 use spatial_grid::GridVersion;
 use vector2d::Vector2Df;
 
-pub fn read(data: Vec<u8>) -> Result<Track, TrkReadError> {
+pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
     let track_builder = &mut TrackBuilder::new(GridVersion::V6_2);
     let mut cursor = Cursor::new(data);
 
@@ -203,15 +203,10 @@ pub fn read(data: Vec<u8>) -> Result<Track, TrkReadError> {
             LineType::Scenery => {
                 track_builder
                     .line_group()
-                    .add_scenery_line(line_id, endpoints)
+                    .add_scenery_line(endpoints)
                     .width(line_scenery_width);
             }
         }
-    }
-
-    for line in track_builder.line_group().scenery_lines() {
-        max_id += 1;
-        line.id(max_id);
     }
 
     if included_features.contains(FEATURE_FRICTIONLESS) {

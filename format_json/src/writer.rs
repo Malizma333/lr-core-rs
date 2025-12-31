@@ -1,3 +1,5 @@
+use std::u32;
+
 use crate::{
     FaultyBool, FaultyU32, JsonLayer, JsonLine, JsonRider, JsonTrack, JsonWriteError,
     LAYER_TYPE_FOLDER, LAYER_TYPE_LAYER, V2,
@@ -55,7 +57,7 @@ pub fn write(track: &Track) -> Result<Vec<u8>, JsonWriteError> {
 
     for line in track.line_group().scenery_lines() {
         lines.push(JsonLine {
-            id: line.id(),
+            id: u32::MAX,
             line_type: 2,
             x1: line.x1(),
             y1: line.y1(),

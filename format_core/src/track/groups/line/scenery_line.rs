@@ -1,16 +1,11 @@
 use vector2d::Vector2Df;
 
 pub struct SceneryLine {
-    id: u32,
     endpoints: (Vector2Df, Vector2Df),
     width: Option<f64>,
 }
 
 impl SceneryLine {
-    pub fn id(&self) -> u32 {
-        self.id
-    }
-
     pub fn x1(&self) -> f64 {
         self.endpoints.0.x
     }
@@ -33,15 +28,13 @@ impl SceneryLine {
 }
 
 pub struct SceneryLineBuilder {
-    id: u32,
     endpoints: (Vector2Df, Vector2Df),
     width: Option<f64>,
 }
 
 impl SceneryLineBuilder {
-    pub fn new(id: u32, endpoints: (Vector2Df, Vector2Df)) -> Self {
+    pub fn new(endpoints: (Vector2Df, Vector2Df)) -> Self {
         SceneryLineBuilder {
-            id,
             endpoints,
             width: None,
         }
@@ -52,13 +45,8 @@ impl SceneryLineBuilder {
         self
     }
 
-    pub fn id(&mut self, _id: u32) -> &mut Self {
-        unimplemented!("Id should be determined at instantiation")
-    }
-
     pub fn build(&self) -> SceneryLine {
         SceneryLine {
-            id: self.id,
             endpoints: self.endpoints,
             width: self.width,
         }

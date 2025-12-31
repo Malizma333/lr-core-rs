@@ -44,7 +44,7 @@ mod tests {
 
             let file_name = format!("tests/fixtures/{}.track.json", test.file);
             let file = fs::read(file_name).expect("Failed to read JSON file");
-            let track = format_json::read(file).expect("Failed to parse track file");
+            let track = format_json::read(&file).expect("Failed to parse track file");
 
             let grid_version = track.metadata().grid_version();
             let mut engine = EngineBuilder::new(grid_version).build();

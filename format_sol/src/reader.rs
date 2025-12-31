@@ -13,7 +13,7 @@ use format_core::{
     },
 };
 
-pub fn read(data: Vec<u8>, track_index: Option<u32>) -> Result<Track, SolReadError> {
+pub fn read(data: &Vec<u8>, track_index: Option<u32>) -> Result<Track, SolReadError> {
     let track_builder = &mut TrackBuilder::new(GridVersion::V6_2);
     let data_size = u64::try_from(data.len())?;
     let mut cursor = Cursor::new(data);
@@ -349,7 +349,7 @@ pub fn read(data: Vec<u8>, track_index: Option<u32>) -> Result<Track, SolReadErr
                         .right_extension(right_extension);
                 }
                 LineType::Scenery => {
-                    track_builder.line_group().add_scenery_line(id, endpoints);
+                    track_builder.line_group().add_scenery_line(endpoints);
                 }
             }
         }

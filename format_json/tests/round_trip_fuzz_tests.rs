@@ -14,7 +14,7 @@ mod tests {
         let random_string = dbg!(rng.rand_str(10));
         track_builder.metadata().title(random_string);
         let expected = track_builder.build();
-        let result = read(write(&expected).unwrap()).unwrap();
+        let result = read(&write(&expected).unwrap()).unwrap();
         assert_eq!(
             result.metadata().title(),
             expected.metadata().title(),
@@ -23,7 +23,7 @@ mod tests {
 
         let track_builder = TrackBuilder::new(GridVersion::V6_2);
         let expected = track_builder.build();
-        let result = read(write(&expected).unwrap()).unwrap();
+        let result = read(&write(&expected).unwrap()).unwrap();
         assert_eq!(
             result.metadata().title(),
             expected.metadata().title(),
@@ -36,7 +36,7 @@ mod tests {
         for version in vec![GridVersion::V6_1, GridVersion::V6_2] {
             let track_builder = TrackBuilder::new(version);
             let expected = track_builder.build();
-            let result = read(write(&expected).unwrap()).unwrap();
+            let result = read(&write(&expected).unwrap()).unwrap();
             assert_eq!(
                 result.metadata().grid_version(),
                 expected.metadata().grid_version(),
@@ -60,7 +60,7 @@ mod tests {
             .metadata()
             .start_position(Vector2Df::new(start_x, start_y));
         let expected = track_builder.build();
-        let result = read(write(&expected).unwrap()).unwrap();
+        let result = read(&write(&expected).unwrap()).unwrap();
         assert_eq!(
             result.metadata().start_position(),
             expected.metadata().start_position(),
@@ -69,7 +69,7 @@ mod tests {
 
         let track_builder = TrackBuilder::new(GridVersion::V6_2);
         let expected = track_builder.build();
-        let result = read(write(&expected).unwrap()).unwrap();
+        let result = read(&write(&expected).unwrap()).unwrap();
         assert_eq!(
             result.metadata().start_position(),
             Some(Vector2Df::zero()),
