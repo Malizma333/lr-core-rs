@@ -362,24 +362,24 @@ mod tests {
     #[test]
     fn cell_positions_of_line_60() {
         let grid = Grid::new(super::GridVersion::V6_0);
-        let data =
-            fs::read_to_string("tests/grid_60_tests.json").expect("Failed to read JSON file");
+        let data = fs::read_to_string("../fixtures/grids/grid_60_tests.json")
+            .expect("Failed to read JSON file");
         run_grid_tests(grid, data);
     }
 
     #[test]
     fn cell_positions_of_line_61() {
         let grid = Grid::new(super::GridVersion::V6_1);
-        let data =
-            fs::read_to_string("tests/grid_61_tests.json").expect("Failed to read JSON file");
+        let data = fs::read_to_string("../fixtures/grids/grid_61_tests.json")
+            .expect("Failed to read JSON file");
         run_grid_tests(grid, data);
     }
 
     #[test]
     fn cell_positions_of_line_62() {
         let grid = Grid::new(super::GridVersion::V6_2);
-        let data =
-            fs::read_to_string("tests/grid_62_tests.json").expect("Failed to read JSON file");
+        let data = fs::read_to_string("../fixtures/grids/grid_62_tests.json")
+            .expect("Failed to read JSON file");
         run_grid_tests(grid, data);
     }
 }

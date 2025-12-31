@@ -42,7 +42,7 @@ mod tests {
         for (i, test) in test_cases.iter().enumerate() {
             println!("Engine test {}: {}", i, test.test);
 
-            let file_name = format!("tests/fixtures/{}.track.json", test.file);
+            let file_name = format!("../fixtures/features/{}.track.json", test.file);
             let file = fs::read(file_name).expect("Failed to read JSON file");
             let track = format_json::read(&file).expect("Failed to parse track file");
 

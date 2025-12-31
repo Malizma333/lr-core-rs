@@ -6,19 +6,17 @@
   "label"?: string,
   "version": "6.0" | "6.1" | "6.2", // 6.0 is invalid in web
   "startPosition"?: { "x": f64, "y": f64 }, // start position must be present in web
-  "lineArray"?: [ // Legacy line array format, not in current web version
-    [
-      // line type
-      // id
-      // x1, y1, x2, y2
-      // line extension bit flags
-      // flipped
-      // previous id, next id (from sol format)
-      // multiplier
-      [0, u32, f64, f64, f64, f64, 0 | 1 | 2 | 3, bool],
-      [1, u32, f64, f64, f64, f64, 0 | 1 | 2 | 3, bool, -1, -1, f64],
-      [2, -u32, f64, f64, f64, f64],
-    ],
+  "linesArray"?: [ // Legacy line array format, not in current web version
+    // line type
+    // id
+    // x1, y1, x2, y2
+    // line extension bit flags
+    // flipped
+    // previous id, next id (from sol format)
+    // multiplier
+    [0, u32, f64, f64, f64, f64, 0 | 1 | 2 | 3, bool],
+    [1, u32, f64, f64, f64, f64, 0 | 1 | 2 | 3, bool, -1, -1, f64],
+    [2, -u32, f64, f64, f64, f64],
     ...
   ],
 

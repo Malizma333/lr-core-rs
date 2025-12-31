@@ -10,7 +10,7 @@ A CLI for converting between Line Rider track formats, written in rust.
 ```bash
 # MacOS/Linux
 cargo build --release --target-dir target
-target/release/format_converter ./samples/HAM.trk json
-target/release/format_converter ./samples/Silk_Road.sol json
-target/release/format_converter ./samples/Omniverse2.track.json sol
+target/release/format_converter ../fixtures/samples/HAM.trk json
+target/release/format_converter ../fixtures/samples/Silk_Road.sol json
+target/release/format_converter ../fixtures/samples/Omniverse2.track.json sol
 ```
