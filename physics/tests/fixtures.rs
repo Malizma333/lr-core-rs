@@ -4,11 +4,12 @@ mod tests {
     use format_json;
     use geometry::Point;
     use physics::{
-        AccelerationLine as PhysicsAccelerationLine, EngineBuilder, EngineView,
+        AccelerationLine as PhysicsAccelerationLine, Engine, EngineBuilder, EngineView,
         EntitySkeletonInitialProperties, Hitbox, MountPhase, NormalLine as PhysicsNormalLine,
         RemountVersion, build_default_rider,
     };
     use serde::Deserialize;
+    use spatial_grid::GridVersion;
     use std::fs;
     use vector2d::Vector2Df;
 
@@ -33,39 +34,31 @@ mod tests {
         state: EngineTestCaseState,
     }
 
-    // TODO break these up
     #[test]
-    fn first_half_engine_fixtures() {
+    fn engine_fixtures() {
         let data =
             fs::read_to_string("tests/fixture_tests.json").expect("Failed to read JSON file");
-        let test_cases: Vec<EngineTestCase> =
+        let mut test_cases: Vec<EngineTestCase> =
             serde_json::from_str(&data).expect("Failed to parse JSON");
 
+        test_cases.sort_by_key(|test_case| test_case.file.clone());
+        let mut last_test_file = String::new();
+        let mut engine = EngineBuilder::new(GridVersion::V6_2).build();
+
         for (i, test) in test_cases.iter().enumerate() {
-            if i < 30 {
-                run_test(i, test);
+            println!("Engine test {}: {}", i, test.test);
+
+            if &last_test_file != &test.file {
+                engine = create_engine(&test.file, test.lra.is_some_and(|lra| lra));
+                last_test_file = test.file.clone();
             }
+
+            compare_states(engine.view_frame(test.frame), &test.state);
         }
     }
 
-    #[test]
-    fn second_half_engine_fixtures() {
-        let data =
-            fs::read_to_string("tests/fixture_tests.json").expect("Failed to read JSON file");
-        let test_cases: Vec<EngineTestCase> =
-            serde_json::from_str(&data).expect("Failed to parse JSON");
-
-        for (i, test) in test_cases.iter().enumerate() {
-            if i >= 30 {
-                run_test(i, test);
-            }
-        }
-    }
-
-    fn run_test(i: usize, test: &EngineTestCase) {
-        println!("Engine test {}: {}", i, test.test);
-
-        let file_name = format!("../fixtures/physics/{}.track.json", test.file);
+    fn create_engine(file: &String, lra: bool) -> Engine {
+        let file_name = format!("../fixtures/physics/{}.track.json", file);
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let track = format_json::read(&file).expect("Failed to parse track file");
 
@@ -117,7 +110,7 @@ mod tests {
         if let Some(rider_group) = track.rider_group() {
             for rider in rider_group.riders() {
                 let mut initial_properties = EntitySkeletonInitialProperties::new();
-                let target_skeleton_template_id = if test.lra.is_some_and(|f| f) {
+                let target_skeleton_template_id = if lra {
                     default_skeleton_template_id_lra
                 } else {
                     match rider.remount_version() {
@@ -143,7 +136,7 @@ mod tests {
             engine.set_skeleton_initial_properties(id, initial_properties);
         }
 
-        compare_states(engine.view_frame(test.frame), &test.state);
+        engine
     }
 
     fn compare_states(result: EngineView, expected: &EngineTestCaseState) {
@@ -213,15 +206,28 @@ mod tests {
                 expected_points.len(),
             );
 
-            for (j, expected_point_data) in expected_points.iter().enumerate() {
+            for (j, expected_point) in expected_points.iter().enumerate() {
+                assert_eq!(expected_point.len(), 64, "Expected 64-character hex string");
+
+                let pos_x =
+                    f64::from_bits(u64::from_str_radix(&expected_point[0..16], 16).unwrap());
+                let pos_y =
+                    f64::from_bits(u64::from_str_radix(&expected_point[16..32], 16).unwrap());
+                let vel_x =
+                    f64::from_bits(u64::from_str_radix(&expected_point[32..48], 16).unwrap());
+                let vel_y =
+                    f64::from_bits(u64::from_str_radix(&expected_point[48..64], 16).unwrap());
+
                 let (expected_position, expected_velocity) =
-                    convert_to_vectors(expected_point_data);
+                    (Vector2Df::new(pos_x, pos_y), Vector2Df::new(vel_x, vel_y));
+
                 assert!(
                     result_point_positions[j] == expected_position,
                     "rider {i} point {j} position mismatch: {:?} != {:?}",
                     result_point_positions[j],
                     expected_position,
                 );
+
                 assert!(
                     result_point_velocities[j] == expected_velocity,
                     "rider {i} point {j} velocity mismatch: {:?} != {:?}",
@@ -230,16 +236,5 @@ mod tests {
                 );
             }
         }
-    }
-
-    fn convert_to_vectors(f64_hex_string: &String) -> (Vector2Df, Vector2Df) {
-        assert_eq!(f64_hex_string.len(), 64, "Expected 64-character hex string");
-
-        let px = f64::from_bits(u64::from_str_radix(&f64_hex_string[0..16], 16).unwrap());
-        let py = f64::from_bits(u64::from_str_radix(&f64_hex_string[16..32], 16).unwrap());
-        let vx = f64::from_bits(u64::from_str_radix(&f64_hex_string[32..48], 16).unwrap());
-        let vy = f64::from_bits(u64::from_str_radix(&f64_hex_string[48..64], 16).unwrap());
-
-        (Vector2Df::new(px, py), Vector2Df::new(vx, vy))
     }
 }

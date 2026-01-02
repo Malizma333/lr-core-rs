@@ -76,7 +76,7 @@ mod test {
 
     #[test]
     fn lrl_features() {
-        let file_name = "../fixtures/format/lrl_features.track.json";
+        let file_name = "../fixtures/format_json/lrl_features.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
@@ -116,7 +116,7 @@ mod test {
 
     #[test]
     fn lro_features() {
-        let file_name = "../fixtures/format/lro_features.track.json";
+        let file_name = "../fixtures/format_json/lro_features.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
@@ -174,7 +174,7 @@ mod test {
 
     #[test]
     fn empty_track() {
-        let file_name = "../fixtures/format/empty_61.track.json";
+        let file_name = "../fixtures/format_json/empty_61.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_1);
@@ -190,7 +190,7 @@ mod test {
 
     #[test]
     fn remount_versions() {
-        let file_name = "../fixtures/format/remount_versions.track.json";
+        let file_name = "../fixtures/format_json/remount_versions.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
@@ -201,22 +201,22 @@ mod test {
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::None, 0)
+            .add_rider(RemountVersion::None, 1)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::ComV1, 0)
+            .add_rider(RemountVersion::ComV1, 2)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::None, 0)
+            .add_rider(RemountVersion::None, 3)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::ComV2, 0)
+            .add_rider(RemountVersion::ComV2, 4)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         let expected = expected_builder.build();
@@ -225,7 +225,7 @@ mod test {
 
     #[test]
     fn empty_layers() {
-        let file_name = "../fixtures/format/empty_layers.track.json";
+        let file_name = "../fixtures/format_json/empty_layers.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
@@ -246,7 +246,7 @@ mod test {
 
     #[test]
     fn line_flags() {
-        let file_name = "../fixtures/format/line_flags.track.json";
+        let file_name = "../fixtures/format_json/line_flags.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
