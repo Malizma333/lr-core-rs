@@ -33,96 +33,117 @@ mod tests {
         state: EngineTestCaseState,
     }
 
+    // TODO break these up
     #[test]
-    fn engine_fixtures() {
+    fn first_half_engine_fixtures() {
         let data =
             fs::read_to_string("tests/fixture_tests.json").expect("Failed to read JSON file");
         let test_cases: Vec<EngineTestCase> =
             serde_json::from_str(&data).expect("Failed to parse JSON");
 
         for (i, test) in test_cases.iter().enumerate() {
-            println!("Engine test {}: {}", i, test.test);
-
-            let file_name = format!("../fixtures/physics/{}.track.json", test.file);
-            let file = fs::read(file_name).expect("Failed to read JSON file");
-            let track = format_json::read(&file).expect("Failed to parse track file");
-
-            let grid_version = track.metadata().grid_version();
-            let mut engine = EngineBuilder::new(grid_version).build();
-            let mut ordered_lines: Vec<(u32, Box<dyn Hitbox>)> = Vec::new();
-
-            for line in track.line_group().acceleration_lines() {
-                let p0 = Point::new(line.x1(), line.y1());
-                let p1 = Point::new(line.x2(), line.y2());
-                let acceleration_line = PhysicsAccelerationLine::new(
-                    (p0, p1),
-                    line.flipped(),
-                    line.left_extension(),
-                    line.right_extension(),
-                    line.multiplier().unwrap_or(1.0),
-                );
-                ordered_lines.push((line.id(), Box::new(acceleration_line)));
+            if i < 30 {
+                run_test(i, test);
             }
+        }
+    }
 
-            for line in track.line_group().standard_lines() {
-                let p0 = Point::new(line.x1(), line.y1());
-                let p1 = Point::new(line.x2(), line.y2());
+    #[test]
+    fn second_half_engine_fixtures() {
+        let data =
+            fs::read_to_string("tests/fixture_tests.json").expect("Failed to read JSON file");
+        let test_cases: Vec<EngineTestCase> =
+            serde_json::from_str(&data).expect("Failed to parse JSON");
 
-                let normal_line = PhysicsNormalLine::new(
-                    (p0, p1),
-                    line.flipped(),
-                    line.left_extension(),
-                    line.right_extension(),
-                );
-                ordered_lines.push((line.id(), Box::new(normal_line)));
+        for (i, test) in test_cases.iter().enumerate() {
+            if i >= 30 {
+                run_test(i, test);
             }
+        }
+    }
 
-            ordered_lines.sort_by_key(|(key, _)| *key);
+    fn run_test(i: usize, test: &EngineTestCase) {
+        println!("Engine test {}: {}", i, test.test);
 
-            for line in ordered_lines {
-                engine.create_line(line.1);
-            }
+        let file_name = format!("../fixtures/physics/{}.track.json", test.file);
+        let file = fs::read(file_name).expect("Failed to read JSON file");
+        let track = format_json::read(&file).expect("Failed to parse track file");
 
-            let default_skeleton_template_id_none =
-                build_default_rider(&mut engine, RemountVersion::None);
-            let default_skeleton_template_id_comv1 =
-                build_default_rider(&mut engine, RemountVersion::ComV1);
-            let default_skeleton_template_id_comv2 =
-                build_default_rider(&mut engine, RemountVersion::ComV2);
-            let default_skeleton_template_id_lra =
-                build_default_rider(&mut engine, RemountVersion::LRA);
+        let grid_version = track.metadata().grid_version();
+        let mut engine = EngineBuilder::new(grid_version).build();
+        let mut ordered_lines: Vec<(u32, Box<dyn Hitbox>)> = Vec::new();
 
-            if let Some(rider_group) = track.rider_group() {
-                for rider in rider_group.riders() {
-                    let mut initial_properties = EntitySkeletonInitialProperties::new();
-                    let target_skeleton_template_id = if test.lra.is_some_and(|f| f) {
-                        default_skeleton_template_id_lra
-                    } else {
-                        match rider.remount_version() {
-                            FormatRemountVersion::None => default_skeleton_template_id_none,
-                            FormatRemountVersion::ComV1 => default_skeleton_template_id_comv1,
-                            FormatRemountVersion::ComV2 => default_skeleton_template_id_comv2,
-                            FormatRemountVersion::LRA => default_skeleton_template_id_lra,
-                        }
-                    };
-                    let id = engine.add_skeleton(target_skeleton_template_id);
-                    if let Some(initial_position) = rider.start_position() {
-                        initial_properties.set_start_position(initial_position);
-                    }
-                    if let Some(initial_velocity) = rider.start_velocity() {
-                        initial_properties.set_start_velocity(initial_velocity);
-                    }
-                    engine.set_skeleton_initial_properties(id, initial_properties);
-                }
-            } else {
+        for line in track.line_group().acceleration_lines() {
+            let p0 = Point::new(line.x1(), line.y1());
+            let p1 = Point::new(line.x2(), line.y2());
+            let acceleration_line = PhysicsAccelerationLine::new(
+                (p0, p1),
+                line.flipped(),
+                line.left_extension(),
+                line.right_extension(),
+                line.multiplier().unwrap_or(1.0),
+            );
+            ordered_lines.push((line.id(), Box::new(acceleration_line)));
+        }
+
+        for line in track.line_group().standard_lines() {
+            let p0 = Point::new(line.x1(), line.y1());
+            let p1 = Point::new(line.x2(), line.y2());
+
+            let normal_line = PhysicsNormalLine::new(
+                (p0, p1),
+                line.flipped(),
+                line.left_extension(),
+                line.right_extension(),
+            );
+            ordered_lines.push((line.id(), Box::new(normal_line)));
+        }
+
+        ordered_lines.sort_by_key(|(key, _)| *key);
+
+        for line in ordered_lines {
+            engine.create_line(line.1);
+        }
+
+        let default_skeleton_template_id_none =
+            build_default_rider(&mut engine, RemountVersion::None);
+        let default_skeleton_template_id_comv1 =
+            build_default_rider(&mut engine, RemountVersion::ComV1);
+        let default_skeleton_template_id_comv2 =
+            build_default_rider(&mut engine, RemountVersion::ComV2);
+        let default_skeleton_template_id_lra =
+            build_default_rider(&mut engine, RemountVersion::LRA);
+
+        if let Some(rider_group) = track.rider_group() {
+            for rider in rider_group.riders() {
                 let mut initial_properties = EntitySkeletonInitialProperties::new();
-                let id = engine.add_skeleton(default_skeleton_template_id_none);
-                initial_properties.set_start_velocity(Vector2Df::new(0.4, 0.0));
+                let target_skeleton_template_id = if test.lra.is_some_and(|f| f) {
+                    default_skeleton_template_id_lra
+                } else {
+                    match rider.remount_version() {
+                        FormatRemountVersion::None => default_skeleton_template_id_none,
+                        FormatRemountVersion::ComV1 => default_skeleton_template_id_comv1,
+                        FormatRemountVersion::ComV2 => default_skeleton_template_id_comv2,
+                        FormatRemountVersion::LRA => default_skeleton_template_id_lra,
+                    }
+                };
+                let id = engine.add_skeleton(target_skeleton_template_id);
+                if let Some(initial_position) = rider.start_position() {
+                    initial_properties.set_start_position(initial_position);
+                }
+                if let Some(initial_velocity) = rider.start_velocity() {
+                    initial_properties.set_start_velocity(initial_velocity);
+                }
                 engine.set_skeleton_initial_properties(id, initial_properties);
             }
-
-            compare_states(engine.view_frame(test.frame), &test.state);
+        } else {
+            let mut initial_properties = EntitySkeletonInitialProperties::new();
+            let id = engine.add_skeleton(default_skeleton_template_id_none);
+            initial_properties.set_start_velocity(Vector2Df::new(0.4, 0.0));
+            engine.set_skeleton_initial_properties(id, initial_properties);
         }
+
+        compare_states(engine.view_frame(test.frame), &test.state);
     }
 
     fn compare_states(result: EngineView, expected: &EngineTestCaseState) {

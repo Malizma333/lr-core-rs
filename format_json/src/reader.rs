@@ -19,12 +19,10 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
         "6.0" => GridVersion::V6_0,
         "6.1" => GridVersion::V6_1,
         "6.2" => GridVersion::V6_2,
-        other => {
-            return Err(JsonReadError::InvalidData {
-                name: "grid version",
-                value: other.to_string(),
-            });
-        }
+        other => Err(JsonReadError::InvalidData {
+            name: "grid version",
+            value: other.to_string(),
+        })?,
     };
 
     let track_builder = &mut TrackBuilder::new(grid_version);
@@ -35,12 +33,10 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
                 0 => LineType::Standard,
                 1 => LineType::Acceleration,
                 2 => LineType::Scenery,
-                other => {
-                    return Err(JsonReadError::InvalidData {
-                        name: "line type",
-                        value: other.to_string(),
-                    });
-                }
+                other => Err(JsonReadError::InvalidData {
+                    name: "line type",
+                    value: other.to_string(),
+                })?,
             };
 
             let endpoints = (
@@ -63,7 +59,10 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
                 };
                 (left_ext_bool, right_ext_bool)
             } else {
-                (false, false)
+                Err(JsonReadError::InvalidData {
+                    name: "line extension",
+                    value: "None".to_string(),
+                })?
             };
 
             let flipped = match line.flipped {
@@ -221,11 +220,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
     if let Some(riders) = json_track.riders {
         for rider in riders.iter() {
             let start_position = Vector2Df::new(rider.start_pos.x, rider.start_pos.y);
-            let start_velocity = if zero_start {
-                Vector2Df::zero()
-            } else {
-                Vector2Df::new(rider.start_vel.x, rider.start_vel.y)
-            };
+            let start_velocity = Vector2Df::new(rider.start_vel.x, rider.start_vel.y);
 
             let rider_builder = track_builder
                 .rider_group()
@@ -379,12 +374,10 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
                         .line_color_group()
                         .add_trigger(line_color_event, frame_bounds);
                 }
-                other => {
-                    return Err(JsonReadError::InvalidData {
-                        name: "trigger type",
-                        value: other.to_string(),
-                    });
-                }
+                other => Err(JsonReadError::InvalidData {
+                    name: "trigger type",
+                    value: other.to_string(),
+                })?,
             }
         }
     }

@@ -47,6 +47,13 @@ mod test {
             .visible(true)
             .editable(true);
         expected_builder
+            .layer_group()
+            .add_layer(2, 2)
+            .name(String::new())
+            .visible(true)
+            .editable(true)
+            .folder_id(1);
+        expected_builder
             .line_group()
             .add_standard_line(1, (Vector2Df::zero(), Vector2Df::up()))
             .flipped(false)
@@ -230,7 +237,7 @@ mod test {
         expected_builder
             .layer_group()
             .add_layer(1, 1)
-            .name("".to_string())
+            .name("#invalid color".to_string())
             .visible(true)
             .editable(true);
         let expected = expected_builder.build();
@@ -238,8 +245,8 @@ mod test {
     }
 
     #[test]
-    fn extended_lines() {
-        let file_name = "../fixtures/format/extended_lines.track.json";
+    fn line_flags() {
+        let file_name = "../fixtures/format/line_flags.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
@@ -252,7 +259,7 @@ mod test {
         expected_builder
             .line_group()
             .add_standard_line(7, (Vector2Df::zero(), Vector2Df::up()))
-            .flipped(false)
+            .flipped(true)
             .left_extension(true)
             .right_extension(true);
         expected_builder
@@ -264,7 +271,7 @@ mod test {
         expected_builder
             .line_group()
             .add_standard_line(2, (Vector2Df::zero(), Vector2Df::up()))
-            .flipped(false)
+            .flipped(true)
             .left_extension(true)
             .right_extension(true);
         expected_builder
