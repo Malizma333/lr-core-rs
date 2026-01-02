@@ -16,7 +16,7 @@ mod test {
 
     #[test]
     fn web_features() {
-        let file_name = "../fixtures/format/web_features.track.json";
+        let file_name = "../fixtures/format_json/web_features.track.json";
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let result = format_json::read(&file).expect("Failed to parse track file");
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
