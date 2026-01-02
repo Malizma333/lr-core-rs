@@ -10,6 +10,22 @@ impl RGBColor {
         Self { red, green, blue }
     }
 
+    pub fn black() -> Self {
+        Self {
+            red: 0,
+            green: 0,
+            blue: 0,
+        }
+    }
+
+    pub fn white() -> Self {
+        Self {
+            red: 255,
+            green: 255,
+            blue: 255,
+        }
+    }
+
     pub fn red(&self) -> u8 {
         self.red
     }

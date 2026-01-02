@@ -153,11 +153,32 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
             let layer_is_folder = layer.size.is_some();
 
             if !layer_is_folder {
+                let (layer_color, layer_name) =
+                    if layer.name.len() < 7 || !layer.name.starts_with('#') {
+                        (None, layer.name.clone())
+                    } else {
+                        let hex = &layer.name[..7];
+                        let r = u8::from_str_radix(&hex[1..3], 16).ok();
+                        let g = u8::from_str_radix(&hex[3..5], 16).ok();
+                        let b = u8::from_str_radix(&hex[5..7], 16).ok();
+
+                        match (r, g, b) {
+                            (Some(r), Some(g), Some(b)) => {
+                                (Some(RGBColor::new(r, g, b)), layer.name[7..].to_string())
+                            }
+                            _ => (None, layer.name.clone()),
+                        }
+                    };
+
                 let layer_builder = track_builder
                     .layer_group()
                     .add_layer(layer.id, index)
-                    .name(layer.name.to_string())
+                    .name(layer_name)
                     .visible(layer.visible);
+
+                if let Some(color) = layer_color {
+                    layer_builder.color(color);
+                }
 
                 if let Some(editable) = layer.editable {
                     layer_builder.editable(editable);
@@ -214,8 +235,6 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
 
             if let Some(angle) = rider.angle {
                 rider_builder.start_angle(angle);
-            } else {
-                rider_builder.start_angle(0.0);
             }
 
             if let Some(remount) = &rider.remountable {

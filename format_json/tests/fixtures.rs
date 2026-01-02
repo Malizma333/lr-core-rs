@@ -37,6 +37,7 @@ mod test {
             .layer_group()
             .add_layer(0, 0)
             .name("Base Layer".to_string())
+            .color(RGBColor::new(255, 0, 0))
             .visible(true)
             .editable(true);
         expected_builder
@@ -124,7 +125,7 @@ mod test {
             .rider_group()
             .add_rider(RemountVersion::LRA)
             .start_position(Vector2Df::zero())
-            .start_velocity(Vector2Df::new(0.4, 0.0))
+            .start_velocity(Vector2Df::new(0.0, 0.0))
             .start_angle(0.0);
         expected_builder
             .line_group()
@@ -160,6 +161,136 @@ mod test {
             LineColorEvent::new(RGBColor::new(0, 0, 0)),
             FrameBoundsTrigger::new(1, 41),
         );
+        let expected = expected_builder.build();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn empty_track() {
+        let file_name = "../fixtures/format/empty_61.track.json";
+        let file = fs::read(file_name).expect("Failed to read JSON file");
+        let result = format_json::read(&file).expect("Failed to parse track file");
+        let mut expected_builder = TrackBuilder::new(GridVersion::V6_1);
+        expected_builder
+            .rider_group()
+            .add_rider(RemountVersion::LRA)
+            .start_position(Vector2Df::new(0.0, 0.0))
+            .start_velocity(Vector2Df::new(0.4, 0.0))
+            .start_angle(0.0);
+        let expected = expected_builder.build();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn remount_versions() {
+        let file_name = "../fixtures/format/remount_versions.track.json";
+        let file = fs::read(file_name).expect("Failed to read JSON file");
+        let result = format_json::read(&file).expect("Failed to parse track file");
+        let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
+        expected_builder
+            .rider_group()
+            .add_rider(RemountVersion::None)
+            .start_position(Vector2Df::new(0.0, 0.0))
+            .start_velocity(Vector2Df::new(0.0, 0.0));
+        expected_builder
+            .rider_group()
+            .add_rider(RemountVersion::None)
+            .start_position(Vector2Df::new(0.0, 0.0))
+            .start_velocity(Vector2Df::new(0.0, 0.0));
+        expected_builder
+            .rider_group()
+            .add_rider(RemountVersion::ComV1)
+            .start_position(Vector2Df::new(0.0, 0.0))
+            .start_velocity(Vector2Df::new(0.0, 0.0));
+        expected_builder
+            .rider_group()
+            .add_rider(RemountVersion::None)
+            .start_position(Vector2Df::new(0.0, 0.0))
+            .start_velocity(Vector2Df::new(0.0, 0.0));
+        expected_builder
+            .rider_group()
+            .add_rider(RemountVersion::ComV2)
+            .start_position(Vector2Df::new(0.0, 0.0))
+            .start_velocity(Vector2Df::new(0.0, 0.0));
+        let expected = expected_builder.build();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn empty_layers() {
+        let file_name = "../fixtures/format/empty_layers.track.json";
+        let file = fs::read(file_name).expect("Failed to read JSON file");
+        let result = format_json::read(&file).expect("Failed to parse track file");
+        let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
+        expected_builder
+            .layer_group()
+            .add_layer(0, 0)
+            .name("Base Layer".to_string())
+            .visible(true);
+        expected_builder
+            .layer_group()
+            .add_layer(1, 1)
+            .name("".to_string())
+            .visible(true)
+            .editable(true);
+        let expected = expected_builder.build();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn extended_lines() {
+        let file_name = "../fixtures/format/extended_lines.track.json";
+        let file = fs::read(file_name).expect("Failed to read JSON file");
+        let result = format_json::read(&file).expect("Failed to parse track file");
+        let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
+        expected_builder
+            .line_group()
+            .add_standard_line(0, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(false)
+            .right_extension(false);
+        expected_builder
+            .line_group()
+            .add_standard_line(7, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(true)
+            .right_extension(true);
+        expected_builder
+            .line_group()
+            .add_standard_line(1, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(false)
+            .right_extension(false);
+        expected_builder
+            .line_group()
+            .add_standard_line(2, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(true)
+            .right_extension(true);
+        expected_builder
+            .line_group()
+            .add_standard_line(3, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(false)
+            .right_extension(false);
+        expected_builder
+            .line_group()
+            .add_standard_line(4, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(true)
+            .right_extension(false);
+        expected_builder
+            .line_group()
+            .add_standard_line(5, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(false)
+            .right_extension(true);
+        expected_builder
+            .line_group()
+            .add_standard_line(6, (Vector2Df::zero(), Vector2Df::up()))
+            .flipped(false)
+            .left_extension(true)
+            .right_extension(true);
         let expected = expected_builder.build();
         assert_eq!(result, expected);
     }
