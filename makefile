@@ -37,5 +37,5 @@ test: ## Run unit tests (set PACKAGE for specific crate)
 	fi
 
 .PHONY: benchmark-physics
-benchmark-physics:
+benchmark-physics: ## Benchmark the physics engine by running all tests with delay breakdown
 	cargo test -p physics tests::engine_fixtures --features benchmark -- --no-capture;\
