@@ -60,6 +60,7 @@ dependencies = [
  "amf0",
  "byteorder",
  "format_core",
+ "pretty_assertions",
  "spatial_grid",
  "thiserror",
  "vector2d",

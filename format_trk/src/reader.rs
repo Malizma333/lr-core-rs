@@ -225,7 +225,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
 
     track_builder
         .rider_group()
-        .add_rider(remount_version)
+        .add_rider(remount_version, 0)
         .start_angle(0.0)
         .start_position(start_position)
         .start_velocity(start_velocity);

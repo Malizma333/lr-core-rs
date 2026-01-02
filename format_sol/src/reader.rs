@@ -182,7 +182,7 @@ pub fn read(data: &Vec<u8>, track_index: Option<u32>) -> Result<Track, SolReadEr
 
     track_builder
         .rider_group()
-        .add_rider(RemountVersion::None)
+        .add_rider(RemountVersion::None, 0)
         .start_angle(0.0)
         .start_position(start_position)
         .start_velocity(start_velocity);

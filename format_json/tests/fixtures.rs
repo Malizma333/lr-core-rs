@@ -29,7 +29,7 @@ mod test {
             .duration(1200);
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::None)
+            .add_rider(RemountVersion::None, 0)
             .start_position(Vector2Df::zero())
             .start_velocity(Vector2Df::new(0.4, 0.0))
             .start_angle(0.0);
@@ -86,7 +86,7 @@ mod test {
             .start_zoom(from_lra_zoom(4.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::LRA)
+            .add_rider(RemountVersion::LRA, 0)
             .start_position(Vector2Df::zero())
             .start_velocity(Vector2Df::new(0.4, 0.0))
             .start_angle(0.0);
@@ -130,7 +130,7 @@ mod test {
             .gravity_well_size(10.0);
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::LRA)
+            .add_rider(RemountVersion::LRA, 0)
             .start_position(Vector2Df::zero())
             .start_velocity(Vector2Df::new(0.0, 0.0))
             .start_angle(0.0);
@@ -180,7 +180,7 @@ mod test {
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_1);
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::LRA)
+            .add_rider(RemountVersion::LRA, 0)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.4, 0.0))
             .start_angle(0.0);
@@ -196,27 +196,27 @@ mod test {
         let mut expected_builder = TrackBuilder::new(GridVersion::V6_2);
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::None)
+            .add_rider(RemountVersion::None, 0)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::None)
+            .add_rider(RemountVersion::None, 0)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::ComV1)
+            .add_rider(RemountVersion::ComV1, 0)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::None)
+            .add_rider(RemountVersion::None, 0)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         expected_builder
             .rider_group()
-            .add_rider(RemountVersion::ComV2)
+            .add_rider(RemountVersion::ComV2, 0)
             .start_position(Vector2Df::new(0.0, 0.0))
             .start_velocity(Vector2Df::new(0.0, 0.0));
         let expected = expected_builder.build();

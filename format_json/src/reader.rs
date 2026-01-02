@@ -218,13 +218,13 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
         .is_some_and(|zero_start: bool| zero_start);
 
     if let Some(riders) = json_track.riders {
-        for rider in riders.iter() {
+        for (index, rider) in riders.iter().enumerate() {
             let start_position = Vector2Df::new(rider.start_pos.x, rider.start_pos.y);
             let start_velocity = Vector2Df::new(rider.start_vel.x, rider.start_vel.y);
 
             let rider_builder = track_builder
                 .rider_group()
-                .add_rider(RemountVersion::None)
+                .add_rider(RemountVersion::None, index as u32)
                 .start_position(start_position + rider_global_offset)
                 .start_velocity(start_velocity);
 
@@ -252,7 +252,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, JsonReadError> {
         };
         track_builder
             .rider_group()
-            .add_rider(RemountVersion::LRA)
+            .add_rider(RemountVersion::LRA, 0)
             .start_angle(0.0)
             .start_position(rider_global_offset)
             .start_velocity(start_velocity);

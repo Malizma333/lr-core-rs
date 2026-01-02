@@ -103,6 +103,8 @@ impl LineGroupBuilder {
             scenery_lines.push(scenery_line);
         }
 
+        standard_lines.sort_by_key(|line| line.id());
+        acceleration_lines.sort_by_key(|line| line.id());
         LineGroup {
             standard_lines,
             acceleration_lines,
