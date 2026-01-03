@@ -50,10 +50,9 @@ coverage: ## Run coverage on tests, with report outputted to target/coverage (se
 	fi
 
 .PHONY: benchmark
-benchmark: ## Run benchmarks, with report outputted to target/benchmarks (set CRATE for a specific crate)
+benchmark: ## Run benchmarks, with report outputted to target/criterion (set CRATE for a specific crate)
 	@if [ -z $(CRATE) ]; then\
 		cargo bench --workspace;\
 	else\
 		cargo bench -p $(CRATE);\
 	fi
-	mv target/criterion target/benchmarks
