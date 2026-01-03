@@ -73,6 +73,7 @@ dependencies = [
  "byteorder",
  "color",
  "format_core",
+ "pretty_assertions",
  "spatial_grid",
  "thiserror",
  "vector2d",
