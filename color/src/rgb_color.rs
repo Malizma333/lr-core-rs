@@ -42,3 +42,20 @@ impl RGBColor {
         format!("#{:02x}{:02x}{:02x}", self.red, self.green, self.blue)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::RGBColor;
+
+    #[test]
+    fn css_string() {
+        let color = RGBColor::black();
+        assert_eq!(color.to_css_string(), "#000000");
+
+        let color = RGBColor::white();
+        assert_eq!(color.to_css_string(), "#ffffff");
+
+        let color = RGBColor::new(64, 128, 32);
+        assert_eq!(color.to_css_string(), "#408020");
+    }
+}
