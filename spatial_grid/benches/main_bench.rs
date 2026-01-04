@@ -8,36 +8,21 @@ use spatial_grid::{Grid, GridVersion};
 use vector2d::Vector2Df;
 
 #[inline]
-fn perform_test(mut group: BenchmarkGroup<'_, WallTime>, lines: Vec<Line>) {
-    let mut index = 0;
-
-    for version in [GridVersion::V6_0, GridVersion::V6_1, GridVersion::V6_2] {
-        group.bench_function(BenchmarkId::from_parameter(version.to_string()), |b| {
-            b.iter(|| {
-                index += 1;
-                let mut grid = Grid::new(version);
-                grid.add_line(black_box(&lines[index % lines.len()]));
-                black_box(grid)
-            });
-        });
-    }
-
-    group.finish();
-}
-
-#[inline]
-fn get_lines(step_x1: bool, step_y1: bool, step_x2: bool, step_y2: bool) -> Vec<Line> {
+fn get_lines(flags: u8) -> Vec<Line> {
     let range = (-140..140).step_by(7);
     let mut lines = Vec::new();
     for x1 in range.clone() {
         for y1 in range.clone() {
             for x2 in range.clone() {
                 for y2 in range.clone() {
-                    let x1 = if step_x1 { f64::from(x1) } else { 0.0 };
-                    let y1 = if step_y1 { f64::from(y1) } else { 0.0 };
-                    let x2 = if step_x2 { f64::from(x2) } else { 0.0 };
-                    let y2 = if step_y2 { f64::from(y2) } else { 0.0 };
-                    lines.push(Line::new(Vector2Df::new(x1, y1), Vector2Df::new(x2, y2)));
+                    let x1 = if flags & 0b1000 != 0 { x1 } else { 0 };
+                    let y1 = if flags & 0b0100 != 0 { y1 } else { 0 };
+                    let x2 = if flags & 0b0010 != 0 { x2 } else { 0 };
+                    let y2 = if flags & 0b0001 != 0 { y2 } else { 0 };
+                    lines.push(Line::new(
+                        Vector2Df::new(f64::from(x1), f64::from(y1)),
+                        Vector2Df::new(f64::from(x2), f64::from(y2)),
+                    ));
                 }
             }
         }
@@ -45,42 +30,63 @@ fn get_lines(step_x1: bool, step_y1: bool, step_x2: bool, step_y2: bool) -> Vec<
     lines
 }
 
-fn add_line_at_origin(c: &mut Criterion) {
-    let group = c.benchmark_group("grid_add_line_at_origin");
-    let lines = get_lines(false, false, true, true);
-    perform_test(group, lines);
+#[derive(Clone, Copy)]
+struct LineCase {
+    name: &'static str,
+    step_flags: u8,
 }
 
-fn add_line_at_origin_flipped(c: &mut Criterion) {
-    let group = c.benchmark_group("grid_add_line_at_origin_flipped");
-    let lines = get_lines(true, true, false, false);
-    perform_test(group, lines);
+const LINE_CASES: &[LineCase] = &[
+    LineCase {
+        name: "origin",
+        step_flags: 0b0011,
+    },
+    LineCase {
+        name: "origin_flipped",
+        step_flags: 0b1100,
+    },
+    LineCase {
+        name: "horizontal",
+        step_flags: 0b1010,
+    },
+    LineCase {
+        name: "vertical",
+        step_flags: 0b0101,
+    },
+    LineCase {
+        name: "everywhere",
+        step_flags: 0b1111,
+    },
+    LineCase {
+        name: "duplicate",
+        step_flags: 0b0000,
+    },
+];
+
+fn bench_add_lines(group: &mut BenchmarkGroup<'_, WallTime>, lines: &[Line]) {
+    for version in [GridVersion::V6_0, GridVersion::V6_1, GridVersion::V6_2] {
+        let id = BenchmarkId::from_parameter(version.to_string());
+
+        group.bench_function(id, |b| {
+            let mut index = 0;
+            b.iter(|| {
+                let mut grid = Grid::new(version);
+                grid.add_line(black_box(&lines[index % lines.len()]));
+                index += 1;
+                black_box(grid)
+            })
+        });
+    }
 }
 
-fn add_line_horizontal(c: &mut Criterion) {
-    let group = c.benchmark_group("grid_add_line_horizontal");
-    let lines = get_lines(true, false, true, false);
-    perform_test(group, lines);
+fn bench_grid_add_line(c: &mut Criterion) {
+    for case in LINE_CASES {
+        let lines = get_lines(case.step_flags);
+        let mut group = c.benchmark_group(format!("grid/add_line/{}", case.name));
+        bench_add_lines(&mut group, &lines);
+        group.finish();
+    }
 }
 
-fn add_line_vertical(c: &mut Criterion) {
-    let group = c.benchmark_group("grid_add_line_vertical");
-    let lines = get_lines(false, true, false, true);
-    perform_test(group, lines);
-}
-
-fn add_line_everywhere(c: &mut Criterion) {
-    let group = c.benchmark_group("grid_add_line_everywhere");
-    let lines = get_lines(true, true, true, true);
-    perform_test(group, lines);
-}
-
-criterion_group!(
-    benches,
-    add_line_at_origin,
-    add_line_at_origin_flipped,
-    add_line_horizontal,
-    add_line_vertical,
-    add_line_everywhere
-);
+criterion_group!(benches, bench_grid_add_line);
 criterion_main!(benches);
