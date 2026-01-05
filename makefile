@@ -17,14 +17,6 @@ init-lib: ## Create a new library crate
 		echo "Usage: make init-lib NAME=[name]"; \
 	fi
 
-.PHONY: init-app
-init-app: ## Create a new application crate
-	@if [ -n "$(NAME)" ]; then \
-		cargo init --vcs none $(NAME); \
-	else \
-		echo "Usage: make init-app NAME=[name]"; \
-	fi
-
 .PHONY: format
 format: ## Format files with rustfmt
 	cargo fmt --all
@@ -56,3 +48,7 @@ benchmark: ## Run benchmarks, with report outputted to target/criterion (set CRA
 	else\
 		cargo bench -p $(CRATE);\
 	fi
+
+.PHONY: run
+run: ## Run the lr_studio application
+	cargo run

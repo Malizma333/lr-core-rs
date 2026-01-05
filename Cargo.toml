@@ -11,5 +11,6 @@ members = [
   "color",
   "lcg_random",
   "amf0",
+  "lr_studio",
 ]
 resolver = "3"
