@@ -1,42 +1,57 @@
 use criterion::{
-    BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime,
+    BenchmarkGroup, BenchmarkId, Criterion, criterion_group, criterion_main, measurement::WallTime,
 };
 use physics::Engine;
 use std::{fs, hint::black_box};
 
-// TODO benchmarks
-// Free falling long length
-// Heavy red multiline
-// Heavy multirider
-// Large single skeleton
-// Long line
-
-struct PhysicsBenchmark {
+struct EngineBenchmark {
     file: &'static str,
     target_frame: u32,
-    name: &'static str,
 }
 
-fn bench_simulate(group: &mut BenchmarkGroup<'_, WallTime>, engine: &Engine) {
-    // TODO view target frame in benchmark
-    todo!()
+const BENCHMARKS: &[EngineBenchmark] = &[
+    EngineBenchmark {
+        file: "free_fall",
+        target_frame: 2400,
+    },
+    EngineBenchmark {
+        file: "heavy_red_multiline",
+        target_frame: 10,
+    },
+    EngineBenchmark {
+        file: "free_fall_multirider",
+        target_frame: 400,
+    },
+    EngineBenchmark {
+        file: "multirider_with_track",
+        target_frame: 400,
+    },
+];
+
+fn bench_view_frame(
+    group: &mut BenchmarkGroup<'_, WallTime>,
+    engine: &mut Engine,
+    target_frame: u32,
+) {
+    let id = BenchmarkId::from_parameter("view_frame");
+    group.bench_function(id, |b| {
+        b.iter(|| {
+            black_box(engine.view_frame(black_box(target_frame)));
+        });
+    });
 }
 
 fn bench_engine_simulation(c: &mut Criterion) {
-    let benchmarks = Vec::<PhysicsBenchmark>::new();
-
-    // TODO read from fixtures file
-
-    for benchmark in benchmarks {
+    for benchmark in BENCHMARKS {
         let file_name = format!(
             "../fixtures/physics/benchmarks/{}.track.json",
             benchmark.file
         );
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let track = format_json::read(&file).expect("Failed to parse track file");
-        let engine = Engine::from_track(track, false);
-        let mut group = c.benchmark_group(format!("physics/simulate/{}", benchmark.name));
-        bench_simulate(&mut group, &engine);
+        let mut engine = Engine::from_track(track, false);
+        let mut group = c.benchmark_group(format!("physics/simulate/{}", benchmark.file));
+        bench_view_frame(&mut group, &mut engine, benchmark.target_frame);
         group.finish();
     }
 }

@@ -30,8 +30,7 @@ mod tests {
 
     #[test]
     fn engine_fixtures() {
-        let data =
-            fs::read_to_string("tests/fixture_tests.json").expect("Failed to read JSON file");
+        let data = fs::read_to_string("tests/fixture_data.json").expect("Failed to read JSON file");
         let mut test_cases: Vec<EngineTestCase> =
             serde_json::from_str(&data).expect("Failed to parse JSON");
 

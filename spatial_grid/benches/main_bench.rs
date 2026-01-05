@@ -8,6 +8,38 @@ use geometry::Line;
 use spatial_grid::Grid;
 use vector2d::Vector2Df;
 
+struct GridBenchmark {
+    name: &'static str,
+    line_flags: u8,
+}
+
+const BENCHMARKS: &[GridBenchmark] = &[
+    GridBenchmark {
+        name: "first_point_at_origin",
+        line_flags: 0b0011,
+    },
+    GridBenchmark {
+        name: "second_point_at_origin",
+        line_flags: 0b1100,
+    },
+    GridBenchmark {
+        name: "both_points_at_origin",
+        line_flags: 0b0000,
+    },
+    GridBenchmark {
+        name: "horizontal_with_origin",
+        line_flags: 0b1010,
+    },
+    GridBenchmark {
+        name: "vertical_with_origin",
+        line_flags: 0b0101,
+    },
+    GridBenchmark {
+        name: "everywhere",
+        line_flags: 0b1111,
+    },
+];
+
 fn get_lines(flags: u8) -> Vec<Line> {
     let range = (-140..140).step_by(7);
     let mut lines = Vec::new();
@@ -30,39 +62,6 @@ fn get_lines(flags: u8) -> Vec<Line> {
     lines
 }
 
-#[derive(Clone, Copy)]
-struct LineCase {
-    name: &'static str,
-    step_flags: u8,
-}
-
-const LINE_CASES: &[LineCase] = &[
-    LineCase {
-        name: "origin",
-        step_flags: 0b0011,
-    },
-    LineCase {
-        name: "origin_flipped",
-        step_flags: 0b1100,
-    },
-    LineCase {
-        name: "horizontal",
-        step_flags: 0b1010,
-    },
-    LineCase {
-        name: "vertical",
-        step_flags: 0b0101,
-    },
-    LineCase {
-        name: "everywhere",
-        step_flags: 0b1111,
-    },
-    LineCase {
-        name: "duplicate",
-        step_flags: 0b0000,
-    },
-];
-
 fn bench_add_lines(group: &mut BenchmarkGroup<'_, WallTime>, lines: &[Line]) {
     for version in [GridVersion::V6_0, GridVersion::V6_1, GridVersion::V6_2] {
         let id = BenchmarkId::from_parameter(version.to_string());
@@ -80,9 +79,9 @@ fn bench_add_lines(group: &mut BenchmarkGroup<'_, WallTime>, lines: &[Line]) {
 }
 
 fn bench_grid_add_line(c: &mut Criterion) {
-    for case in LINE_CASES {
-        let lines = get_lines(case.step_flags);
-        let mut group = c.benchmark_group(format!("grid/add_line/{}", case.name));
+    for benchmark in BENCHMARKS {
+        let lines = get_lines(benchmark.line_flags);
+        let mut group = c.benchmark_group(format!("grid/add_line/{}", benchmark.name));
         bench_add_lines(&mut group, &lines);
         group.finish();
     }
