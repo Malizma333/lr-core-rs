@@ -11,19 +11,6 @@ pub struct EntityPoint {
 }
 
 impl EntityPoint {
-    // Used for testing hitbox-point collisions
-    #[cfg(test)]
-    pub(crate) fn new(contact_friction: f64, air_friction: f64, contact: bool) -> Self {
-        Self {
-            initial_position: Vector2Df::zero(),
-            contact_friction,
-            air_friction,
-            contact,
-        }
-    }
-}
-
-impl EntityPoint {
     pub(crate) fn initial_position(&self) -> Point {
         self.initial_position
     }

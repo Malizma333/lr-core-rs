@@ -1,5 +1,8 @@
-use criterion::{Criterion, criterion_group, criterion_main};
-use std::hint::black_box;
+use criterion::{
+    BenchmarkGroup, Criterion, criterion_group, criterion_main, measurement::WallTime,
+};
+use physics::Engine;
+use std::{fs, hint::black_box};
 
 // TODO benchmarks
 // Free falling long length
@@ -8,11 +11,32 @@ use std::hint::black_box;
 // Large single skeleton
 // Long line
 
+struct PhysicsBenchmark {
+    file: &'static str,
+    target_frame: u32,
+    name: &'static str,
+}
+
+fn bench_simulate(group: &mut BenchmarkGroup<'_, WallTime>, engine: &Engine) {
+    // TODO view target frame in benchmark
+    todo!()
+}
+
 fn bench_engine_simulation(c: &mut Criterion) {
-    for case in LINE_CASES {
-        let lines = get_lines(case.step_flags);
-        let mut group = c.benchmark_group(format!("grid/add_line/{}", case.name));
-        bench_add_lines(&mut group, &lines);
+    let benchmarks = Vec::<PhysicsBenchmark>::new();
+
+    // TODO read from fixtures file
+
+    for benchmark in benchmarks {
+        let file_name = format!(
+            "../fixtures/physics/benchmarks/{}.track.json",
+            benchmark.file
+        );
+        let file = fs::read(file_name).expect("Failed to read JSON file");
+        let track = format_json::read(&file).expect("Failed to parse track file");
+        let engine = Engine::from_track(track, false);
+        let mut group = c.benchmark_group(format!("physics/simulate/{}", benchmark.name));
+        bench_simulate(&mut group, &engine);
         group.finish();
     }
 }

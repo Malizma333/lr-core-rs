@@ -237,11 +237,9 @@ version = "0.1.0"
 dependencies = [
  "color",
  "format_core",
- "lcg_random",
  "pretty_assertions",
  "serde",
  "serde_json",
- "spatial_grid",
  "thiserror",
  "vector2d",
 ]
@@ -254,7 +252,6 @@ dependencies = [
  "byteorder",
  "format_core",
  "pretty_assertions",
- "spatial_grid",
  "thiserror",
  "vector2d",
 ]
@@ -267,7 +264,6 @@ dependencies = [
  "color",
  "format_core",
  "pretty_assertions",
- "spatial_grid",
  "thiserror",
  "vector2d",
 ]

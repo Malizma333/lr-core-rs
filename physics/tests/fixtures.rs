@@ -2,7 +2,7 @@
 mod tests {
     use format_core::track::GridVersion;
     use format_json;
-    use physics::{EngineBuilder, EngineView, MountPhase, test_utils::create_engine};
+    use physics::{Engine, EngineView, MountPhase};
     use serde::Deserialize;
     use std::fs;
     use vector2d::Vector2Df;
@@ -37,7 +37,7 @@ mod tests {
 
         test_cases.sort_by_key(|test_case| test_case.file.clone());
         let mut last_test_file = String::new();
-        let mut engine = EngineBuilder::new(GridVersion::V6_2).build();
+        let mut engine = Engine::new(GridVersion::V6_2);
 
         for (i, test) in test_cases.iter().enumerate() {
             println!("Engine test {}: {}", i, test.test);
@@ -46,7 +46,9 @@ mod tests {
                 let file_name = format!("../fixtures/physics/tests/{}.track.json", test.file);
                 let file = fs::read(file_name).expect("Failed to read JSON file");
                 let track = format_json::read(&file).expect("Failed to parse track file");
-                engine = create_engine(track, test.lra.is_some_and(|lra| lra));
+                let enable_lra = test.lra.is_some_and(|lra| lra);
+                // TODO use enable_lra within track
+                engine = Engine::from_track(track, enable_lra);
                 last_test_file = test.file.clone();
             }
 
@@ -152,18 +154,18 @@ mod tests {
             }
         }
     }
+
+    // TODO custom skeleton tests
+    // Skeleton with no mount bones
+    // Skeleton with single mount bone connected to self
+    // Skeleton with multiple mount bones connected to self
+    // Skeleton with three separate mountable connections coming together
+    // Skeleton with three separate mountable connections coming together partial
+    // Skeleton with all mount bones
+
+    // TODO api tests
+    // Custom gravity
+    // Skeleton freeze
+    // Iteration view
+    // Sub-iteration view
 }
-
-// TODO custom skeleton tests
-// Skeleton with no mount bones
-// Skeleton with single mount bone connected to self
-// Skeleton with multiple mount bones connected to self
-// Skeleton with three separate mountable connections coming together
-// Skeleton with three separate mountable connections coming together partial
-// Skeleton with all mount bones
-
-// TODO api tests
-// Custom gravity
-// Skeleton freeze
-// Iteration view
-// Sub-iteration view
