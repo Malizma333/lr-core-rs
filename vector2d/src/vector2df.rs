@@ -131,6 +131,16 @@ impl Vector2Df {
         Vector2Df::new(-self.y, self.x)
     }
 
+    /** Flips the x value of a vector */
+    pub fn flip_horizontal(&self) -> Vector2Df {
+        Vector2Df::new(-self.x, self.y)
+    }
+
+    /** Flips the y value of a vector */
+    pub fn flip_vertical(&self) -> Vector2Df {
+        Vector2Df::new(self.x, -self.y)
+    }
+
     pub fn to_hex_string(&self) -> String {
         format!("(0x{:016x}, 0x{:016x})", self.x.to_bits(), self.y.to_bits(),)
     }

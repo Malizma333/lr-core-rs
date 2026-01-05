@@ -1,6 +1,10 @@
 use crate::{
-    EntitySkeletonInitialProperties, MountPhase, RemountVersion,
-    engine::state::EngineState,
+    EntitySkeletonInitialProperties, MountPhase, PhysicsLine, PhysicsLineBuilder,
+    build_default_rider,
+    engine::{
+        defaults::{default_get_gravity_at_time, default_get_skeleton_frozen_at_time},
+        state::EngineState,
+    },
     entity::{
         joint::entity::EntityJoint,
         point::state::EntityPointState,
@@ -9,26 +13,22 @@ use crate::{
             builder::EntitySkeletonBuilder, entity::EntitySkeleton, state::EntitySkeletonState,
         },
     },
-    line::Hitbox,
 };
-use geometry::Line;
+use format_core::track::{GridVersion, RemountVersion, Track};
+use geometry::{Line, Point};
 use spatial_grid::{Grid, GridLineId};
 use std::collections::HashMap;
 use vector2d::Vector2Df;
-mod builder;
 mod defaults;
 mod moment;
 mod state;
 mod view;
-pub use builder::EngineBuilder;
 pub use moment::PhysicsMoment;
 pub use view::EngineView;
 
-const GRAVITY_MULTIPLIER: f64 = -0.175;
-
 pub struct Engine {
     grid: Grid,
-    line_lookup: HashMap<GridLineId, Box<dyn Hitbox>>,
+    line_lookup: HashMap<GridLineId, PhysicsLine>,
     registry: EntityRegistry,
     // The initial state of the engine as a reference point
     initial_state: EngineState,
@@ -39,6 +39,100 @@ pub struct Engine {
 }
 
 impl Engine {
+    pub fn new(grid_version: GridVersion) -> Self {
+        let initial_state = EngineState::new();
+
+        Engine {
+            grid: Grid::new(grid_version),
+            line_lookup: HashMap::new(),
+            registry: EntityRegistry::new(),
+            state_snapshots: vec![initial_state.clone()],
+            initial_state,
+            get_gravity_at_time: default_get_gravity_at_time,
+            get_skeleton_frozen_at_time: default_get_skeleton_frozen_at_time,
+        }
+    }
+
+    pub fn from_track(track: Track, lra: bool) -> Self {
+        let grid_version = track.metadata().grid_version();
+        let mut engine = Engine::new(grid_version);
+        let mut ordered_lines: Vec<(u32, PhysicsLine)> = Vec::new();
+
+        for line in track.line_group().acceleration_lines() {
+            let p0 = Point::new(line.x1(), line.y1());
+            let p1 = Point::new(line.x2(), line.y2());
+            let mut physics_line = PhysicsLineBuilder::new((p0, p1));
+            physics_line
+                .flipped(line.flipped())
+                .left_extension(line.left_extension())
+                .right_extension(line.right_extension());
+
+            physics_line.acceleration_multiplier(line.multiplier().unwrap_or(1.0));
+
+            ordered_lines.push((line.id(), physics_line.build()));
+        }
+
+        for line in track.line_group().standard_lines() {
+            let p0 = Point::new(line.x1(), line.y1());
+            let p1 = Point::new(line.x2(), line.y2());
+
+            let mut physics_line = PhysicsLineBuilder::new((p0, p1));
+            physics_line
+                .flipped(line.flipped())
+                .left_extension(line.left_extension())
+                .right_extension(line.right_extension());
+
+            ordered_lines.push((line.id(), physics_line.build()));
+        }
+
+        ordered_lines.sort_by_key(|(key, _)| *key);
+
+        for line in ordered_lines {
+            engine.create_line(line.1);
+        }
+
+        let template_none = build_default_rider(&mut engine, RemountVersion::None);
+        let template_comv1 = build_default_rider(&mut engine, RemountVersion::ComV1);
+        let template_comv2 = build_default_rider(&mut engine, RemountVersion::ComV2);
+        let template_lra = build_default_rider(&mut engine, RemountVersion::LRA);
+
+        if let Some(rider_group) = track.rider_group() {
+            for rider in rider_group.riders() {
+                let mut initial_properties = EntitySkeletonInitialProperties::new();
+                let target_skeleton_template_id = if lra {
+                    template_lra
+                } else {
+                    match rider.remount_version() {
+                        RemountVersion::None => template_none,
+                        RemountVersion::ComV1 => template_comv1,
+                        RemountVersion::ComV2 => template_comv2,
+                        RemountVersion::LRA => template_lra,
+                    }
+                };
+                let id = engine.add_skeleton(target_skeleton_template_id);
+                if let Some(initial_position) = rider.start_position() {
+                    initial_properties.set_start_position(initial_position);
+                }
+                if let Some(initial_velocity) = rider.start_velocity() {
+                    initial_properties.set_start_velocity(initial_velocity);
+                }
+                engine.set_skeleton_initial_properties(id, initial_properties);
+            }
+        } else {
+            let mut initial_properties = EntitySkeletonInitialProperties::new();
+            let id = engine.add_skeleton(template_none);
+            initial_properties.set_start_velocity(Vector2Df::new(0.4, 0.0));
+            engine.set_skeleton_initial_properties(id, initial_properties);
+        }
+
+        engine
+    }
+
+    pub fn clear_cache(&mut self) {
+        self.state_snapshots.truncate(0);
+        self.state_snapshots.push(self.initial_state.clone());
+    }
+
     pub fn view_frame(&mut self, frame: u32) -> EngineView {
         self.fill_snapshots_up_to_frame(frame);
         let state = self
@@ -67,8 +161,8 @@ impl Engine {
         self.get_skeleton_frozen_at_time = function;
     }
 
-    pub fn create_line(&mut self, line: Box<dyn Hitbox>) -> GridLineId {
-        let line_points = &Line::from_tuple(line.properties().endpoints());
+    pub fn create_line(&mut self, line: PhysicsLine) -> GridLineId {
+        let line_points = &Line::new(line.endpoints().0, line.endpoints().1);
         let id = self.grid.add_line(line_points);
         self.line_lookup.insert(id, line);
         self.invalidate_snapshots();
@@ -78,7 +172,7 @@ impl Engine {
     pub fn move_line(&mut self, line_id: GridLineId, new_points: Line) {
         let line = self.line_lookup.get(&line_id);
         if let Some(line) = line {
-            let line_points = &Line::from_tuple(line.properties().endpoints());
+            let line_points = &Line::new(line.endpoints().0, line.endpoints().1);
             self.grid.move_line(line_id, line_points, &new_points);
             self.invalidate_snapshots();
         }
@@ -87,7 +181,7 @@ impl Engine {
     pub fn delete_line(&mut self, line_id: GridLineId) {
         let line = self.line_lookup.remove(&line_id);
         if let Some(line) = line {
-            let line_points = &Line::from_tuple(line.properties().endpoints());
+            let line_points = &Line::new(line.endpoints().0, line.endpoints().1);
             self.grid.remove_line(line_id, line_points);
             self.invalidate_snapshots();
         }
@@ -199,7 +293,7 @@ impl Engine {
                     let point_state = current_state.points_mut().get_mut(point_id).unwrap();
                     point.process_initial_step(
                         point_state,
-                        GRAVITY_MULTIPLIER * (self.get_gravity_at_time)(frame),
+                        (self.get_gravity_at_time)(frame).flip_vertical(),
                     );
                 }
 
@@ -382,7 +476,6 @@ impl Engine {
                                 .unwrap()
                                 .set_mount_phase(next_mount_phase);
 
-                            // LRA also breaks sled on mount joint break
                             match skeleton.remount_version() {
                                 RemountVersion::LRA => current_state
                                     .skeletons_mut()

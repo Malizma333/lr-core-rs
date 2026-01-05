@@ -1,5 +1,5 @@
+use crate::track::GridVersion;
 use color::RGBColor;
-use spatial_grid::GridVersion;
 use vector2d::Vector2Df;
 
 // way to store all data that previous versions have in their preserved form
@@ -19,20 +19,14 @@ pub struct Metadata {
     description: Option<String>,
     duration: Option<u32>,
 
-    // TODO deprecated
-    script: Option<String>,
-
     // LRA+ Properties
     gravity_well_size: Option<f64>,
     audio_filename: Option<String>,
     audio_offset: Option<f64>, // Offset (in seconds) until the song starts
-    // TODO group properties
     start_gravity: Option<Vector2Df>,
     start_zoom: Option<f64>,
     start_line_color: Option<RGBColor>,
     start_background_color: Option<RGBColor>,
-    // TODO deprecated
-    zero_friction_riders: bool,
 }
 
 impl Metadata {
@@ -54,10 +48,6 @@ impl Metadata {
 
     pub fn duration(&self) -> Option<u32> {
         self.duration
-    }
-
-    pub fn script(&self) -> &Option<String> {
-        &self.script
     }
 
     pub fn gravity_well_size(&self) -> Option<f64> {
@@ -87,10 +77,6 @@ impl Metadata {
     pub fn start_background_color(&self) -> Option<RGBColor> {
         self.start_background_color
     }
-
-    pub fn zero_friction_riders(&self) -> bool {
-        self.zero_friction_riders
-    }
 }
 
 pub struct MetadataBuilder {
@@ -101,7 +87,6 @@ pub struct MetadataBuilder {
     artist: Option<String>,
     description: Option<String>,
     duration: Option<u32>,
-    script: Option<String>,
 
     // LRA+ Properties
     gravity_well_size: Option<f64>,
@@ -111,7 +96,6 @@ pub struct MetadataBuilder {
     start_zoom: Option<f64>,
     start_line_color: Option<RGBColor>,
     start_background_color: Option<RGBColor>,
-    zero_friction_riders: bool,
 }
 
 impl MetadataBuilder {
@@ -122,7 +106,6 @@ impl MetadataBuilder {
             artist: None,
             description: None,
             duration: None,
-            script: None,
             gravity_well_size: None,
             audio_filename: None,
             audio_offset: None,
@@ -130,7 +113,6 @@ impl MetadataBuilder {
             start_zoom: None,
             start_line_color: None,
             start_background_color: None,
-            zero_friction_riders: false,
         }
     }
 
@@ -156,11 +138,6 @@ impl MetadataBuilder {
 
     pub fn duration(&mut self, duration: u32) -> &mut Self {
         self.duration = Some(duration);
-        self
-    }
-
-    pub fn script(&mut self, script: String) -> &mut Self {
-        self.script = Some(script);
         self
     }
 
@@ -199,11 +176,6 @@ impl MetadataBuilder {
         self
     }
 
-    pub fn zero_friction_riders(&mut self, zero_friction_riders: bool) -> &mut Self {
-        self.zero_friction_riders = zero_friction_riders;
-        self
-    }
-
     pub(crate) fn build(&self) -> Metadata {
         Metadata {
             grid_version: self.grid_version,
@@ -211,7 +183,6 @@ impl MetadataBuilder {
             artist: self.artist.clone(),
             description: self.description.clone(),
             duration: self.duration,
-            script: self.script.clone(),
             gravity_well_size: self.gravity_well_size,
             audio_filename: self.audio_filename.clone(),
             audio_offset: self.audio_offset,
@@ -219,7 +190,6 @@ impl MetadataBuilder {
             start_zoom: self.start_zoom,
             start_line_color: self.start_line_color,
             start_background_color: self.start_background_color,
-            zero_friction_riders: self.zero_friction_riders,
         }
     }
 }

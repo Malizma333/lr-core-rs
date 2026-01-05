@@ -1,35 +1,35 @@
 use std::{
     io,
     num::{ParseFloatError, ParseIntError, TryFromIntError},
-    string::FromUtf8Error,
+    str::Utf8Error,
 };
 
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum TrkReadError {
-    #[error("{0}")]
+    #[error("IO error: {0}")]
     Io(#[from] io::Error),
-    #[error("{0}")]
+    #[error("Failed to convert integer: {0}")]
     TryFromInt(#[from] TryFromIntError),
-    #[error("{0}")]
+    #[error("Failed to parse integer: {0}")]
     IntConversion(#[from] ParseIntError),
-    #[error("{0}")]
+    #[error("Failed to parse float: {0}")]
     FloatConversion(#[from] ParseFloatError),
-    #[error("{0}")]
-    FromUTF8(#[from] FromUtf8Error),
-    #[error("invalid magic number: {0}")]
+    #[error("Failed to parse utf8 string: {0}")]
+    Utf8Parsing(#[from] Utf8Error),
+    #[error("Invalid magic number: {0}")]
     InvalidMagicNumber(String),
-    #[error("unsupported track version: {0}")]
+    #[error("Unsupported track version: {0}")]
     UnsupportedTrackVersion(String),
-    #[error("invalid song data format: {0}")]
+    #[error("Invalid song data format: {0}")]
     InvalidSongFormat(String),
-    #[error("unsupported line type: {0}")]
+    #[error("Unsupported line type: {0}")]
     UnsupportedLineType(String),
-    #[error("invalid key value format: {0}")]
+    #[error("Invalid key value format: {0}")]
     InvalidKeyValue(String),
-    #[error("empty trigger data")]
+    #[error("Empty trigger data")]
     EmptyTriggerData,
-    #[error("unsupported trigger type: {0}")]
+    #[error("Unsupported trigger type: {0}")]
     UnsupportedTriggerType(String),
 }

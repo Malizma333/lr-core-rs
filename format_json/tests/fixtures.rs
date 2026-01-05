@@ -6,12 +6,11 @@ mod test {
 
     use format_core::{
         track::{
-            BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, LineColorEvent,
+            BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, GridVersion, LineColorEvent,
             LineHitTrigger, RemountVersion, TrackBuilder,
         },
         unit_conversion::from_lra_zoom,
     };
-    use spatial_grid::GridVersion;
     use vector2d::Vector2Df;
 
     #[test]
@@ -25,7 +24,6 @@ mod test {
             .title(String::new())
             .artist(String::new())
             .description(String::new())
-            .script(String::new())
             .duration(1200);
         expected_builder
             .rider_group()

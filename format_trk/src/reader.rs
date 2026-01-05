@@ -16,12 +16,11 @@ use byteorder::{LittleEndian, ReadBytesExt};
 use color::RGBColor;
 use format_core::{
     track::{
-        BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, LineColorEvent, LineHitTrigger,
-        LineType, RemountVersion, Track, TrackBuilder,
+        BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, GridVersion, LineColorEvent,
+        LineHitTrigger, LineType, RemountVersion, Track, TrackBuilder,
     },
     unit_conversion::{from_lra_gravity, from_lra_scenery_width, from_lra_zoom},
 };
-use spatial_grid::GridVersion;
 use vector2d::Vector2Df;
 
 pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
@@ -49,7 +48,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
     let feature_string_length = cursor.read_u16::<LittleEndian>()?;
     let mut buffer = vec![0; usize::from(feature_string_length)];
     cursor.read_exact(&mut buffer)?;
-    let feature_string = String::from_utf8(buffer)?;
+    let feature_string = str::from_utf8(&buffer)?;
     let mut included_features: HashSet<&str> = Default::default();
 
     for feature in feature_string.split(';').filter(|s| !s.is_empty()) {
@@ -81,7 +80,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
 
         let mut buffer = vec![0; song_string_length];
         cursor.read_exact(&mut buffer)?;
-        let song_string = String::from_utf8(buffer)?;
+        let song_string = str::from_utf8(&buffer)?;
         let song_data: Vec<&str> = song_string
             .split("\r\n")
             .filter(|s| !s.is_empty())
@@ -195,7 +194,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
     }
 
     if included_features.contains(FEATURE_FRICTIONLESS) {
-        track_builder.metadata().zero_friction_riders(true);
+        // ignore for now
     }
 
     let remount_version = if included_features.contains(FEATURE_REMOUNT) {
@@ -254,7 +253,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
         let meta_string_length = cursor.read_u16::<LittleEndian>()?;
         let mut buffer = vec![0; usize::from(meta_string_length)];
         cursor.read_exact(&mut buffer)?;
-        let meta_string = String::from_utf8(buffer)?;
+        let meta_string = str::from_utf8(&buffer)?;
         let key_value_pair: Vec<&str> = meta_string.split("=").filter(|s| !s.is_empty()).collect();
 
         if key_value_pair.len() != 2 {

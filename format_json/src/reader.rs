@@ -1,12 +1,11 @@
 use color::RGBColor;
 use format_core::{
     track::{
-        BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, LineColorEvent, LineHitTrigger,
-        LineType, RemountVersion, Track, TrackBuilder,
+        BackgroundColorEvent, CameraZoomEvent, FrameBoundsTrigger, GridVersion, LineColorEvent,
+        LineHitTrigger, LineType, RemountVersion, Track, TrackBuilder,
     },
     unit_conversion::from_lra_zoom,
 };
-use spatial_grid::GridVersion;
 use vector2d::Vector2Df;
 
 use crate::{
@@ -14,7 +13,7 @@ use crate::{
 };
 
 pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
-    let json_string = String::from_utf8(bytes.to_vec())?;
+    let json_string = str::from_utf8(bytes)?;
     let json_track: JsonTrack = serde_json::from_str(&json_string)?;
 
     let grid_version = match json_track.version.as_str() {
@@ -257,10 +256,6 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
 
     if let Some(duration) = json_track.duration {
         track_builder.metadata().duration(duration);
-    }
-
-    if let Some(script) = json_track.script {
-        track_builder.metadata().script(script);
     }
 
     if let Some(gravity_well_size) = json_track.gravity_well_size {

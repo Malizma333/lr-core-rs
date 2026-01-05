@@ -228,7 +228,6 @@ name = "format_core"
 version = "0.1.0"
 dependencies = [
  "color",
- "spatial_grid",
  "vector2d",
 ]
 
@@ -238,11 +237,9 @@ version = "0.1.0"
 dependencies = [
  "color",
  "format_core",
- "lcg_random",
  "pretty_assertions",
  "serde",
  "serde_json",
- "spatial_grid",
  "thiserror",
  "vector2d",
 ]
@@ -255,7 +252,6 @@ dependencies = [
  "byteorder",
  "format_core",
  "pretty_assertions",
- "spatial_grid",
  "thiserror",
  "vector2d",
 ]
@@ -268,7 +264,6 @@ dependencies = [
  "color",
  "format_core",
  "pretty_assertions",
- "spatial_grid",
  "thiserror",
  "vector2d",
 ]
@@ -556,6 +551,8 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 name = "spatial_grid"
 version = "0.1.0"
 dependencies = [
+ "criterion",
+ "format_core",
  "geometry",
  "serde",
  "serde_json",
