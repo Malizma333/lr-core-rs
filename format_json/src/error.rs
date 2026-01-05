@@ -1,33 +1,22 @@
-use std::{
-    fmt::Display,
-    io,
-    num::{ParseFloatError, ParseIntError, TryFromIntError},
-    string::FromUtf8Error,
-};
+use std::{fmt::Display, num::TryFromIntError, str::Utf8Error};
 
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum JsonReadError {
-    #[error("{0}")]
-    Io(#[from] io::Error),
-    #[error("{0}")]
+    #[error("Failed to convert integer: {0}")]
     TryFromInt(#[from] TryFromIntError),
-    #[error("{0}")]
-    IntConversion(#[from] ParseIntError),
-    #[error("{0}")]
-    FloatConversion(#[from] ParseFloatError),
-    #[error("{0}")]
-    FromUTF8(#[from] FromUtf8Error),
-    #[error("{0}")]
+    #[error("Failed to parse utf8 string: {0}")]
+    Utf8Parsing(#[from] Utf8Error),
+    #[error("Failed to deserialize json: {0}")]
     SerdeJson(#[from] serde_json::Error),
-    #[error("unsupported grid version: {0}")]
+    #[error("Unsupported grid version: {0}")]
     UnsupportedGridVersion(String),
-    #[error("unsupported line type: {0}")]
+    #[error("Unsupported line type: {0}")]
     UnsupportedLineType(String),
-    #[error("unsupported trigger type: {0}")]
+    #[error("Unsupported trigger type: {0}")]
     UnsupportedTriggerType(String),
-    #[error("invalid trigger format")]
+    #[error("Invalid trigger format")]
     InvalidTriggerFormat(#[from] InvalidTriggerFormatError),
 }
 

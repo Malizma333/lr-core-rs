@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
-    let json_string = String::from_utf8(bytes.to_vec())?;
+    let json_string = str::from_utf8(bytes)?;
     let json_track: JsonTrack = serde_json::from_str(&json_string)?;
 
     let grid_version = match json_track.version.as_str() {
