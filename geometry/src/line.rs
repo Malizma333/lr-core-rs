@@ -4,7 +4,7 @@ use vector2d::Vector2Df;
 
 use crate::Point;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Line(Point, Point);
 
 #[derive(PartialEq, Debug)]

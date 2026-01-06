@@ -1,13 +1,15 @@
 //! Format used by the updated web version of Line Rider, [linerider.com](https://www.linerider.com/)
 
 mod error;
+mod json_array_line;
 mod reader;
-mod serde_line_array;
 
 pub use error::JsonReadError;
 pub use reader::read;
 
 use serde::{Deserialize, Serialize};
+
+use crate::json_array_line::LRAJsonArrayLine;
 
 // A u32 value that can take the range of a normal u32, or negative for invalid (for parsing some json fields)
 #[derive(Debug, Serialize, Deserialize, Copy, Clone)]
@@ -47,20 +49,6 @@ impl From<FaultyBool> for bool {
 struct V2 {
     x: f64,
     y: f64,
-}
-
-// LRA line array types:
-// [type: 0, id: int, x1: double, y1: double, x2: double, y2: double, extended: u8, flipped: bool]
-// [type: 1, id: int, x1: double, y1: double, x2: double, y2: double, extended: u8, flipped: bool, _?: -1, _?: -1, multiplier?: int]
-// [type: 2, id: int, x1: double, y1: double, x2: double, y2: double]
-// Extended bitflags 0b000000ba
-// a: 1 if starting/left extension
-// b: 1 if ending/right extension
-#[derive(Debug)]
-enum LRAJsonArrayLine {
-    Standard(u32, f64, f64, f64, f64, u8, bool),
-    Acceleration(u32, f64, f64, f64, f64, u8, bool, (), (), u32),
-    Scenery(FaultyU32, f64, f64, f64, f64),
 }
 
 #[derive(Serialize, Deserialize, Debug)]

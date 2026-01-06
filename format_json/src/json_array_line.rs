@@ -1,13 +1,24 @@
-use core::fmt;
-
 use crate::FaultyU32;
-
-use super::LRAJsonArrayLine;
+use core::fmt;
 use serde::{
     Deserialize, Deserializer, Serialize,
     de::{Error as DeError, SeqAccess, Visitor},
     ser::Error,
 };
+
+// LRA line array types:
+// [type: 0, id: int, x1: double, y1: double, x2: double, y2: double, extended: u8, flipped: bool]
+// [type: 1, id: int, x1: double, y1: double, x2: double, y2: double, extended: u8, flipped: bool, _?: -1, _?: -1, multiplier?: int]
+// [type: 2, id: int, x1: double, y1: double, x2: double, y2: double]
+// Extended bitflags 0b000000ba
+// a: 1 if starting/left extension
+// b: 1 if ending/right extension
+#[derive(Debug)]
+pub(super) enum LRAJsonArrayLine {
+    Standard(u32, f64, f64, f64, f64, u8, bool),
+    Acceleration(u32, f64, f64, f64, f64, u8, bool, (), (), u32),
+    Scenery(FaultyU32, f64, f64, f64, f64),
+}
 
 impl Serialize for LRAJsonArrayLine {
     fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>

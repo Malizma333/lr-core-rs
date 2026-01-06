@@ -9,7 +9,8 @@ use format_core::{
 use vector2d::Vector2Df;
 
 use crate::{
-    FaultyBool, JsonReadError, JsonTrack, LRAJsonArrayLine, error::InvalidTriggerFormatError,
+    FaultyBool, JsonReadError, JsonTrack, error::InvalidTriggerFormatError,
+    json_array_line::LRAJsonArrayLine,
 };
 
 pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {

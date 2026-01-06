@@ -1,17 +1,4 @@
-use std::{
-    collections::HashSet,
-    io::{Cursor, Read, Seek, SeekFrom},
-};
-
-use crate::{
-    FEATURE_6_1, FEATURE_BACKGROUND_COLOR_B, FEATURE_BACKGROUND_COLOR_G,
-    FEATURE_BACKGROUND_COLOR_R, FEATURE_FRICTIONLESS, FEATURE_GRAVITY_WELL_SIZE,
-    FEATURE_IGNORABLE_TRIGGER, FEATURE_LINE_COLOR_B, FEATURE_LINE_COLOR_G, FEATURE_LINE_COLOR_R,
-    FEATURE_RED_MULTIPLIER, FEATURE_REMOUNT, FEATURE_SCENERY_WIDTH, FEATURE_SONG_INFO,
-    FEATURE_START_ZOOM, FEATURE_TRIGGERS, FEATURE_X_GRAVITY, FEATURE_Y_GRAVITY, FEATURE_ZERO_START,
-    TrkReadError,
-};
-
+use crate::TrkReadError;
 use byteorder::{LittleEndian, ReadBytesExt};
 use color::RGBColor;
 use format_core::{
@@ -21,7 +8,32 @@ use format_core::{
     },
     unit_conversion::{from_lra_gravity, from_lra_scenery_width, from_lra_zoom},
 };
+use std::{
+    collections::HashSet,
+    io::{Cursor, Read, Seek, SeekFrom},
+};
 use vector2d::Vector2Df;
+
+// These string literals are implementation-specific, do not modify
+const FEATURE_RED_MULTIPLIER: &str = "REDMULTIPLIER";
+const FEATURE_SCENERY_WIDTH: &str = "SCENERYWIDTH";
+const FEATURE_SONG_INFO: &str = "SONGINFO";
+const FEATURE_IGNORABLE_TRIGGER: &str = "IGNORABLE_TRIGGER";
+const FEATURE_6_1: &str = "6.1";
+const FEATURE_ZERO_START: &str = "ZEROSTART";
+const FEATURE_REMOUNT: &str = "REMOUNT";
+const FEATURE_FRICTIONLESS: &str = "FRICTIONLESS";
+const FEATURE_START_ZOOM: &str = "STARTZOOM";
+const FEATURE_X_GRAVITY: &str = "XGRAVITY";
+const FEATURE_Y_GRAVITY: &str = "YGRAVITY";
+const FEATURE_GRAVITY_WELL_SIZE: &str = "GRAVITYWELLSIZE";
+const FEATURE_BACKGROUND_COLOR_R: &str = "BGCOLORR";
+const FEATURE_BACKGROUND_COLOR_G: &str = "BGCOLORG";
+const FEATURE_BACKGROUND_COLOR_B: &str = "BGCOLORB";
+const FEATURE_LINE_COLOR_R: &str = "LINECOLORR";
+const FEATURE_LINE_COLOR_G: &str = "LINECOLORG";
+const FEATURE_LINE_COLOR_B: &str = "LINECOLORB";
+const FEATURE_TRIGGERS: &str = "TRIGGERS";
 
 pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
     let track_builder = &mut TrackBuilder::new(GridVersion::V6_2);

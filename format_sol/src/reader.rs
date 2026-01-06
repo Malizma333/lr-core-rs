@@ -1,10 +1,20 @@
 use crate::SolReadError;
 use amf0::deserialize;
 use byteorder::{BigEndian, ReadBytesExt};
-use std::io::{Cursor, Read};
+use format_core::track::{GridVersion, LineType, RemountVersion, Track, TrackBuilder};
+use std::io::{Cursor, Read, Seek};
 use vector2d::Vector2Df;
 
-use format_core::track::{GridVersion, LineType, RemountVersion, Track, TrackBuilder};
+/// Retrieve the number of tracks an sol file contains
+pub fn get_track_count(data: &[u8]) -> u32 {
+    let mut cursor = Cursor::new(data);
+
+    // HACK: We assume header size is constant, and track list length will always be from 0x2C to 0x2F
+    let _ = cursor.seek(std::io::SeekFrom::Start(0x2C));
+    let num_tracks = cursor.read_u32::<BigEndian>().unwrap_or(0);
+
+    num_tracks
+}
 
 pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError> {
     let track_builder = &mut TrackBuilder::new(GridVersion::V6_2);
