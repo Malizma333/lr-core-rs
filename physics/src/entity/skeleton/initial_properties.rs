@@ -1,13 +1,13 @@
 use vector2d::Vector2Df;
 
-pub struct EntitySkeletonInitialProperties {
+pub struct InitialProperties {
     start_position: Vector2Df,
     start_velocity: Vector2Df,
 }
 
-impl EntitySkeletonInitialProperties {
+impl InitialProperties {
     pub fn new() -> Self {
-        EntitySkeletonInitialProperties {
+        InitialProperties {
             start_position: Vector2Df::zero(),
             start_velocity: Vector2Df::zero(),
         }

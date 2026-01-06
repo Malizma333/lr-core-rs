@@ -37,7 +37,7 @@ fn bench_view_frame(
     group.bench_function(id, |b| {
         b.iter(|| {
             black_box(engine.view_frame(black_box(target_frame)));
-            engine.clear_cache();
+            engine.clear_frame_cache();
         });
     });
 }
@@ -50,7 +50,7 @@ fn bench_engine_simulation(c: &mut Criterion) {
         );
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let track = format_json::read(&file).expect("Failed to parse track file");
-        let mut engine = Engine::from_track(track, false);
+        let mut engine = Engine::from_track(&track, false);
         let mut group = c.benchmark_group(format!("physics/simulate/{}", benchmark.file));
         bench_view_frame(&mut group, &mut engine, benchmark.target_frame);
         group.finish();

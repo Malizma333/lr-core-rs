@@ -1,22 +1,12 @@
-# Physics Engine
+## Physics Engine API
 
-## Current Features
-
-- Premade classic physics entities (normal and acceleration lines, rider and sled skeletons, and the rider-skeleton mount)
-- Builders for custom line types, skeleton types, and mount types
-- Timeline seeking (with iteration and subiteration views available)
-- Timeline-based functions to modify physics parameter (such as gravity)
-- Test fixtures borrowed from [lr-core-py](https://github.com/Malizma333/lr-core-py) to ensure compatibility with existing engines
-
-# Engine API
-
-## Creating a New Engine
+### Creating a New Engine
 ```rust
 // Allow for extending more engine parameters in the future (eg enable LRA compatibility fixes)
 EngineBuilder::new().grid_version(version).build() -> Engine
 ```
 
-## Timeline Viewing
+### Timeline Viewing
 ```rust
 engine.view_frame(frame) -> Vec<&Skeleton>
 // Similar to LRA (iteration, subiteration) captured in a "Moment"
@@ -25,19 +15,20 @@ engine.view_moment(frame, moment) -> Vec<&Skeleton>
 
 ### Time-based Physics Parameters
 ```rust
+// TODO these should be keyframe based instead to make them more serializable and compatible
 // Overriding by passing defined functions
-engine.define_gravity(get_gravity_at_time(frame) -> Vector2df)
-engine.define_enabled_skeleton(get_enabled_skeletons_at_time(frame) -> Vec<bool>)
+// engine.define_gravity(get_gravity_at_time(frame) -> Vector2df)
+// engine.define_enabled_skeleton(get_enabled_skeletons_at_time(frame) -> Vec<bool>)
 ```
 
-## Line Grid Modifications
+### Line Grid Modifications
 ```rust
-engine.create_line(line) -> LineId
-engine.update_line(line_id, new_line) -> ()
-engine.delete_line(line_id) -> ()
+engine.create_line(line: Line) -> LineId
+engine.update_line(line_id: Id, new_line: Line) -> ()
+engine.delete_line(line_id: Id) -> ()
 ```
 
-## Entity Registry
+### Entity Registry
 ```rust
 let registry = engine.registry();
 
@@ -60,7 +51,7 @@ let (my_skeleton, j1_id) = my_skeleton.joint(b1_id, b2_id).build();
 let skeleton_template_id = my_skeleton.build();
 ```
 
-# Architecture
+## Architecture
 
 Four entity class types:
 - Point
@@ -73,3 +64,16 @@ Each has four sub-types:
 - Template (reference for how to construct Entity)
 - Entity (contains props populated by Template as well as helper functions operating on State)
 - State (contains everything that needs to be copied across frames, plugged into entities for calculations)
+
+Should one instance of Engine be created during the entire program?
+- No, new engine will be created when loading a track or creating a new track, but will be modified otherwise
+
+Who should be responsible for storing mutable line data and passing it around when it updates?
+- physics lines should be owned by and accessed by the engine, with update methods
+- abstract "line" entities are handled by the application(?)
+  - maybe create a new library interface that works with the canvas overall?
+
+Where should physics types belong for reusability in other crates?
+- 
+
+Where should builder structs go? Should builders be combined with the entities themselves (getters/setters?)

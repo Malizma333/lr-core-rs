@@ -46,7 +46,7 @@ mod tests {
                 let file = fs::read(file_name).expect("Failed to read JSON file");
                 let track = format_json::read(&file).expect("Failed to parse track file");
                 let enable_lra = test.lra.is_some_and(|lra| lra);
-                engine = Engine::from_track(track, enable_lra);
+                engine = Engine::from_track(&track, enable_lra);
                 last_test_file = test.file.clone();
             }
 

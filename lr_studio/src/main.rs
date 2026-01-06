@@ -1,4 +1,5 @@
 use eframe::egui;
+use physics::Engine;
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
@@ -10,22 +11,18 @@ fn main() {
 }
 
 #[derive(Default)]
-struct LineRiderStudioApp {}
+struct LineRiderStudioApp {
+    physics_engine: Engine,
+}
 
 impl LineRiderStudioApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
-        // Restore app state using cc.storage (requires the "persistence" feature).
-        // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
-        // for e.g. egui::PaintCallback.
         Self::default()
     }
 }
 
 impl eframe::App for LineRiderStudioApp {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Hello World!");
-        });
+        egui::CentralPanel::default().show(ctx, |ui| {});
     }
 }

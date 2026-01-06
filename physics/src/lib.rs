@@ -1,9 +1,9 @@
 mod default_rider;
 mod engine;
 mod entity;
-mod line;
+mod physics_line;
 
 pub use default_rider::build_default_rider;
 pub use engine::{Engine, EngineView};
-pub use entity::{EntitySkeletonInitialProperties, MountPhase};
-pub use line::{PhysicsLine, PhysicsLineBuilder};
+pub use entity::{InitialProperties, MountPhase};
+pub use physics_line::PhysicsLineBuilder;

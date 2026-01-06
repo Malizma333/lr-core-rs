@@ -1,10 +1,6 @@
 use crate::{
-    EntitySkeletonInitialProperties, MountPhase, PhysicsLine, PhysicsLineBuilder,
-    build_default_rider,
-    engine::{
-        defaults::{default_get_gravity_at_time, default_get_skeleton_frozen_at_time},
-        state::EngineState,
-    },
+    InitialProperties, MountPhase, PhysicsLineBuilder, build_default_rider,
+    engine::state::EngineState,
     entity::{
         joint::entity::EntityJoint,
         point::state::EntityPointState,
@@ -13,13 +9,13 @@ use crate::{
             builder::EntitySkeletonBuilder, entity::EntitySkeleton, state::EntitySkeletonState,
         },
     },
+    physics_line::PhysicsLine,
 };
 use format_core::track::{GridVersion, RemountVersion, Track};
 use geometry::{Line, Point};
 use spatial_grid::{Grid, GridLineId};
 use std::collections::HashMap;
 use vector2d::Vector2Df;
-mod defaults;
 mod moment;
 mod state;
 mod view;
@@ -34,26 +30,37 @@ pub struct Engine {
     initial_state: EngineState,
     // A list of cached state snapshots we can jump to
     state_snapshots: Vec<EngineState>,
-    get_gravity_at_time: fn(u32) -> Vector2Df,
-    get_skeleton_frozen_at_time: fn(EntitySkeletonId, u32) -> bool,
+}
+
+impl Default for Engine {
+    fn default() -> Self {
+        Self::new(GridVersion::V6_2)
+    }
 }
 
 impl Engine {
+    /// Creates a new blank line rider physics engine
     pub fn new(grid_version: GridVersion) -> Self {
-        let initial_state = EngineState::new();
-
         Engine {
+            // TODO grid and line_lookup should be tied together somehow
             grid: Grid::new(grid_version),
             line_lookup: HashMap::new(),
+            // TODO adding or removing from the registry should modify state_snapshots and initial_state
+            // Changing the initial state should clear the state snapshots
+            // So the entity registry should be part of the initial state?
             registry: EntityRegistry::new(),
-            state_snapshots: vec![initial_state.clone()],
-            initial_state,
-            get_gravity_at_time: default_get_gravity_at_time,
-            get_skeleton_frozen_at_time: default_get_skeleton_frozen_at_time,
+            state_snapshots: Vec::new(),
+            initial_state: EngineState::new(),
         }
     }
 
-    pub fn from_track(track: Track, lra: bool) -> Self {
+    /// Changes the engine's grid version and reregisters all physics lines
+    pub fn set_grid_version(&mut self, grid_version: GridVersion) {
+        todo!()
+    }
+
+    /// Creates a physics engine from track data
+    pub fn from_track(track: &Track, lra: bool) -> Self {
         let grid_version = track.metadata().grid_version();
         let mut engine = Engine::new(grid_version);
         let mut ordered_lines: Vec<(u32, PhysicsLine)> = Vec::new();
@@ -61,7 +68,7 @@ impl Engine {
         for line in track.line_group().acceleration_lines() {
             let p0 = Point::new(line.x1(), line.y1());
             let p1 = Point::new(line.x2(), line.y2());
-            let mut physics_line = PhysicsLineBuilder::new((p0, p1));
+            let mut physics_line = PhysicsLineBuilder::new(Line::new(p0, p1));
             physics_line
                 .flipped(line.flipped())
                 .left_extension(line.left_extension())
@@ -75,8 +82,7 @@ impl Engine {
         for line in track.line_group().standard_lines() {
             let p0 = Point::new(line.x1(), line.y1());
             let p1 = Point::new(line.x2(), line.y2());
-
-            let mut physics_line = PhysicsLineBuilder::new((p0, p1));
+            let mut physics_line = PhysicsLineBuilder::new(Line::new(p0, p1));
             physics_line
                 .flipped(line.flipped())
                 .left_extension(line.left_extension())
@@ -88,7 +94,7 @@ impl Engine {
         ordered_lines.sort_by_key(|(key, _)| *key);
 
         for line in ordered_lines {
-            engine.create_line(line.1);
+            engine.add_line(line.1);
         }
 
         let template_none = build_default_rider(&mut engine, RemountVersion::None);
@@ -98,7 +104,7 @@ impl Engine {
 
         if let Some(rider_group) = track.rider_group() {
             for rider in rider_group.riders() {
-                let mut initial_properties = EntitySkeletonInitialProperties::new();
+                let mut initial_properties = InitialProperties::new();
                 let target_skeleton_template_id = if lra {
                     template_lra
                 } else {
@@ -119,7 +125,7 @@ impl Engine {
                 engine.set_skeleton_initial_properties(id, initial_properties);
             }
         } else {
-            let mut initial_properties = EntitySkeletonInitialProperties::new();
+            let mut initial_properties = InitialProperties::new();
             let id = engine.add_skeleton(template_none);
             initial_properties.set_start_velocity(Vector2Df::new(0.4, 0.0));
             engine.set_skeleton_initial_properties(id, initial_properties);
@@ -128,11 +134,12 @@ impl Engine {
         engine
     }
 
-    pub fn clear_cache(&mut self) {
+    // TODO make this private/only for tests
+    pub fn clear_frame_cache(&mut self) {
         self.state_snapshots.truncate(0);
-        self.state_snapshots.push(self.initial_state.clone());
     }
 
+    /// View the skeletons of a specific frame by simulating up to that frame
     pub fn view_frame(&mut self, frame: u32) -> EngineView {
         self.fill_snapshots_up_to_frame(frame);
         let state = self
@@ -142,6 +149,7 @@ impl Engine {
         EngineView::new(&self.registry, state)
     }
 
+    /// View the skeletons of a specific moment by simulating up to that frame and moment
     pub fn view_moment(&mut self, frame: u32, moment: PhysicsMoment) -> EngineView {
         self.fill_snapshots_up_to_frame(frame);
         let target_frame_state = self
@@ -153,43 +161,31 @@ impl Engine {
         EngineView::new(&self.registry, &state)
     }
 
-    pub fn define_gravity(&mut self, function: fn(u32) -> Vector2Df) {
-        self.get_gravity_at_time = function;
-    }
-
-    pub fn define_skeleton_frozen(&mut self, function: fn(EntitySkeletonId, u32) -> bool) {
-        self.get_skeleton_frozen_at_time = function;
-    }
-
-    pub fn create_line(&mut self, line: PhysicsLine) -> GridLineId {
-        let line_points = &Line::new(line.endpoints().0, line.endpoints().1);
-        let id = self.grid.add_line(line_points);
+    pub fn add_line(&mut self, line: PhysicsLine) -> GridLineId {
+        let id = self.grid.add_line(line.endpoints());
         self.line_lookup.insert(id, line);
         self.invalidate_snapshots();
         id
     }
 
-    pub fn move_line(&mut self, line_id: GridLineId, new_points: Line) {
+    pub fn update_line(&mut self, line_id: GridLineId, new_points: Line) {
         let line = self.line_lookup.get(&line_id);
         if let Some(line) = line {
-            let line_points = &Line::new(line.endpoints().0, line.endpoints().1);
-            self.grid.move_line(line_id, line_points, &new_points);
+            self.grid.update_line(line_id, new_points);
             self.invalidate_snapshots();
         }
     }
 
-    pub fn delete_line(&mut self, line_id: GridLineId) {
+    pub fn remove_line(&mut self, line_id: GridLineId) {
         let line = self.line_lookup.remove(&line_id);
         if let Some(line) = line {
-            let line_points = &Line::new(line.endpoints().0, line.endpoints().1);
-            self.grid.remove_line(line_id, line_points);
+            self.grid.remove_line(line_id);
             self.invalidate_snapshots();
         }
     }
 
     fn invalidate_snapshots(&mut self) {
         self.state_snapshots.truncate(0);
-        self.state_snapshots.push(self.initial_state.clone());
     }
 
     pub fn build_skeleton(&mut self) -> EntitySkeletonBuilder<'_> {
@@ -224,7 +220,7 @@ impl Engine {
     pub fn set_skeleton_initial_properties(
         &mut self,
         skeleton_id: EntitySkeletonId,
-        initial_properties: EntitySkeletonInitialProperties,
+        initial_properties: InitialProperties,
     ) {
         let skeleton = self.registry.get_skeleton(skeleton_id);
 
@@ -276,7 +272,7 @@ impl Engine {
     fn get_next_state(
         &mut self,
         mut current_state: EngineState,
-        frame: u32,
+        _frame: u32,
         _moment: Option<PhysicsMoment>,
     ) -> EngineState {
         let mut dismount_flags = Vec::new();
@@ -285,45 +281,58 @@ impl Engine {
         for (skeleton_id, skeleton) in self.registry.skeletons() {
             let mut dismounted_this_frame = false;
 
-            // Check if frozen skeleton
-            if !(self.get_skeleton_frozen_at_time)(*skeleton_id, frame) {
-                // momentum
-                for point_id in skeleton.points() {
-                    let point = self.registry.get_point(*point_id);
-                    let point_state = current_state.points_mut().get_mut(point_id).unwrap();
-                    point.process_initial_step(
-                        point_state,
-                        (self.get_gravity_at_time)(frame).flip_vertical(),
-                    );
-                }
+            // momentum
+            for point_id in skeleton.points() {
+                let point = self.registry.get_point(*point_id);
+                let point_state = current_state.points_mut().get_mut(point_id).unwrap();
+                const GRAVITY_MULTIPLIER: f64 = 0.175;
+                let gravity = Vector2Df::down() * GRAVITY_MULTIPLIER;
+                point.process_initial_step(point_state, gravity.flip_vertical());
+            }
 
-                let initial_mount_phase = current_state
-                    .skeletons()
-                    .get(skeleton_id)
-                    .unwrap()
-                    .mount_phase();
+            let initial_mount_phase = current_state
+                .skeletons()
+                .get(skeleton_id)
+                .unwrap()
+                .mount_phase();
 
-                for _ in 0..6 {
-                    // bones
-                    for bone_id in skeleton.bones() {
-                        let bone = self.registry.get_bone(*bone_id);
+            for _ in 0..6 {
+                // bones
+                for bone_id in skeleton.bones() {
+                    let bone = self.registry.get_bone(*bone_id);
 
-                        if !bone.is_flutter() {
-                            let point_states = (
-                                current_state.points().get(&bone.points().0).unwrap(),
-                                current_state.points().get(&bone.points().1).unwrap(),
-                            );
+                    if !bone.is_flutter() {
+                        let point_states = (
+                            current_state.points().get(&bone.points().0).unwrap(),
+                            current_state.points().get(&bone.points().1).unwrap(),
+                        );
 
-                            let mount_phase = match skeleton.remount_version() {
-                                RemountVersion::LRA => initial_mount_phase,
-                                _ => current_state
-                                    .skeletons()
-                                    .get(skeleton_id)
-                                    .unwrap()
-                                    .mount_phase(),
-                            };
+                        let mount_phase = match skeleton.remount_version() {
+                            RemountVersion::LRA => initial_mount_phase,
+                            _ => current_state
+                                .skeletons()
+                                .get(skeleton_id)
+                                .unwrap()
+                                .mount_phase(),
+                        };
 
-                            if !bone.is_breakable() {
+                        if !bone.is_breakable() {
+                            let adjustment =
+                                bone.get_adjustment(point_states, mount_phase.remounting());
+                            current_state
+                                .points_mut()
+                                .get_mut(&bone.points().0)
+                                .unwrap()
+                                .update(Some(adjustment.0), None, None);
+                            current_state
+                                .points_mut()
+                                .get_mut(&bone.points().1)
+                                .unwrap()
+                                .update(Some(adjustment.1), None, None);
+                        } else if (mount_phase.remounting() || mount_phase.mounted())
+                            && !dismounted_this_frame
+                        {
+                            if bone.get_intact(point_states, mount_phase.remounting()) {
                                 let adjustment =
                                     bone.get_adjustment(point_states, mount_phase.remounting());
                                 current_state
@@ -336,188 +345,169 @@ impl Engine {
                                     .get_mut(&bone.points().1)
                                     .unwrap()
                                     .update(Some(adjustment.1), None, None);
-                            } else if (mount_phase.remounting() || mount_phase.mounted())
-                                && !dismounted_this_frame
-                            {
-                                if bone.get_intact(point_states, mount_phase.remounting()) {
-                                    let adjustment =
-                                        bone.get_adjustment(point_states, mount_phase.remounting());
-                                    current_state
-                                        .points_mut()
-                                        .get_mut(&bone.points().0)
-                                        .unwrap()
-                                        .update(Some(adjustment.0), None, None);
-                                    current_state
-                                        .points_mut()
-                                        .get_mut(&bone.points().1)
-                                        .unwrap()
-                                        .update(Some(adjustment.1), None, None);
-                                } else {
-                                    dismounted_this_frame = true;
+                            } else {
+                                dismounted_this_frame = true;
 
-                                    let next_mount_phase = match skeleton.remount_version() {
-                                        RemountVersion::None => MountPhase::Dismounted {
-                                            frames_until_remounting: 0,
-                                        },
-                                        _ => {
-                                            if mount_phase.mounted() {
-                                                MountPhase::Dismounting {
-                                                    frames_until_dismounted: skeleton
-                                                        .dismounted_timer(),
-                                                }
-                                            } else if mount_phase.remounting() {
-                                                MountPhase::Dismounted {
-                                                    frames_until_remounting: skeleton
-                                                        .remounting_timer(),
-                                                }
-                                            } else {
-                                                mount_phase
+                                let next_mount_phase = match skeleton.remount_version() {
+                                    RemountVersion::None => MountPhase::Dismounted {
+                                        frames_until_remounting: 0,
+                                    },
+                                    _ => {
+                                        if mount_phase.mounted() {
+                                            MountPhase::Dismounting {
+                                                frames_until_dismounted: skeleton
+                                                    .dismounted_timer(),
                                             }
+                                        } else if mount_phase.remounting() {
+                                            MountPhase::Dismounted {
+                                                frames_until_remounting: skeleton
+                                                    .remounting_timer(),
+                                            }
+                                        } else {
+                                            mount_phase
                                         }
-                                    };
-
-                                    current_state
-                                        .skeletons_mut()
-                                        .get_mut(skeleton_id)
-                                        .unwrap()
-                                        .set_mount_phase(next_mount_phase);
-                                }
-                            }
-                        }
-                    }
-
-                    // line collisions
-                    for point_id in skeleton.points() {
-                        let point = self.registry.get_point(*point_id);
-                        let point_state = current_state.points_mut().get_mut(point_id).unwrap();
-                        let interacting_lines =
-                            self.grid.get_lines_near_point(point_state.position());
-                        for line_id in interacting_lines {
-                            let line = &self.line_lookup[&line_id];
-                            if let Some((new_position, new_previous_position)) =
-                                line.check_interaction(point, point_state)
-                            {
-                                point_state.update(
-                                    Some(new_position),
-                                    None,
-                                    Some(new_previous_position),
-                                );
-                            }
-                        }
-                    }
-                }
-
-                // flutter bones
-                for bone_id in skeleton.bones() {
-                    let bone = self.registry.get_bone(*bone_id);
-                    if bone.is_flutter() {
-                        let point_states = (
-                            current_state.points().get(&bone.points().0).unwrap(),
-                            current_state.points().get(&bone.points().1).unwrap(),
-                        );
-                        let mount_phase = current_state
-                            .skeletons()
-                            .get(skeleton_id)
-                            .unwrap()
-                            .mount_phase();
-                        let adjustment =
-                            bone.get_adjustment(point_states, mount_phase.remounting());
-                        current_state
-                            .points_mut()
-                            .get_mut(&bone.points().0)
-                            .unwrap()
-                            .update(Some(adjustment.0), None, None);
-                        current_state
-                            .points_mut()
-                            .get_mut(&bone.points().1)
-                            .unwrap()
-                            .update(Some(adjustment.1), None, None);
-                    }
-                }
-
-                // check dismount
-                let mount_phase = current_state
-                    .skeletons()
-                    .get(skeleton_id)
-                    .unwrap()
-                    .mount_phase();
-
-                if mount_phase.mounted() || mount_phase.remounting() {
-                    for joint_id in skeleton.joints() {
-                        let joint = self.registry.get_joint(*joint_id);
-                        if joint.is_mount()
-                            && self.get_joint_should_break(joint, &current_state)
-                            && !dismounted_this_frame
-                        {
-                            dismounted_this_frame = true;
-
-                            let next_mount_phase = match skeleton.remount_version() {
-                                RemountVersion::None => MountPhase::Dismounted {
-                                    frames_until_remounting: 0,
-                                },
-                                _ => {
-                                    if mount_phase.mounted() {
-                                        MountPhase::Dismounting {
-                                            frames_until_dismounted: skeleton.dismounted_timer(),
-                                        }
-                                    } else if mount_phase.remounting() {
-                                        MountPhase::Dismounted {
-                                            frames_until_remounting: skeleton.remounting_timer(),
-                                        }
-                                    } else {
-                                        mount_phase
                                     }
-                                }
-                            };
+                                };
 
-                            current_state
-                                .skeletons_mut()
-                                .get_mut(skeleton_id)
-                                .unwrap()
-                                .set_mount_phase(next_mount_phase);
-
-                            match skeleton.remount_version() {
-                                RemountVersion::LRA => current_state
+                                current_state
                                     .skeletons_mut()
                                     .get_mut(skeleton_id)
                                     .unwrap()
-                                    .set_sled_intact(false),
-                                _ => {}
+                                    .set_mount_phase(next_mount_phase);
                             }
                         }
                     }
                 }
 
-                // check skeleton break (like sled break)
-                let mount_phase = current_state
-                    .skeletons()
-                    .get(skeleton_id)
-                    .unwrap()
-                    .mount_phase();
-                let sled_intact = current_state
-                    .skeletons()
-                    .get(skeleton_id)
-                    .unwrap()
-                    .sled_intact();
-
-                let sled_break_version = match skeleton.remount_version() {
-                    RemountVersion::None | RemountVersion::ComV2 => true,
-                    _ => false,
-                };
-
-                if mount_phase.mounted() || mount_phase.remounting() || sled_break_version {
-                    for joint_id in skeleton.joints() {
-                        let joint = self.registry.get_joint(*joint_id);
-                        if !joint.is_mount()
-                            && self.get_joint_should_break(joint, &current_state)
-                            && sled_intact
+                // line collisions
+                for point_id in skeleton.points() {
+                    let point = self.registry.get_point(*point_id);
+                    let point_state = current_state.points_mut().get_mut(point_id).unwrap();
+                    let interacting_lines = self.grid.get_lines_near_point(point_state.position());
+                    for line_id in interacting_lines {
+                        let line = &self.line_lookup[&line_id];
+                        if let Some((new_position, new_previous_position)) =
+                            line.check_interaction(point, point_state)
                         {
-                            current_state
+                            point_state.update(
+                                Some(new_position),
+                                None,
+                                Some(new_previous_position),
+                            );
+                        }
+                    }
+                }
+            }
+
+            // flutter bones
+            for bone_id in skeleton.bones() {
+                let bone = self.registry.get_bone(*bone_id);
+                if bone.is_flutter() {
+                    let point_states = (
+                        current_state.points().get(&bone.points().0).unwrap(),
+                        current_state.points().get(&bone.points().1).unwrap(),
+                    );
+                    let mount_phase = current_state
+                        .skeletons()
+                        .get(skeleton_id)
+                        .unwrap()
+                        .mount_phase();
+                    let adjustment = bone.get_adjustment(point_states, mount_phase.remounting());
+                    current_state
+                        .points_mut()
+                        .get_mut(&bone.points().0)
+                        .unwrap()
+                        .update(Some(adjustment.0), None, None);
+                    current_state
+                        .points_mut()
+                        .get_mut(&bone.points().1)
+                        .unwrap()
+                        .update(Some(adjustment.1), None, None);
+                }
+            }
+
+            // check dismount
+            let mount_phase = current_state
+                .skeletons()
+                .get(skeleton_id)
+                .unwrap()
+                .mount_phase();
+
+            if mount_phase.mounted() || mount_phase.remounting() {
+                for joint_id in skeleton.joints() {
+                    let joint = self.registry.get_joint(*joint_id);
+                    if joint.is_mount()
+                        && self.get_joint_should_break(joint, &current_state)
+                        && !dismounted_this_frame
+                    {
+                        dismounted_this_frame = true;
+
+                        let next_mount_phase = match skeleton.remount_version() {
+                            RemountVersion::None => MountPhase::Dismounted {
+                                frames_until_remounting: 0,
+                            },
+                            _ => {
+                                if mount_phase.mounted() {
+                                    MountPhase::Dismounting {
+                                        frames_until_dismounted: skeleton.dismounted_timer(),
+                                    }
+                                } else if mount_phase.remounting() {
+                                    MountPhase::Dismounted {
+                                        frames_until_remounting: skeleton.remounting_timer(),
+                                    }
+                                } else {
+                                    mount_phase
+                                }
+                            }
+                        };
+
+                        current_state
+                            .skeletons_mut()
+                            .get_mut(skeleton_id)
+                            .unwrap()
+                            .set_mount_phase(next_mount_phase);
+
+                        match skeleton.remount_version() {
+                            RemountVersion::LRA => current_state
                                 .skeletons_mut()
                                 .get_mut(skeleton_id)
                                 .unwrap()
-                                .set_sled_intact(false);
+                                .set_sled_intact(false),
+                            _ => {}
                         }
+                    }
+                }
+            }
+
+            // check skeleton break (like sled break)
+            let mount_phase = current_state
+                .skeletons()
+                .get(skeleton_id)
+                .unwrap()
+                .mount_phase();
+            let sled_intact = current_state
+                .skeletons()
+                .get(skeleton_id)
+                .unwrap()
+                .sled_intact();
+
+            let sled_break_version = match skeleton.remount_version() {
+                RemountVersion::None | RemountVersion::ComV2 => true,
+                _ => false,
+            };
+
+            if mount_phase.mounted() || mount_phase.remounting() || sled_break_version {
+                for joint_id in skeleton.joints() {
+                    let joint = self.registry.get_joint(*joint_id);
+                    if !joint.is_mount()
+                        && self.get_joint_should_break(joint, &current_state)
+                        && sled_intact
+                    {
+                        current_state
+                            .skeletons_mut()
+                            .get_mut(skeleton_id)
+                            .unwrap()
+                            .set_sled_intact(false);
                     }
                 }
             }
@@ -532,7 +522,7 @@ impl Engine {
             let dismounted_this_frame = dismount_flags[dismount_flag_index];
             dismount_flag_index += 1;
 
-            if !(self.get_skeleton_frozen_at_time)(*skeleton_id, frame) && !dismounted_this_frame {
+            if !dismounted_this_frame {
                 let current_mount_phase = current_state
                     .skeletons()
                     .get(skeleton_id)
