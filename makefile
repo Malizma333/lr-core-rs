@@ -11,10 +11,10 @@ install: ## Install development tooling locally at .cargo
 
 .PHONY: init-lib
 init-lib: ## Create a new library crate
-	@if [ -n "$(NAME)" ]; then \
-		cargo init --lib --vcs none $(NAME); \
+	@if [ -n "$(CRATE)" ]; then \
+		cargo init --lib --vcs none $(CRATE); \
 	else \
-		echo "Usage: make init-lib NAME=[name]"; \
+		echo "Usage: make init-lib CRATE=[name]"; \
 	fi
 
 .PHONY: format
