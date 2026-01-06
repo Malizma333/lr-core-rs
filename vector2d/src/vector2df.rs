@@ -48,13 +48,15 @@ impl Div<f64> for Vector2Df {
     }
 }
 
+impl From<Vector2Di> for Vector2Df {
+    fn from(v1: Vector2Di) -> Self {
+        Vector2Df::new(f64::from(v1.x()), f64::from(v1.y()))
+    }
+}
+
 impl Vector2Df {
     pub fn new(x: f64, y: f64) -> Vector2Df {
         Vector2Df { x, y }
-    }
-
-    pub fn from(v1: &Vector2Di) -> Vector2Df {
-        Vector2Df::new(f64::from(v1.x()), f64::from(v1.y()))
     }
 
     pub fn x(&self) -> f64 {
@@ -144,6 +146,14 @@ impl Vector2Df {
     pub fn to_hex_string(&self) -> String {
         format!("(0x{:016x}, 0x{:016x})", self.x.to_bits(), self.y.to_bits(),)
     }
+
+    pub fn with_x(&self, x: f64) -> Vector2Df {
+        Vector2Df::new(x, self.y)
+    }
+
+    pub fn with_y(&self, y: f64) -> Vector2Df {
+        Vector2Df::new(self.x, y)
+    }
 }
 
 #[cfg(test)]
@@ -153,7 +163,7 @@ mod tests {
     #[test]
     fn from() {
         let v1 = Vector2Di::new(1, 3);
-        let v2 = Vector2Df::from(&v1);
+        let v2 = Vector2Df::from(v1);
         assert!(
             v2.x == 1.0 && v2.y == 3.0,
             "creating vector2df from vector2di should cast integers to floats"

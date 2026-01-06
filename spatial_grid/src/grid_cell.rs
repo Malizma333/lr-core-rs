@@ -16,7 +16,7 @@ impl GridCell {
             scaled_position.x().floor() as i32,
             scaled_position.y().floor() as i32,
         );
-        let remainder = world_position - f64::from(CELL_SIZE) * Vector2Df::from(&position);
+        let remainder = world_position - f64::from(CELL_SIZE) * Vector2Df::from(position);
         GridCell {
             position,
             remainder,
