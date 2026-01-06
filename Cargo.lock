@@ -149,8 +149,8 @@ dependencies = [
 name = "amf0"
 version = "0.1.0"
 dependencies = [
- "byteorder",
  "lr_types",
+ "quick_byte",
  "thiserror 2.0.17",
  "vector2d",
 ]
@@ -523,12 +523,6 @@ dependencies = [
  "quote",
  "syn",
 ]
-
-[[package]]
-name = "byteorder"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "byteorder-lite"
@@ -1837,9 +1831,9 @@ name = "lr_format_sol"
 version = "0.1.0"
 dependencies = [
  "amf0",
- "byteorder",
  "lr_types",
  "pretty_assertions",
+ "quick_byte",
  "thiserror 2.0.17",
  "vector2d",
 ]
@@ -1848,10 +1842,10 @@ dependencies = [
 name = "lr_format_trk"
 version = "0.1.0"
 dependencies = [
- "byteorder",
  "color",
  "lr_types",
  "pretty_assertions",
+ "quick_byte",
  "thiserror 2.0.17",
  "vector2d",
 ]
@@ -2661,6 +2655,10 @@ checksum = "b66c2058c55a409d601666cffe35f04333cf1013010882cec174a7467cd4e21c"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "quick_byte"
+version = "0.1.0"
 
 [[package]]
 name = "quote"

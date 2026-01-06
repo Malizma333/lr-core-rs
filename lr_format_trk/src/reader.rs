@@ -1,5 +1,4 @@
 use crate::TrkReadError;
-use byteorder::{LittleEndian, ReadBytesExt};
 use color::RGBColor;
 use lr_types::{
     track::{
@@ -8,6 +7,7 @@ use lr_types::{
     },
     unit_conversion::{from_lra_gravity, from_lra_scenery_width, from_lra_zoom},
 };
+use quick_byte::QuickRead;
 use std::{
     collections::HashSet,
     io::{Cursor, Read, Seek, SeekFrom},
@@ -57,7 +57,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
         Err(TrkReadError::UnsupportedTrackVersion(version.to_string()))?
     }
 
-    let feature_string_length = cursor.read_u16::<LittleEndian>()?;
+    let feature_string_length = cursor.read_u16_le()?;
     let mut buffer = vec![0; usize::from(feature_string_length)];
     cursor.read_exact(&mut buffer)?;
     let feature_string = str::from_utf8(&buffer)?;
@@ -110,11 +110,11 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
             .audio_offset(-seconds_offset);
     }
 
-    let start_pos_x = cursor.read_f64::<LittleEndian>()?;
-    let start_pos_y = cursor.read_f64::<LittleEndian>()?;
+    let start_pos_x = cursor.read_f64_le()?;
+    let start_pos_y = cursor.read_f64_le()?;
     let start_position = Vector2Df::new(start_pos_x, start_pos_y);
 
-    let line_count = cursor.read_u32::<LittleEndian>()?;
+    let line_count = cursor.read_u32_le()?;
 
     let mut max_id = 0;
 
@@ -148,8 +148,8 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
             if included_features.contains(FEATURE_IGNORABLE_TRIGGER) {
                 let has_zoom_trigger = cursor.read_u8()?;
                 if has_zoom_trigger == 1 {
-                    let target_zoom = from_lra_zoom(cursor.read_f32::<LittleEndian>()?);
-                    let length = u32::try_from(cursor.read_i16::<LittleEndian>()?)?;
+                    let target_zoom = from_lra_zoom(cursor.read_f32_le()?);
+                    let length = u32::try_from(cursor.read_i16_le()?)?;
                     let zoom_event = CameraZoomEvent::new(target_zoom);
                     let line_hit = LineHitTrigger::new(line_id, length);
                     track_builder
@@ -158,19 +158,19 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
                 }
             }
 
-            line_id = cursor.read_u32::<LittleEndian>()?;
+            line_id = cursor.read_u32_le()?;
             max_id = max_id.max(line_id);
 
             if line_ext != 0 {
-                _ = cursor.read_i32::<LittleEndian>()?; // Prev line id or -1
-                _ = cursor.read_i32::<LittleEndian>()?; // Next line id or -1
+                _ = cursor.read_i32_le()?; // Prev line id or -1
+                _ = cursor.read_i32_le()?; // Next line id or -1
             }
         }
 
-        let line_x1 = cursor.read_f64::<LittleEndian>()?;
-        let line_y1 = cursor.read_f64::<LittleEndian>()?;
-        let line_x2 = cursor.read_f64::<LittleEndian>()?;
-        let line_y2 = cursor.read_f64::<LittleEndian>()?;
+        let line_x1 = cursor.read_f64_le()?;
+        let line_y1 = cursor.read_f64_le()?;
+        let line_x2 = cursor.read_f64_le()?;
+        let line_y2 = cursor.read_f64_le()?;
         let endpoints = (
             Vector2Df::new(line_x1, line_y1),
             Vector2Df::new(line_x2, line_y2),
@@ -248,7 +248,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
         )))?
     }
 
-    let num_entries = cursor.read_u16::<LittleEndian>()?;
+    let num_entries = cursor.read_u16_le()?;
 
     let mut start_zoom = None;
     let mut start_gravity_x = None;
@@ -262,7 +262,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
     let mut start_bg_color_blue = None;
 
     for _ in 0..num_entries {
-        let meta_string_length = cursor.read_u16::<LittleEndian>()?;
+        let meta_string_length = cursor.read_u16_le()?;
         let mut buffer = vec![0; usize::from(meta_string_length)];
         cursor.read_exact(&mut buffer)?;
         let meta_string = str::from_utf8(&buffer)?;

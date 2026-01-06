@@ -9,8 +9,8 @@ install: ## Install development tooling locally at .cargo
 	# Test coverage
 	cargo install cargo-tarpaulin --version 0.35.0 --locked --root .cargo
 
-.PHONY: init-lib
-init-lib: ## Create a new library crate
+.PHONY: init-crate
+init-crate: ## Create a new library crate
 	@if [ -n "$(CRATE)" ]; then \
 		cargo init --lib --vcs none $(CRATE); \
 	else \

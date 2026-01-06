@@ -1,9 +1,10 @@
 //! <https://github.com/KallDrexx/rust-media-libs>
 //! License: See ../LICENSE-APACHE and ../LICENSE-MIT
-//! Modifications Copyright 2025 Tobias Bessler
+//! Modifications Copyright 2026 Tobias Bessler
+
+use quick_byte::QuickRead;
 
 use super::{Amf0Value, errors::Amf0DeserializationError, markers};
-use byteorder::{BigEndian, ReadBytesExt};
 use std::collections::HashMap;
 use std::io::Read;
 
@@ -57,7 +58,7 @@ fn read_next_value<R: Read>(
 }
 
 fn parse_number<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0DeserializationError> {
-    let number = bytes.read_f64::<BigEndian>()?;
+    let number = bytes.read_f64_be()?;
     let value = Amf0Value::Number(number);
 
     Ok(value)
@@ -82,7 +83,7 @@ fn parse_bool<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0DeserializationEr
 }
 
 fn parse_string<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0DeserializationError> {
-    let length = bytes.read_u16::<BigEndian>()?;
+    let length = bytes.read_u16_be()?;
     let mut buffer: Vec<u8> = vec![0_u8; length as usize];
     bytes.read_exact(&mut buffer)?;
 
@@ -122,7 +123,7 @@ fn parse_ecma_array<R: Read>(
     // then the buffer will start at that ending and funky things will happen.  So for now it seems
     // like we can ignore the associative count and just read exactly as we would an object.
 
-    let _associative_count = bytes.read_u32::<BigEndian>()?;
+    let _associative_count = bytes.read_u32_be()?;
     parse_object(bytes, references)
 }
 
@@ -130,7 +131,7 @@ fn parse_strict_array<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
 ) -> Result<Amf0Value, Amf0DeserializationError> {
-    let _array_count = bytes.read_u32::<BigEndian>()?;
+    let _array_count = bytes.read_u32_be()?;
     let mut values: Vec<Amf0Value> = Vec::new();
 
     for _ in 0.._array_count {
@@ -151,7 +152,7 @@ fn parse_object_property<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
 ) -> Result<Option<ObjectProperty>, Amf0DeserializationError> {
-    let label_length = bytes.read_u16::<BigEndian>()?;
+    let label_length = bytes.read_u16_be()?;
     if label_length == 0 {
         // Next byte should be the end of object marker.  We need to read this
         // to make sure we progress the current position.
@@ -181,16 +182,17 @@ fn parse_reference<R: Read>(
     bytes: &mut R,
     references: &Vec<Amf0Value>,
 ) -> Result<Amf0Value, Amf0DeserializationError> {
-    let index = bytes.read_u16::<BigEndian>()?;
+    let index = bytes.read_u16_be()?;
     Ok(references[index as usize].clone())
 }
 
 #[cfg(test)]
 mod tests {
+    use quick_byte::QuickWrite;
+
     use super::super::Amf0Value;
     use super::deserialize;
     use super::markers;
-    use byteorder::{BigEndian, WriteBytesExt};
     use std::collections::HashMap;
     use std::io::Cursor;
 
@@ -198,11 +200,11 @@ mod tests {
     fn can_deserialize_strict_array() {
         let mut vector = vec![];
         vector.push(markers::STRICT_ARRAY_MARKER);
-        vector.write_u32::<BigEndian>(2).unwrap();
+        vector.write_u32_be(2).unwrap();
         vector.push(markers::NUMBER_MARKER);
-        vector.write_f64::<BigEndian>(1.0).unwrap();
+        vector.write_f64_be(1.0).unwrap();
         vector.push(markers::NUMBER_MARKER);
-        vector.write_f64::<BigEndian>(2.0).unwrap();
+        vector.write_f64_be(2.0).unwrap();
 
         let mut input = Cursor::new(vector);
         let result = deserialize(&mut input).unwrap();
@@ -218,7 +220,7 @@ mod tests {
 
         let mut vector = vec![];
         vector.write_u8(markers::NUMBER_MARKER).unwrap();
-        vector.write_f64::<BigEndian>(number).unwrap();
+        vector.write_f64_be(number).unwrap();
 
         let mut input = Cursor::new(vector);
         let result = deserialize(&mut input).unwrap();
@@ -259,7 +261,7 @@ mod tests {
 
         let mut vector = vec![];
         vector.write_u8(markers::STRING_MARKER).unwrap();
-        vector.write_u16::<BigEndian>(value.len() as u16).unwrap();
+        vector.write_u16_be(value.len() as u16).unwrap();
         vector.extend(value.as_bytes());
 
         let mut input = Cursor::new(vector);
@@ -287,13 +289,11 @@ mod tests {
 
         let mut vector = vec![];
         vector.push(markers::OBJECT_MARKER);
-        vector.write_u16::<BigEndian>(4).unwrap();
+        vector.write_u16_be(4).unwrap();
         vector.extend("test".as_bytes());
         vector.push(markers::NUMBER_MARKER);
-        vector.write_f64::<BigEndian>(NUMBER).unwrap();
-        vector
-            .write_u16::<BigEndian>(markers::UTF_8_EMPTY_MARKER)
-            .unwrap();
+        vector.write_f64_be(NUMBER).unwrap();
+        vector.write_u16_be(markers::UTF_8_EMPTY_MARKER).unwrap();
         vector.push(markers::OBJECT_END_MARKER);
 
         let mut input = Cursor::new(vector);
@@ -310,19 +310,17 @@ mod tests {
     fn can_deserialize_emca_array() {
         let mut vector = vec![];
         vector.push(markers::ECMA_ARRAY_MARKER);
-        vector.write_u32::<BigEndian>(2).unwrap();
-        vector.write_u16::<BigEndian>(5).unwrap();
+        vector.write_u32_be(2).unwrap();
+        vector.write_u16_be(5).unwrap();
         vector.extend("test1".as_bytes());
         vector.push(markers::NUMBER_MARKER);
-        vector.write_f64::<BigEndian>(1.0).unwrap();
-        vector.write_u16::<BigEndian>(5).unwrap();
+        vector.write_f64_be(1.0).unwrap();
+        vector.write_u16_be(5).unwrap();
         vector.extend("test2".as_bytes());
         vector.write_u8(markers::STRING_MARKER).unwrap();
-        vector.write_u16::<BigEndian>(6).unwrap();
+        vector.write_u16_be(6).unwrap();
         vector.extend("second".as_bytes());
-        vector
-            .write_u16::<BigEndian>(markers::UTF_8_EMPTY_MARKER)
-            .unwrap();
+        vector.write_u16_be(markers::UTF_8_EMPTY_MARKER).unwrap();
         vector.push(markers::OBJECT_END_MARKER);
 
         let mut input = Cursor::new(vector);

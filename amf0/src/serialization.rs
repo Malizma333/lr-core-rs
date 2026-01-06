@@ -1,9 +1,10 @@
 //! <https://github.com/KallDrexx/rust-media-libs>
 //! License: See ../LICENSE-APACHE and ../LICENSE-MIT
-//! Modifications Copyright 2025 Tobias Bessler
+//! Modifications Copyright 2026 Tobias Bessler
+
+use quick_byte::QuickWrite;
 
 use super::{Amf0Value, errors::Amf0SerializationError, markers};
-use byteorder::{BigEndian, WriteBytesExt};
 use std::collections::HashMap;
 
 // Serializes values into an amf0 encoded vector of bytes
@@ -54,7 +55,7 @@ fn serialize_value(value: &Amf0Value, bytes: &mut Vec<u8>) -> Result<(), Amf0Ser
 }
 
 fn serialize_number(value: f64, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
-    bytes.write_f64::<BigEndian>(value)?;
+    bytes.write_f64_be(value)?;
     Ok(())
 }
 
@@ -68,7 +69,7 @@ fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), Amf0Seria
         return Err(Amf0SerializationError::NormalStringTooLong);
     }
 
-    bytes.write_u16::<BigEndian>(value.len() as u16)?;
+    bytes.write_u16_be(value.len() as u16)?;
     bytes.extend(value.as_bytes());
     Ok(())
 }
@@ -78,12 +79,12 @@ fn serialize_object(
     bytes: &mut Vec<u8>,
 ) -> Result<(), Amf0SerializationError> {
     for (name, value) in properties {
-        bytes.write_u16::<BigEndian>(name.len() as u16)?;
+        bytes.write_u16_be(name.len() as u16)?;
         bytes.extend(name.as_bytes());
         serialize_value(value, bytes)?;
     }
 
-    bytes.write_u16::<BigEndian>(markers::UTF_8_EMPTY_MARKER)?;
+    bytes.write_u16_be(markers::UTF_8_EMPTY_MARKER)?;
     bytes.push(markers::OBJECT_END_MARKER);
     Ok(())
 }
@@ -92,7 +93,7 @@ fn serialize_strict_array(
     array: &Vec<Amf0Value>,
     bytes: &mut Vec<u8>,
 ) -> Result<(), Amf0SerializationError> {
-    bytes.write_u32::<BigEndian>(array.len() as u32)?;
+    bytes.write_u32_be(array.len() as u32)?;
 
     for value in array {
         serialize_value(value, bytes)?;
@@ -105,7 +106,7 @@ fn serialize_ecma_array(
     properties: &HashMap<String, Amf0Value>,
     bytes: &mut Vec<u8>,
 ) -> Result<(), Amf0SerializationError> {
-    bytes.write_u32::<BigEndian>(properties.len() as u32)?;
+    bytes.write_u32_be(properties.len() as u32)?;
 
     serialize_object(properties, bytes)?;
 
@@ -118,7 +119,7 @@ mod tests {
     use super::Amf0SerializationError;
     use super::markers;
     use super::serialize;
-    use byteorder::{BigEndian, WriteBytesExt};
+    use quick_byte::QuickWrite;
     use std::collections::HashMap;
 
     #[test]
@@ -134,9 +135,9 @@ mod tests {
         let mut expected = vec![];
 
         expected.write_u8(markers::STRICT_ARRAY_MARKER).unwrap();
-        expected.write_u32::<BigEndian>(1).unwrap();
+        expected.write_u32_be(1).unwrap();
         expected.write_u8(markers::NUMBER_MARKER).unwrap();
-        expected.write_f64::<BigEndian>(number).unwrap();
+        expected.write_f64_be(number).unwrap();
 
         assert_eq!(result, expected);
     }
@@ -150,7 +151,7 @@ mod tests {
 
         let mut expected = vec![];
         expected.write_u8(markers::NUMBER_MARKER).unwrap();
-        expected.write_f64::<BigEndian>(number).unwrap();
+        expected.write_f64_be(number).unwrap();
 
         assert_eq!(result, expected);
     }
@@ -188,7 +189,7 @@ mod tests {
 
         let mut expected = vec![];
         expected.write_u8(markers::STRING_MARKER).unwrap();
-        expected.write_u16::<BigEndian>(value.len() as u16).unwrap();
+        expected.write_u16_be(value.len() as u16).unwrap();
         expected.extend(value.as_bytes());
 
         assert_eq!(result, expected);
@@ -217,13 +218,11 @@ mod tests {
 
         let mut expected = vec![];
         expected.push(markers::OBJECT_MARKER);
-        expected.write_u16::<BigEndian>(4).unwrap();
+        expected.write_u16_be(4).unwrap();
         expected.extend("test".as_bytes());
         expected.push(markers::NUMBER_MARKER);
-        expected.write_f64::<BigEndian>(NUMBER).unwrap();
-        expected
-            .write_u16::<BigEndian>(markers::UTF_8_EMPTY_MARKER)
-            .unwrap();
+        expected.write_f64_be(NUMBER).unwrap();
+        expected.write_u16_be(markers::UTF_8_EMPTY_MARKER).unwrap();
         expected.push(markers::OBJECT_END_MARKER);
 
         assert_eq!(result, expected);

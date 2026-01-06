@@ -1,6 +1,6 @@
 //! <https://github.com/KallDrexx/rust-media-libs>
 //! License: See ../LICENSE-APACHE and ../LICENSE-MIT
-//! Modifications Copyright 2025 Tobias Bessler
+//! Modifications Copyright 2026 Tobias Bessler
 
 mod deserialization;
 mod errors;

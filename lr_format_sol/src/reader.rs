@@ -1,7 +1,7 @@
 use crate::SolReadError;
 use amf0::deserialize;
-use byteorder::{BigEndian, ReadBytesExt};
 use lr_types::track::{GridVersion, LineType, RemountVersion, Track, TrackBuilder};
+use quick_byte::QuickRead;
 use std::io::{Cursor, Read, Seek};
 use vector2d::Vector2Df;
 
@@ -11,7 +11,7 @@ pub fn get_track_count(data: &[u8]) -> u32 {
 
     // HACK: We assume header size is constant, and track list length will always be from 0x2C to 0x2F
     let _ = cursor.seek(std::io::SeekFrom::Start(0x2C));
-    let num_tracks = cursor.read_u32::<BigEndian>().unwrap_or(0);
+    let num_tracks = cursor.read_u32_be().unwrap_or(0);
 
     num_tracks
 }
@@ -33,7 +33,7 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
     }
 
     // Header
-    let _file_size = bytes.read_u32::<BigEndian>()? + 6;
+    let _file_size = bytes.read_u32_be()? + 6;
 
     let mut tag = [0u8; 4];
     bytes.read_exact(&mut tag)?;
@@ -51,7 +51,7 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
         )))?
     }
 
-    let sol_string_length = bytes.read_u16::<BigEndian>()?;
+    let sol_string_length = bytes.read_u16_be()?;
     let mut sol_name = vec![0; usize::from(sol_string_length)];
     bytes.read_exact(&mut sol_name)?;
     if str::from_utf8(&sol_name)? != "savedLines" {
@@ -61,9 +61,9 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
         )))?
     }
 
-    let _padding = bytes.read_u32::<BigEndian>()?;
+    let _padding = bytes.read_u32_be()?;
 
-    let data_string_length = bytes.read_u16::<BigEndian>()?;
+    let data_string_length = bytes.read_u16_be()?;
     let mut data_name = vec![0; usize::from(data_string_length)];
     bytes.read_exact(&mut data_name)?;
     if str::from_utf8(&data_name)? != "trackList" {
