@@ -1,30 +1,49 @@
-use std::{fmt::Display, num::TryFromIntError, str::Utf8Error};
+use std::{error::Error, fmt, num, str};
 
-use thiserror::Error;
-
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum JsonReadError {
-    #[error("Failed to convert integer: {0}")]
-    TryFromInt(#[from] TryFromIntError),
-    #[error("Failed to parse utf8 string: {0}")]
-    Utf8Parsing(#[from] Utf8Error),
-    #[error("Failed to deserialize json: {0}")]
-    SerdeJson(#[from] serde_json::Error),
-    #[error("Unsupported grid version: {0}")]
     UnsupportedGridVersion(String),
-    #[error("Unsupported line type: {0}")]
     UnsupportedLineType(String),
-    #[error("Unsupported trigger type: {0}")]
     UnsupportedTriggerType(String),
-    #[error("Invalid trigger format")]
-    InvalidTriggerFormat(#[from] InvalidTriggerFormatError),
+    InvalidTriggerFormat(String),
+    Other(Box<dyn Error + Send + Sync>),
 }
 
-#[derive(Clone, Debug, Error)]
-pub struct InvalidTriggerFormatError(pub String);
+impl fmt::Display for JsonReadError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            Self::UnsupportedGridVersion(e) => write!(f, "Unsupported grid version: {}", e),
+            Self::UnsupportedLineType(e) => write!(f, "Unsupported line type: {}", e),
+            Self::UnsupportedTriggerType(e) => write!(f, "Unsupported trigger type: {}", e),
+            Self::InvalidTriggerFormat(e) => write!(f, "Invalid trigger format: {}", e),
+            Self::Other(e) => write!(f, "Other error occurred: {}", e),
+        }
+    }
+}
 
-impl Display for InvalidTriggerFormatError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "InvalidTriggerFormatError: {}", self.0)
+impl Error for JsonReadError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match &self {
+            JsonReadError::Other(e) => Some(&**e),
+            _ => None,
+        }
+    }
+}
+
+impl From<serde_json::Error> for JsonReadError {
+    fn from(value: serde_json::Error) -> Self {
+        JsonReadError::Other(Box::new(value))
+    }
+}
+
+impl From<num::TryFromIntError> for JsonReadError {
+    fn from(value: num::TryFromIntError) -> Self {
+        JsonReadError::Other(Box::new(value))
+    }
+}
+
+impl From<str::Utf8Error> for JsonReadError {
+    fn from(value: str::Utf8Error) -> Self {
+        JsonReadError::Other(Box::new(value))
     }
 }

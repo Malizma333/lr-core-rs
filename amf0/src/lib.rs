@@ -7,7 +7,7 @@ mod errors;
 mod serialization;
 
 pub use deserialization::deserialize;
-pub use errors::{Amf0DeserializationError, Amf0SerializationError};
+pub use errors::{DeserializationError, SerializationError};
 pub use serialization::serialize;
 
 use std::collections::HashMap;

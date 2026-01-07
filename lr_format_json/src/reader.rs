@@ -8,10 +8,7 @@ use lr_types::{
 };
 use vector2d::Vector2Df;
 
-use crate::{
-    FaultyBool, JsonReadError, JsonTrack, error::InvalidTriggerFormatError,
-    json_array_line::LRAJsonArrayLine,
-};
+use crate::{FaultyBool, JsonReadError, JsonTrack, json_array_line::LRAJsonArrayLine};
 
 pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
     let json_string = str::from_utf8(bytes)?;
@@ -317,7 +314,8 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
 
     if let Some(time_triggers) = json_track.time_based_triggers {
         for trigger in time_triggers {
-            let err = InvalidTriggerFormatError(format!("{:?}", trigger));
+            // Closure just avoids moving the value
+            let err = || JsonReadError::InvalidTriggerFormat(format!("{:?}", trigger));
             match trigger.trigger_type {
                 0 => {
                     // Zoom
@@ -333,16 +331,16 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
                 1 => {
                     // Background Color
                     let red = u8::try_from(
-                        Option::<u32>::from(trigger.background_red.ok_or(err.clone())?)
-                            .ok_or(err.clone())?,
+                        Option::<u32>::from(trigger.background_red.ok_or_else(err)?)
+                            .ok_or_else(err)?,
                     )?;
                     let green = u8::try_from(
-                        Option::<u32>::from(trigger.background_green.ok_or(err.clone())?)
-                            .ok_or(err.clone())?,
+                        Option::<u32>::from(trigger.background_green.ok_or_else(err)?)
+                            .ok_or_else(err)?,
                     )?;
                     let blue = u8::try_from(
-                        Option::<u32>::from(trigger.background_blue.ok_or(err.clone())?)
-                            .ok_or(err.clone())?,
+                        Option::<u32>::from(trigger.background_blue.ok_or_else(err)?)
+                            .ok_or_else(err)?,
                     )?;
                     let start_frame = trigger.start;
                     let end_frame = trigger.end;
@@ -355,16 +353,13 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
                 2 => {
                     // Line Color
                     let red = u8::try_from(
-                        Option::<u32>::from(trigger.line_red.ok_or(err.clone())?)
-                            .ok_or(err.clone())?,
+                        Option::<u32>::from(trigger.line_red.ok_or_else(err)?).ok_or_else(err)?,
                     )?;
                     let green = u8::try_from(
-                        Option::<u32>::from(trigger.line_green.ok_or(err.clone())?)
-                            .ok_or(err.clone())?,
+                        Option::<u32>::from(trigger.line_green.ok_or_else(err)?).ok_or_else(err)?,
                     )?;
                     let blue = u8::try_from(
-                        Option::<u32>::from(trigger.line_blue.ok_or(err.clone())?)
-                            .ok_or(err.clone())?,
+                        Option::<u32>::from(trigger.line_blue.ok_or_else(err)?).ok_or_else(err)?,
                     )?;
                     let start_frame = trigger.start;
                     let end_frame = trigger.end;

@@ -1,35 +1,67 @@
-use std::{
-    io,
-    num::{ParseFloatError, ParseIntError, TryFromIntError},
-    str::Utf8Error,
-};
+use std::{error::Error, fmt, io, num, str};
 
-use thiserror::Error;
-
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum TrkReadError {
-    #[error("IO error: {0}")]
-    Io(#[from] io::Error),
-    #[error("Failed to convert integer: {0}")]
-    TryFromInt(#[from] TryFromIntError),
-    #[error("Failed to parse integer: {0}")]
-    IntConversion(#[from] ParseIntError),
-    #[error("Failed to parse float: {0}")]
-    FloatConversion(#[from] ParseFloatError),
-    #[error("Failed to parse utf8 string: {0}")]
-    Utf8Parsing(#[from] Utf8Error),
-    #[error("Invalid magic number: {0}")]
     InvalidMagicNumber(String),
-    #[error("Unsupported track version: {0}")]
     UnsupportedTrackVersion(String),
-    #[error("Invalid song data format: {0}")]
     InvalidSongFormat(String),
-    #[error("Unsupported line type: {0}")]
     UnsupportedLineType(String),
-    #[error("Invalid key value format: {0}")]
     InvalidKeyValue(String),
-    #[error("Empty trigger data")]
     EmptyTriggerData,
-    #[error("Unsupported trigger type: {0}")]
     UnsupportedTriggerType(String),
+    Other(Box<dyn Error + Send + Sync>),
+}
+
+impl fmt::Display for TrkReadError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            Self::InvalidMagicNumber(e) => write!(f, "Invalid magic number: {}", e),
+            Self::UnsupportedTrackVersion(e) => write!(f, "Unsupported track version: {}", e),
+            Self::InvalidSongFormat(e) => write!(f, "Invalid song format: {}", e),
+            Self::UnsupportedLineType(e) => write!(f, "Unsupported line type: {}", e),
+            Self::InvalidKeyValue(e) => write!(f, "Invalid key value format: {}", e),
+            Self::EmptyTriggerData => write!(f, "Empty trigger data"),
+            Self::UnsupportedTriggerType(e) => write!(f, "Unsupported trigger type: {}", e),
+            Self::Other(e) => write!(f, "Other error occurred: {}", e),
+        }
+    }
+}
+
+impl Error for TrkReadError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match &self {
+            TrkReadError::Other(e) => Some(&**e),
+            _ => None,
+        }
+    }
+}
+
+impl From<io::Error> for TrkReadError {
+    fn from(value: io::Error) -> Self {
+        TrkReadError::Other(Box::new(value))
+    }
+}
+
+impl From<num::TryFromIntError> for TrkReadError {
+    fn from(value: num::TryFromIntError) -> Self {
+        TrkReadError::Other(Box::new(value))
+    }
+}
+
+impl From<num::ParseIntError> for TrkReadError {
+    fn from(value: num::ParseIntError) -> Self {
+        TrkReadError::Other(Box::new(value))
+    }
+}
+
+impl From<num::ParseFloatError> for TrkReadError {
+    fn from(value: num::ParseFloatError) -> Self {
+        TrkReadError::Other(Box::new(value))
+    }
+}
+
+impl From<str::Utf8Error> for TrkReadError {
+    fn from(value: str::Utf8Error) -> Self {
+        TrkReadError::Other(Box::new(value))
+    }
 }

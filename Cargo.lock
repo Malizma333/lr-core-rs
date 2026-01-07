@@ -151,7 +151,6 @@ version = "0.1.0"
 dependencies = [
  "lr_types",
  "quick_byte",
- "thiserror 2.0.17",
  "vector2d",
 ]
 
@@ -1822,7 +1821,6 @@ dependencies = [
  "pretty_assertions",
  "serde",
  "serde_json",
- "thiserror 2.0.17",
  "vector2d",
 ]
 
@@ -1834,7 +1832,6 @@ dependencies = [
  "lr_types",
  "pretty_assertions",
  "quick_byte",
- "thiserror 2.0.17",
  "vector2d",
 ]
 
@@ -1846,7 +1843,6 @@ dependencies = [
  "lr_types",
  "pretty_assertions",
  "quick_byte",
- "thiserror 2.0.17",
  "vector2d",
 ]
 

@@ -4,7 +4,7 @@
 
 use quick_byte::QuickRead;
 
-use super::{Amf0Value, errors::Amf0DeserializationError, markers};
+use super::{Amf0Value, errors::DeserializationError, markers};
 use std::collections::HashMap;
 use std::io::Read;
 
@@ -14,7 +14,7 @@ struct ObjectProperty {
 }
 
 // Turns any readable byte stream and converts it into an array of AMF0 values
-pub fn deserialize<R: Read>(bytes: &mut R) -> Result<Vec<Amf0Value>, Amf0DeserializationError> {
+pub fn deserialize<R: Read>(bytes: &mut R) -> Result<Vec<Amf0Value>, DeserializationError> {
     let mut references = vec![];
     let mut results = vec![];
 
@@ -31,7 +31,7 @@ pub fn deserialize<R: Read>(bytes: &mut R) -> Result<Vec<Amf0Value>, Amf0Deseria
 fn read_next_value<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
-) -> Result<Option<Amf0Value>, Amf0DeserializationError> {
+) -> Result<Option<Amf0Value>, DeserializationError> {
     let mut buffer: [u8; 1] = [0];
     let bytes_read = bytes.read(&mut buffer)?;
 
@@ -53,26 +53,26 @@ fn read_next_value<R: Read>(
         markers::STRING_MARKER => parse_string(bytes).map(Some),
         markers::STRICT_ARRAY_MARKER => parse_strict_array(bytes, references).map(Some),
         markers::REFERENCE_MARKER => parse_reference(bytes, references).map(Some),
-        _ => Err(Amf0DeserializationError::UnknownMarker { marker: buffer[0] }),
+        _ => Err(DeserializationError::UnknownMarker { marker: buffer[0] }),
     }
 }
 
-fn parse_number<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0DeserializationError> {
+fn parse_number<R: Read>(bytes: &mut R) -> Result<Amf0Value, DeserializationError> {
     let number = bytes.read_f64_be()?;
     let value = Amf0Value::Number(number);
 
     Ok(value)
 }
 
-fn parse_null() -> Result<Amf0Value, Amf0DeserializationError> {
+fn parse_null() -> Result<Amf0Value, DeserializationError> {
     Ok(Amf0Value::Null)
 }
 
-fn parse_undefined() -> Result<Amf0Value, Amf0DeserializationError> {
+fn parse_undefined() -> Result<Amf0Value, DeserializationError> {
     Ok(Amf0Value::Undefined)
 }
 
-fn parse_bool<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0DeserializationError> {
+fn parse_bool<R: Read>(bytes: &mut R) -> Result<Amf0Value, DeserializationError> {
     let value = bytes.read_u8()?;
 
     if value == 1 {
@@ -82,7 +82,7 @@ fn parse_bool<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0DeserializationEr
     }
 }
 
-fn parse_string<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0DeserializationError> {
+fn parse_string<R: Read>(bytes: &mut R) -> Result<Amf0Value, DeserializationError> {
     let length = bytes.read_u16_be()?;
     let mut buffer: Vec<u8> = vec![0_u8; length as usize];
     bytes.read_exact(&mut buffer)?;
@@ -94,7 +94,7 @@ fn parse_string<R: Read>(bytes: &mut R) -> Result<Amf0Value, Amf0Deserialization
 fn parse_object<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
-) -> Result<Amf0Value, Amf0DeserializationError> {
+) -> Result<Amf0Value, DeserializationError> {
     let mut properties = HashMap::new();
 
     loop {
@@ -112,7 +112,7 @@ fn parse_object<R: Read>(
 fn parse_ecma_array<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
-) -> Result<Amf0Value, Amf0DeserializationError> {
+) -> Result<Amf0Value, DeserializationError> {
     // An ECMA array is an array of values indexed via strings instead of numeric indexes (so
     // essentially a hash map).  It seems functionally equivalent to an object so for simplicity
     // treat it as such.
@@ -130,7 +130,7 @@ fn parse_ecma_array<R: Read>(
 fn parse_strict_array<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
-) -> Result<Amf0Value, Amf0DeserializationError> {
+) -> Result<Amf0Value, DeserializationError> {
     let _array_count = bytes.read_u32_be()?;
     let mut values: Vec<Amf0Value> = Vec::new();
 
@@ -151,14 +151,14 @@ fn parse_strict_array<R: Read>(
 fn parse_object_property<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
-) -> Result<Option<ObjectProperty>, Amf0DeserializationError> {
+) -> Result<Option<ObjectProperty>, DeserializationError> {
     let label_length = bytes.read_u16_be()?;
     if label_length == 0 {
         // Next byte should be the end of object marker.  We need to read this
         // to make sure we progress the current position.
         let byte = bytes.read_u8()?;
         if byte != markers::OBJECT_END_MARKER {
-            return Err(Amf0DeserializationError::UnexpectedEmptyObjectPropertyName);
+            return Err(DeserializationError::UnexpectedEmptyObjectPropertyName);
         }
 
         return Ok(None);
@@ -170,7 +170,7 @@ fn parse_object_property<R: Read>(
     let label = String::from_utf8(label_buffer)?;
 
     match read_next_value(bytes, references)? {
-        None => Err(Amf0DeserializationError::UnexpectedEof),
+        None => Err(DeserializationError::UnexpectedEof),
         Some(property_value) => Ok(Some(ObjectProperty {
             label,
             value: property_value,
@@ -181,7 +181,7 @@ fn parse_object_property<R: Read>(
 fn parse_reference<R: Read>(
     bytes: &mut R,
     references: &Vec<Amf0Value>,
-) -> Result<Amf0Value, Amf0DeserializationError> {
+) -> Result<Amf0Value, DeserializationError> {
     let index = bytes.read_u16_be()?;
     Ok(references[index as usize].clone())
 }

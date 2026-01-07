@@ -4,11 +4,11 @@
 
 use quick_byte::QuickWrite;
 
-use super::{Amf0Value, errors::Amf0SerializationError, markers};
+use super::{Amf0Value, errors::SerializationError, markers};
 use std::collections::HashMap;
 
 // Serializes values into an amf0 encoded vector of bytes
-pub fn serialize(values: &Vec<Amf0Value>) -> Result<Vec<u8>, Amf0SerializationError> {
+pub fn serialize(values: &Vec<Amf0Value>) -> Result<Vec<u8>, SerializationError> {
     let mut bytes = vec![];
     for value in values {
         serialize_value(value, &mut bytes)?;
@@ -17,7 +17,7 @@ pub fn serialize(values: &Vec<Amf0Value>) -> Result<Vec<u8>, Amf0SerializationEr
     Ok(bytes)
 }
 
-fn serialize_value(value: &Amf0Value, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
+fn serialize_value(value: &Amf0Value, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
     match *value {
         Amf0Value::Boolean(val) => {
             bytes.push(markers::BOOLEAN_MARKER);
@@ -54,19 +54,19 @@ fn serialize_value(value: &Amf0Value, bytes: &mut Vec<u8>) -> Result<(), Amf0Ser
     }
 }
 
-fn serialize_number(value: f64, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
+fn serialize_number(value: f64, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
     bytes.write_f64_be(value)?;
     Ok(())
 }
 
-fn serialize_bool(value: bool, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
+fn serialize_bool(value: bool, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
     bytes.push(value as u8);
     Ok(())
 }
 
-fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
+fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
     if value.len() > (u16::MAX as usize) {
-        return Err(Amf0SerializationError::NormalStringTooLong);
+        return Err(SerializationError::NormalStringTooLong);
     }
 
     bytes.write_u16_be(value.len() as u16)?;
@@ -77,7 +77,7 @@ fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), Amf0Seria
 fn serialize_object(
     properties: &HashMap<String, Amf0Value>,
     bytes: &mut Vec<u8>,
-) -> Result<(), Amf0SerializationError> {
+) -> Result<(), SerializationError> {
     for (name, value) in properties {
         bytes.write_u16_be(name.len() as u16)?;
         bytes.extend(name.as_bytes());
@@ -92,7 +92,7 @@ fn serialize_object(
 fn serialize_strict_array(
     array: &Vec<Amf0Value>,
     bytes: &mut Vec<u8>,
-) -> Result<(), Amf0SerializationError> {
+) -> Result<(), SerializationError> {
     bytes.write_u32_be(array.len() as u32)?;
 
     for value in array {
@@ -105,7 +105,7 @@ fn serialize_strict_array(
 fn serialize_ecma_array(
     properties: &HashMap<String, Amf0Value>,
     bytes: &mut Vec<u8>,
-) -> Result<(), Amf0SerializationError> {
+) -> Result<(), SerializationError> {
     bytes.write_u32_be(properties.len() as u32)?;
 
     serialize_object(properties, bytes)?;
@@ -116,7 +116,7 @@ fn serialize_ecma_array(
 #[cfg(test)]
 mod tests {
     use super::super::Amf0Value;
-    use super::Amf0SerializationError;
+    use super::SerializationError;
     use super::markers;
     use super::serialize;
     use quick_byte::QuickWrite;
@@ -239,7 +239,7 @@ mod tests {
         let input = vec![Amf0Value::Utf8String(value)];
         let result = serialize(&input);
 
-        matches!(result, Err(Amf0SerializationError::NormalStringTooLong));
+        matches!(result, Err(SerializationError::NormalStringTooLong));
     }
 
     #[test]

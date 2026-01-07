@@ -9,7 +9,6 @@ lr_types = {path = "../lr_types"}
 serde = {version = "1", features = ["derive"]}
 # Float roundtrip ensures floats get serialized/deserialized with exact precision (however, 2x slower)
 serde_json = {version = "1", features = ["float_roundtrip"]}
-thiserror = "2"
 vector2d = {path = "../vector2d"}
 
 [dev-dependencies]
