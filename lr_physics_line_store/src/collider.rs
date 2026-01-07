@@ -12,5 +12,5 @@ pub trait ColliderState {
 
     fn velocity(&self) -> Vector2Df;
 
-    fn previous_position(&self) -> Point;
+    fn external_velocity(&self) -> Point;
 }

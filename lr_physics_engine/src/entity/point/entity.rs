@@ -27,7 +27,7 @@ impl EntityPoint {
     }
 
     pub(crate) fn process_initial_step(&self, state: &mut EntityPointState, gravity: Vector2Df) {
-        let computed_velocity = state.position().vector_from(state.previous_position());
+        let computed_velocity = state.position().vector_from(state.external_velocity());
         let new_velocity = computed_velocity * (1.0 - self.air_friction) + gravity;
         let new_position = state.position().translated_by(new_velocity);
         state.update(

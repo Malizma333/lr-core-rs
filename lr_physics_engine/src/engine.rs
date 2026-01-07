@@ -380,13 +380,13 @@ impl Engine {
                     let point = self.registry.get_point(*point_id);
                     let point_state = current_state.points_mut().get_mut(point_id).unwrap();
                     for line in self.line_store.lines_near_point(point_state.position()) {
-                        if let Some((new_position, new_previous_position)) =
+                        if let Some((new_position, new_external_velocity)) =
                             line.check_interaction(point, point_state)
                         {
                             point_state.update(
                                 Some(new_position),
                                 None,
-                                Some(new_previous_position),
+                                Some(new_external_velocity),
                             );
                         }
                     }
@@ -732,7 +732,7 @@ impl Engine {
                 .update(
                     Some(target_state.position()),
                     Some(target_state.velocity()),
-                    Some(target_state.previous_position()),
+                    Some(target_state.external_velocity()),
                 );
             current_state
                 .points_mut()
@@ -741,7 +741,7 @@ impl Engine {
                 .update(
                     Some(other_state.position()),
                     Some(other_state.velocity()),
-                    Some(other_state.previous_position()),
+                    Some(other_state.external_velocity()),
                 );
         }
     }

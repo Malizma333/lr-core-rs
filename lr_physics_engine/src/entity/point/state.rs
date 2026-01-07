@@ -6,7 +6,7 @@ use vector2d::Vector2Df;
 pub struct EntityPointState {
     position: Point,
     velocity: Vector2Df,
-    previous_position: Point,
+    external_velocity: Point,
 }
 
 impl ColliderState for EntityPointState {
@@ -18,17 +18,17 @@ impl ColliderState for EntityPointState {
         self.velocity
     }
 
-    fn previous_position(&self) -> Point {
-        self.previous_position
+    fn external_velocity(&self) -> Point {
+        self.external_velocity
     }
 }
 
 impl EntityPointState {
-    pub(crate) fn new(position: Point, velocity: Vector2Df, previous_position: Point) -> Self {
+    pub(crate) fn new(position: Point, velocity: Vector2Df, external_velocity: Point) -> Self {
         EntityPointState {
             position,
             velocity,
-            previous_position,
+            external_velocity,
         }
     }
 
@@ -36,11 +36,11 @@ impl EntityPointState {
         &mut self,
         new_position: Option<Point>,
         new_velocity: Option<Vector2Df>,
-        new_previous_position: Option<Point>,
+        external_velocity: Option<Point>,
     ) {
         self.position = new_position.unwrap_or(self.position);
         self.velocity = new_velocity.unwrap_or(self.velocity);
-        self.previous_position = new_previous_position.unwrap_or(self.previous_position);
+        self.external_velocity = external_velocity.unwrap_or(self.external_velocity);
     }
 
     pub(crate) fn position(&self) -> Point {
@@ -51,7 +51,7 @@ impl EntityPointState {
         self.velocity
     }
 
-    pub(crate) fn previous_position(&self) -> Point {
-        self.previous_position
+    pub(crate) fn external_velocity(&self) -> Point {
+        self.external_velocity
     }
 }

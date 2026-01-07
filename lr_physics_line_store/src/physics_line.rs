@@ -100,10 +100,7 @@ impl PhysicsLine {
         self.recompute_props();
     }
 
-    /** Returns the new (position, previous position) to update a point with if it interacts with this line\
-    *(The previous position is not necessarily `position - velocity`, it represents how much force is applied
-    on the momentum tick due to forces such as friction)*
-    */
+    /// Returns the new (position, external_velocity) to update a point with if it interacts with this line
     pub fn check_interaction<T: ColliderProps, U: ColliderState>(
         &self,
         point: &T,
@@ -129,13 +126,13 @@ impl PhysicsLine {
                 .position()
                 .translated_by(-1.0 * self.normal_unit * distance_from_line_top);
 
-            let friction_x_flipped = if point_state.previous_position().x() >= new_position.x() {
+            let friction_x_flipped = if point_state.external_velocity().x() >= new_position.x() {
                 -1.0
             } else {
                 1.0
             };
 
-            let friction_y_flipped = if point_state.previous_position().y() < new_position.y() {
+            let friction_y_flipped = if point_state.external_velocity().y() < new_position.y() {
                 -1.0
             } else {
                 1.0
@@ -149,12 +146,12 @@ impl PhysicsLine {
                 friction_y_flipped * initial_friction_vector.y(),
             );
 
-            let new_previous_position = point_state
-                .previous_position()
+            let new_external_velocity = point_state
+                .external_velocity()
                 .translated_by(friction_vector)
                 .translated_by(-1.0 * self.acceleration_vector);
 
-            Some((new_position, new_previous_position))
+            Some((new_position, new_external_velocity))
         } else {
             None
         }
