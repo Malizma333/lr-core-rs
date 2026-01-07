@@ -1,3 +1,5 @@
+//!  Adds a trait to shorthand common read/write operations on bytes
+
 use std::io::{self, Read, Write};
 
 pub trait QuickRead {
