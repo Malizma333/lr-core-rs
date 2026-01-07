@@ -8,8 +8,8 @@ use crate::entity::{
     },
     skeleton::template::EntitySkeletonTemplate,
 };
+use geometry::Point;
 use lr_types::track::RemountVersion;
-use vector2d::Vector2Df;
 
 pub struct EntitySkeletonBuilder<'a> {
     registry: &'a mut EntityRegistry,
@@ -67,7 +67,7 @@ impl<'a> EntitySkeletonBuilder<'a> {
         (self, id)
     }
 
-    pub fn point(self, initial_position: Vector2Df) -> EntityPointBuilder<'a> {
+    pub fn point(self, initial_position: Point) -> EntityPointBuilder<'a> {
         EntityPointBuilder::new(self, initial_position)
     }
 

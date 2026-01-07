@@ -82,7 +82,8 @@ impl Grid {
         let mut line_ids: Vec<GridLineId> = Vec::new();
         for i in -1..2 {
             for j in -1..2 {
-                let position = CELL_SIZE * Vector2Df::new(f64::from(i), f64::from(j)) + point;
+                let position =
+                    point.translated_by(CELL_SIZE * Vector2Df::new(f64::from(i), f64::from(j)));
                 let cell_key = GridCell::new(position).get_key();
                 if let Some(cell) = self.cells.get(&cell_key) {
                     for line_id in cell.iter().rev() {
@@ -217,14 +218,15 @@ impl Grid {
 
         if matches!(self.version, GridVersion::V6_0) {
             let line_halfway = 0.5 * Vector2Df::new(line_vector.x().abs(), line_vector.y().abs());
-            let line_midpoint = endpoints.p0() + 0.5 * line_vector;
+            let line_midpoint = endpoints.p0().translated_by(0.5 * line_vector);
             let absolute_normal = Vector2Df::new(line_normal.x().abs(), line_normal.y().abs());
             for cell_x in lower_bound_x..upper_bound_x + 1 {
                 for cell_y in lower_bound_y..upper_bound_y + 1 {
-                    let current_position_in_box = CELL_SIZE
-                        * Vector2Df::new(f64::from(cell_x) + 0.5, f64::from(cell_y) + 0.5);
+                    let current_position_in_box =
+                        CELL_SIZE * Point::new(f64::from(cell_x) + 0.5, f64::from(cell_y) + 0.5);
                     let next_cell_position = GridCell::new(current_position_in_box);
-                    let distance_between_centers = line_midpoint - current_position_in_box;
+                    let distance_between_centers =
+                        line_midpoint.vector_from(current_position_in_box);
                     let distance_from_cell_center =
                         Vector2Df::dot(absolute_normal, *next_cell_position.remainder());
                     let cell_overlap_into_hitbox = Vector2Df::dot(
@@ -278,7 +280,6 @@ mod tests {
     use lr_types::track::GridVersion;
     use serde::Deserialize;
     use std::fs;
-    use vector2d::Vector2Df;
 
     #[derive(Deserialize)]
     struct GridTestCase {
@@ -290,12 +291,12 @@ mod tests {
     #[test]
     fn add_move_remove_lines() {
         let mut grid = Grid::new(GridVersion::V6_2);
-        let line0 = Line::new(Point::zero(), Point::one() * CELL_SIZE);
+        let line0 = Line::new(Point::zero(), Point::new(CELL_SIZE, CELL_SIZE));
         let line1 = Line::new(
-            Point::one() * 2.0 * CELL_SIZE,
-            Point::one() * 3.0 * CELL_SIZE,
+            Point::new(2.0 * CELL_SIZE, 2.0 * CELL_SIZE),
+            Point::new(3.0 * CELL_SIZE, 3.0 * CELL_SIZE),
         );
-        let cell_key = GridCell::new(Vector2Df::zero()).get_key();
+        let cell_key = GridCell::new(Point::zero()).get_key();
 
         assert!(grid.cells.is_empty(), "new grid should have no cells");
 

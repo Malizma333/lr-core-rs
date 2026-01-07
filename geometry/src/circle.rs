@@ -1,5 +1,3 @@
-use vector2d::Vector2Df;
-
 use crate::{Line, Point};
 
 #[derive(Debug)]
@@ -22,7 +20,7 @@ impl Circle {
     }
 
     pub fn contains_point(&self, point: Point) -> bool {
-        Vector2Df::distance_squared(point, self.center()) <= self.radius * self.radius
+        point.distance_squared_from(self.center()) <= self.radius * self.radius
     }
 
     /** Whether this circle includes part of a line, including lines with endpoints outside of the circle that intersect it */

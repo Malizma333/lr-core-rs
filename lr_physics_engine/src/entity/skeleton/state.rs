@@ -1,18 +1,9 @@
 use crate::MountPhase;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EntitySkeletonState {
     mount_phase: MountPhase,
     sled_intact: bool,
-}
-
-impl Clone for EntitySkeletonState {
-    fn clone(&self) -> Self {
-        EntitySkeletonState {
-            mount_phase: self.mount_phase,
-            sled_intact: self.sled_intact,
-        }
-    }
 }
 
 impl EntitySkeletonState {

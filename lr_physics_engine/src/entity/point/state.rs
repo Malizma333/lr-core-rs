@@ -1,20 +1,25 @@
 use geometry::Point;
+use lr_physics_line_store::ColliderState;
 use vector2d::Vector2Df;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EntityPointState {
     position: Point,
     velocity: Vector2Df,
     previous_position: Point,
 }
 
-impl Clone for EntityPointState {
-    fn clone(&self) -> Self {
-        Self {
-            position: self.position.clone(),
-            velocity: self.velocity.clone(),
-            previous_position: self.previous_position.clone(),
-        }
+impl ColliderState for EntityPointState {
+    fn position(&self) -> Point {
+        self.position
+    }
+
+    fn velocity(&self) -> Vector2Df {
+        self.velocity
+    }
+
+    fn previous_position(&self) -> Point {
+        self.previous_position
     }
 }
 

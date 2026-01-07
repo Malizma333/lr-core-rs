@@ -6,19 +6,10 @@ use crate::entity::{
     skeleton::state::EntitySkeletonState,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(super) struct EngineState {
     point_states: BTreeMap<EntityPointId, EntityPointState>,
     skeleton_states: BTreeMap<EntitySkeletonId, EntitySkeletonState>,
-}
-
-impl Clone for EngineState {
-    fn clone(&self) -> Self {
-        Self {
-            point_states: self.point_states.clone(),
-            skeleton_states: self.skeleton_states.clone(),
-        }
-    }
 }
 
 impl EngineState {

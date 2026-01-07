@@ -1,3 +1,4 @@
+use geometry::Point;
 use vector2d::Vector2Df;
 
 use crate::entity::{point::state::EntityPointState, registry::EntityPointId};
@@ -30,12 +31,15 @@ impl EntityBone {
         }
     }
 
-    pub(crate) fn get_adjustment(
+    pub(crate) fn get_adjusted(
         &self,
         point_states: (&EntityPointState, &EntityPointState),
         remounting: bool,
-    ) -> (Vector2Df, Vector2Df) {
-        let bone_vector = point_states.0.position() - point_states.1.position();
+    ) -> (Point, Point) {
+        let bone_vector = point_states
+            .0
+            .position()
+            .vector_from(point_states.1.position());
         let percent_adjustment = self.get_percent_adjustment(bone_vector);
 
         let adjustment_strength = if remounting {
@@ -46,8 +50,14 @@ impl EntityBone {
         let adjustment = adjustment_strength * percent_adjustment;
 
         (
-            point_states.0.position() - bone_vector * adjustment * (1.0 - self.bias),
-            point_states.1.position() + bone_vector * adjustment * self.bias,
+            point_states
+                .0
+                .position()
+                .translated_by(-1.0 * bone_vector * adjustment * (1.0 - self.bias)),
+            point_states
+                .1
+                .position()
+                .translated_by(bone_vector * adjustment * self.bias),
         )
     }
 
@@ -56,7 +66,10 @@ impl EntityBone {
         point_states: (&EntityPointState, &EntityPointState),
         remounting: bool,
     ) -> bool {
-        let bone_vector = point_states.1.position() - point_states.0.position();
+        let bone_vector = point_states
+            .1
+            .position()
+            .vector_from(point_states.0.position());
         let percent_adjustment = self.get_percent_adjustment(bone_vector);
 
         let endurance = if remounting {

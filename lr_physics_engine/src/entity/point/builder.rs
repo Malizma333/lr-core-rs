@@ -8,7 +8,7 @@ use crate::entity::{
 pub struct EntityPointBuilder<'a> {
     skeleton: EntitySkeletonBuilder<'a>,
     initial_position: Point,
-    contact: bool,
+    is_contact: bool,
     contact_friction: Option<f64>,
     air_friction: Option<f64>,
 }
@@ -21,14 +21,14 @@ impl<'a> EntityPointBuilder<'a> {
         Self {
             skeleton,
             initial_position,
-            contact: false,
+            is_contact: false,
             contact_friction: None,
             air_friction: None,
         }
     }
 
-    pub fn contact(mut self) -> Self {
-        self.contact = true;
+    pub fn is_contact(mut self) -> Self {
+        self.is_contact = true;
         self
     }
 
@@ -45,7 +45,7 @@ impl<'a> EntityPointBuilder<'a> {
     pub fn build(self) -> (EntitySkeletonBuilder<'a>, EntityPointTemplateId) {
         let template = EntityPointTemplate {
             initial_position: self.initial_position,
-            contact: self.contact,
+            is_contact: self.is_contact,
             contact_friction: self.contact_friction.unwrap_or(0.0),
             air_friction: self.air_friction.unwrap_or(0.0),
         };

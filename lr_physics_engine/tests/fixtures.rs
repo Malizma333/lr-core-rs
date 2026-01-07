@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod tests {
+    use geometry::Point;
     use lr_format_json;
     use lr_physics_engine::{Engine, EngineView, MountPhase};
     use lr_types::track::GridVersion;
@@ -137,7 +138,7 @@ mod tests {
                     f64::from_bits(u64::from_str_radix(&expected_point[48..64], 16).unwrap());
 
                 let (expected_position, expected_velocity) =
-                    (Vector2Df::new(pos_x, pos_y), Vector2Df::new(vel_x, vel_y));
+                    (Point::new(pos_x, pos_y), Vector2Df::new(vel_x, vel_y));
 
                 assert!(
                     result_point_positions[j] == expected_position,

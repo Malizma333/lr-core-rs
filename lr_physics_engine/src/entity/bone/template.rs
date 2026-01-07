@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-use vector2d::Vector2Df;
-
 use crate::entity::{
     bone::entity::EntityBone,
     registry::{EntityPointId, EntityPointTemplateId, EntityRegistry},
@@ -33,8 +31,8 @@ impl EntityBoneTemplate {
             registry.get_point(connected_points.0).initial_position(),
             registry.get_point(connected_points.1).initial_position(),
         );
-        let rest_length = Vector2Df::distance(initial_positions.0, initial_positions.1)
-            * self.initial_length_factor;
+        let rest_length =
+            initial_positions.0.distance_from(initial_positions.1) * self.initial_length_factor;
 
         EntityBone {
             points: connected_points,

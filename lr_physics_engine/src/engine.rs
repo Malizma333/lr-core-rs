@@ -1,5 +1,5 @@
 use crate::{
-    InitialProperties, MountPhase, PhysicsLineBuilder, build_default_rider,
+    InitialProperties, MountPhase, build_default_rider,
     engine::state::EngineState,
     entity::{
         joint::entity::EntityJoint,
@@ -9,12 +9,11 @@ use crate::{
             builder::EntitySkeletonBuilder, entity::EntitySkeleton, state::EntitySkeletonState,
         },
     },
-    physics_line::PhysicsLine,
 };
 use geometry::{Line, Point};
-use lr_physics_grid::{Grid, GridLineId};
+use lr_physics_grid::GridLineId;
+use lr_physics_line_store::{LineStore, PhysicsLine};
 use lr_types::track::{GridVersion, RemountVersion, Track};
-use std::collections::HashMap;
 use vector2d::Vector2Df;
 mod moment;
 mod state;
@@ -23,8 +22,7 @@ pub use moment::PhysicsMoment;
 pub use view::EngineView;
 
 pub struct Engine {
-    grid: Grid,
-    line_lookup: HashMap<GridLineId, PhysicsLine>,
+    line_store: LineStore,
     registry: EntityRegistry,
     // The initial state of the engine as a reference point
     initial_state: EngineState,
@@ -42,9 +40,7 @@ impl Engine {
     /// Creates a new blank line rider physics engine
     pub fn new(grid_version: GridVersion) -> Self {
         Engine {
-            // TODO grid and line_lookup should be tied together somehow
-            grid: Grid::new(grid_version),
-            line_lookup: HashMap::new(),
+            line_store: LineStore::new(grid_version),
             // TODO adding or removing from the registry should modify state_snapshots and initial_state
             // Changing the initial state should clear the state snapshots
             // So the entity registry should be part of the initial state?
@@ -56,7 +52,7 @@ impl Engine {
 
     /// Changes the engine's grid version and reregisters all physics lines
     pub fn set_grid_version(&mut self, grid_version: GridVersion) {
-        todo!()
+        self.line_store.update_grid_version(grid_version);
     }
 
     /// Creates a physics engine from track data
@@ -68,27 +64,28 @@ impl Engine {
         for line in track.line_group().acceleration_lines() {
             let p0 = Point::new(line.x1(), line.y1());
             let p1 = Point::new(line.x2(), line.y2());
-            let mut physics_line = PhysicsLineBuilder::new(Line::new(p0, p1));
-            physics_line
-                .flipped(line.flipped())
-                .left_extension(line.left_extension())
-                .right_extension(line.right_extension());
+            let mut physics_line = PhysicsLine::new(
+                Line::new(p0, p1),
+                line.flipped(),
+                line.left_extension(),
+                line.right_extension(),
+            );
+            physics_line.set_accel_multiplier(line.multiplier().unwrap_or(1.0));
 
-            physics_line.acceleration_multiplier(line.multiplier().unwrap_or(1.0));
-
-            ordered_lines.push((line.id(), physics_line.build()));
+            ordered_lines.push((line.id(), physics_line));
         }
 
         for line in track.line_group().standard_lines() {
             let p0 = Point::new(line.x1(), line.y1());
             let p1 = Point::new(line.x2(), line.y2());
-            let mut physics_line = PhysicsLineBuilder::new(Line::new(p0, p1));
-            physics_line
-                .flipped(line.flipped())
-                .left_extension(line.left_extension())
-                .right_extension(line.right_extension());
+            let physics_line = PhysicsLine::new(
+                Line::new(p0, p1),
+                line.flipped(),
+                line.left_extension(),
+                line.right_extension(),
+            );
 
-            ordered_lines.push((line.id(), physics_line.build()));
+            ordered_lines.push((line.id(), physics_line));
         }
 
         ordered_lines.sort_by_key(|(key, _)| *key);
@@ -117,7 +114,7 @@ impl Engine {
                 };
                 let id = engine.add_skeleton(target_skeleton_template_id);
                 if let Some(initial_position) = rider.start_position() {
-                    initial_properties.set_start_position(initial_position);
+                    initial_properties.set_start_offset(initial_position);
                 }
                 if let Some(initial_velocity) = rider.start_velocity() {
                     initial_properties.set_start_velocity(initial_velocity);
@@ -164,27 +161,19 @@ impl Engine {
     }
 
     pub fn add_line(&mut self, line: PhysicsLine) -> GridLineId {
-        let id = self.grid.add_line(line.endpoints());
-        self.line_lookup.insert(id, line);
+        let id = self.line_store.add_line(line);
         self.invalidate_snapshots();
         id
     }
 
     pub fn update_line(&mut self, line_id: GridLineId, new_points: Line) {
-        // TODO update line endpoints in line lookup
-        let line = self.line_lookup.get(&line_id);
-        if let Some(line) = line {
-            self.grid.update_line(line_id, new_points);
-            self.invalidate_snapshots();
-        }
+        self.line_store.update_line(line_id, new_points);
+        self.invalidate_snapshots();
     }
 
     pub fn remove_line(&mut self, line_id: GridLineId) {
-        let line = self.line_lookup.remove(&line_id);
-        if let Some(line) = line {
-            self.grid.remove_line(line_id);
-            self.invalidate_snapshots();
-        }
+        self.line_store.remove_line(line_id);
+        self.invalidate_snapshots();
     }
 
     fn invalidate_snapshots(&mut self) {
@@ -230,13 +219,17 @@ impl Engine {
         for point_id in skeleton.points() {
             let point = self.registry.get_point(*point_id);
             let local_offset = point.initial_position();
-            let position = local_offset + initial_properties.start_position();
+            let position = local_offset.translated_by(initial_properties.start_offset());
             let velocity = initial_properties.start_velocity();
             self.initial_state
                 .points_mut()
                 .get_mut(point_id)
                 .unwrap()
-                .update(Some(position), Some(velocity), Some(position - velocity));
+                .update(
+                    Some(position),
+                    Some(velocity),
+                    Some(position.translated_by(-1.0 * velocity)),
+                );
         }
 
         self.invalidate_snapshots();
@@ -320,34 +313,34 @@ impl Engine {
                         };
 
                         if !bone.is_breakable() {
-                            let adjustment =
-                                bone.get_adjustment(point_states, mount_phase.remounting());
+                            let adjusted =
+                                bone.get_adjusted(point_states, mount_phase.remounting());
                             current_state
                                 .points_mut()
                                 .get_mut(&bone.points().0)
                                 .unwrap()
-                                .update(Some(adjustment.0), None, None);
+                                .update(Some(adjusted.0), None, None);
                             current_state
                                 .points_mut()
                                 .get_mut(&bone.points().1)
                                 .unwrap()
-                                .update(Some(adjustment.1), None, None);
+                                .update(Some(adjusted.1), None, None);
                         } else if (mount_phase.remounting() || mount_phase.mounted())
                             && !dismounted_this_frame
                         {
                             if bone.get_intact(point_states, mount_phase.remounting()) {
-                                let adjustment =
-                                    bone.get_adjustment(point_states, mount_phase.remounting());
+                                let adjusted =
+                                    bone.get_adjusted(point_states, mount_phase.remounting());
                                 current_state
                                     .points_mut()
                                     .get_mut(&bone.points().0)
                                     .unwrap()
-                                    .update(Some(adjustment.0), None, None);
+                                    .update(Some(adjusted.0), None, None);
                                 current_state
                                     .points_mut()
                                     .get_mut(&bone.points().1)
                                     .unwrap()
-                                    .update(Some(adjustment.1), None, None);
+                                    .update(Some(adjusted.1), None, None);
                             } else {
                                 dismounted_this_frame = true;
 
@@ -386,9 +379,7 @@ impl Engine {
                 for point_id in skeleton.points() {
                     let point = self.registry.get_point(*point_id);
                     let point_state = current_state.points_mut().get_mut(point_id).unwrap();
-                    let interacting_lines = self.grid.get_lines_near_point(point_state.position());
-                    for line_id in interacting_lines {
-                        let line = &self.line_lookup[&line_id];
+                    for line in self.line_store.lines_near_point(point_state.position()) {
                         if let Some((new_position, new_previous_position)) =
                             line.check_interaction(point, point_state)
                         {
@@ -415,17 +406,17 @@ impl Engine {
                         .get(skeleton_id)
                         .unwrap()
                         .mount_phase();
-                    let adjustment = bone.get_adjustment(point_states, mount_phase.remounting());
+                    let adjusted = bone.get_adjusted(point_states, mount_phase.remounting());
                     current_state
                         .points_mut()
                         .get_mut(&bone.points().0)
                         .unwrap()
-                        .update(Some(adjustment.0), None, None);
+                        .update(Some(adjusted.0), None, None);
                     current_state
                         .points_mut()
                         .get_mut(&bone.points().1)
                         .unwrap()
-                        .update(Some(adjustment.1), None, None);
+                        .update(Some(adjusted.1), None, None);
                 }
             }
 
@@ -686,8 +677,8 @@ impl Engine {
         let bone1_p0 = current_state.points().get(&bones.1.points().0).unwrap();
         let bone1_p1 = current_state.points().get(&bones.1.points().1).unwrap();
         let bone_vectors = (
-            bone0_p0.position() - bone0_p1.position(),
-            bone1_p0.position() - bone1_p1.position(),
+            bone0_p0.position().vector_from(bone0_p1.position()),
+            bone1_p0.position().vector_from(bone1_p1.position()),
         );
         joint.should_break(bone_vectors)
     }

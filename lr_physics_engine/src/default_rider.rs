@@ -1,6 +1,6 @@
 use crate::{Engine, entity::registry::EntitySkeletonTemplateId};
+use geometry::Point;
 use lr_types::track::RemountVersion;
-use vector2d::Vector2Df;
 
 // Known bug: Default riders of different remount versions are not able to
 // cross-remount with each other because they come from different templates,
@@ -38,61 +38,61 @@ pub fn build_default_rider(
     };
 
     let (skeleton, peg) = skeleton
-        .point(Vector2Df::new(0.0, 0.0))
-        .contact()
+        .point(Point::new(0.0, 0.0))
+        .is_contact()
         .contact_friction(0.8)
         .build();
-    let (skeleton, tail) = skeleton.point(Vector2Df::new(0.0, 5.0)).contact().build();
-    let (skeleton, nose) = skeleton.point(Vector2Df::new(15.0, 5.0)).contact().build();
-    let (skeleton, string) = skeleton.point(Vector2Df::new(17.5, 0.0)).contact().build();
+    let (skeleton, tail) = skeleton.point(Point::new(0.0, 5.0)).is_contact().build();
+    let (skeleton, nose) = skeleton.point(Point::new(15.0, 5.0)).is_contact().build();
+    let (skeleton, string) = skeleton.point(Point::new(17.5, 0.0)).is_contact().build();
     let (skeleton, butt) = skeleton
-        .point(Vector2Df::new(5.0, 0.0))
-        .contact()
+        .point(Point::new(5.0, 0.0))
+        .is_contact()
         .contact_friction(0.8)
         .build();
     let (skeleton, shoulder) = skeleton
-        .point(Vector2Df::new(5.0, -5.5))
-        .contact()
+        .point(Point::new(5.0, -5.5))
+        .is_contact()
         .contact_friction(0.8)
         .build();
     let (skeleton, right_hand) = skeleton
-        .point(Vector2Df::new(11.5, -5.0))
-        .contact()
+        .point(Point::new(11.5, -5.0))
+        .is_contact()
         .contact_friction(0.1)
         .build();
     let (skeleton, left_hand) = skeleton
-        .point(Vector2Df::new(11.5, -5.0))
-        .contact()
+        .point(Point::new(11.5, -5.0))
+        .is_contact()
         .contact_friction(0.1)
         .build();
-    let (skeleton, left_foot) = skeleton.point(Vector2Df::new(10.0, 5.0)).contact().build();
-    let (skeleton, right_foot) = skeleton.point(Vector2Df::new(10.0, 5.0)).contact().build();
+    let (skeleton, left_foot) = skeleton.point(Point::new(10.0, 5.0)).is_contact().build();
+    let (skeleton, right_foot) = skeleton.point(Point::new(10.0, 5.0)).is_contact().build();
     let (skeleton, scarf0) = skeleton
-        .point(Vector2Df::new(3.0, -5.5))
+        .point(Point::new(3.0, -5.5))
         .air_friction(scarf_friction)
         .build();
     let (skeleton, scarf1) = skeleton
-        .point(Vector2Df::new(1.0, -5.5))
+        .point(Point::new(1.0, -5.5))
         .air_friction(scarf_friction)
         .build();
     let (skeleton, scarf2) = skeleton
-        .point(Vector2Df::new(-1.0, -5.5))
+        .point(Point::new(-1.0, -5.5))
         .air_friction(scarf_friction)
         .build();
     let (skeleton, scarf3) = skeleton
-        .point(Vector2Df::new(-3.0, -5.5))
+        .point(Point::new(-3.0, -5.5))
         .air_friction(scarf_friction)
         .build();
     let (skeleton, scarf4) = skeleton
-        .point(Vector2Df::new(-5.0, -5.5))
+        .point(Point::new(-5.0, -5.5))
         .air_friction(scarf_friction)
         .build();
     let (skeleton, scarf5) = skeleton
-        .point(Vector2Df::new(-7.0, -5.5))
+        .point(Point::new(-7.0, -5.5))
         .air_friction(scarf_friction)
         .build();
     let (skeleton, scarf6) = skeleton
-        .point(Vector2Df::new(-9.0, -5.5))
+        .point(Point::new(-9.0, -5.5))
         .air_friction(scarf_friction)
         .build();
 

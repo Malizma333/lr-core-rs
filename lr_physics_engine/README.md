@@ -13,14 +13,6 @@ engine.view_frame(frame) -> Vec<&Skeleton>
 engine.view_moment(frame, moment) -> Vec<&Skeleton>
 ```
 
-### Time-based Physics Parameters
-```rust
-// TODO these should be keyframe based instead to make them more serializable and compatible
-// Overriding by passing defined functions
-// engine.define_gravity(get_gravity_at_time(frame) -> Vector2df)
-// engine.define_enabled_skeleton(get_enabled_skeletons_at_time(frame) -> Vec<bool>)
-```
-
 ### Line Grid Modifications
 ```rust
 engine.create_line(line: Line) -> LineId

@@ -1,11 +1,10 @@
 use criterion::{
     BenchmarkGroup, BenchmarkId, Criterion, criterion_group, criterion_main, measurement::WallTime,
 };
-use geometry::Line;
-use lr_types::track::GridVersion;
+use geometry::{Line, Point};
 use lr_physics_grid::Grid;
+use lr_types::track::GridVersion;
 use std::hint::black_box;
-use vector2d::Vector2Df;
 
 struct GridBenchmark {
     name: &'static str,
@@ -51,8 +50,8 @@ fn get_lines(flags: u8) -> Vec<Line> {
                     let x2 = if flags & 0b0010 != 0 { x2 } else { 0 };
                     let y2 = if flags & 0b0001 != 0 { y2 } else { 0 };
                     lines.push(Line::new(
-                        Vector2Df::new(f64::from(x1), f64::from(y1)),
-                        Vector2Df::new(f64::from(x2), f64::from(y2)),
+                        Point::new(f64::from(x1), f64::from(y1)),
+                        Point::new(f64::from(x2), f64::from(y2)),
                     ));
                 }
             }

@@ -34,17 +34,19 @@ impl Rectangle {
 
     /** Returns the point at the bottom right of this rectangle */
     pub fn bottom_right(&self) -> Point {
-        self.origin + Vector2Df::new(self.size.x(), 0.0)
+        self.origin
+            .translated_by(Vector2Df::new(self.size.x(), 0.0))
     }
 
     /** Returns the point at the top left of this rectangle */
     pub fn top_left(&self) -> Point {
-        self.origin + Vector2Df::new(0.0, self.size.y())
+        self.origin
+            .translated_by(Vector2Df::new(0.0, self.size.y()))
     }
 
     /** Returns the point at the top right of this rectangle */
     pub fn top_right(&self) -> Point {
-        self.origin + self.size
+        self.origin.translated_by(self.size)
     }
 
     /** Returns the line segment that represents the bottom side of this rectangle */

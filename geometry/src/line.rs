@@ -32,7 +32,7 @@ impl Line {
     }
 
     pub fn get_vector(&self) -> Vector2Df {
-        self.1 - self.0
+        self.1.vector_from(self.0)
     }
 
     pub fn intersects(&self, other: &Self) -> bool {
@@ -79,8 +79,7 @@ impl Line {
     }
 
     pub fn contains_point(&self, point: Point) -> bool {
-        Vector2Df::distance(self.0, point) + Vector2Df::distance(self.1, point)
-            == Vector2Df::distance(self.0, self.1)
+        self.0.distance_from(point) + self.1.distance_from(point) == self.0.distance_from(self.1)
     }
 
     /** Returns the closest point that lies on this line from another point */
@@ -90,9 +89,9 @@ impl Line {
         if delta == Vector2Df::zero() {
             self.0
         } else {
-            let alignment = Vector2Df::dot(point - self.0, delta);
+            let alignment = Vector2Df::dot(point.vector_from(self.0), delta);
             let percent_along_line = (alignment / delta.length_squared()).clamp(0.0, 1.0);
-            self.0 + percent_along_line * delta
+            self.0.translated_by(percent_along_line * delta)
         }
     }
 }
