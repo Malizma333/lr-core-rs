@@ -1,5 +1,5 @@
 use crate::{
-    InitialProperties, MountPhase,
+    InitialProperties, MountPhase, build_default_rider,
     engine::state::EngineState,
     entity::{
         joint::entity::EntityJoint,
@@ -12,6 +12,7 @@ use crate::{
     },
 };
 use geometry::Line;
+use lr_format_core::Track;
 use lr_physics_grid::{GridLineId, GridVersion};
 use lr_physics_line_store::{LineStore, PhysicsLine};
 use vector2d::Vector2Df;
@@ -732,48 +733,28 @@ impl Engine {
         true
     }
 
-    // TODO make these private/only for tests
+    // TODO make these only visible by tests
 
     pub fn clear_frame_cache(&mut self) {
         self.state_snapshots.truncate(0);
     }
 
     pub fn from_track(track: &Track, lra: bool) -> Self {
-        let grid_version = track.metadata().grid_version();
+        let grid_version = match track.grid_version() {
+            lr_format_core::GridVersion::V6_0 => GridVersion::V6_0,
+            lr_format_core::GridVersion::V6_1 => GridVersion::V6_1,
+            lr_format_core::GridVersion::V6_2 => GridVersion::V6_2,
+        };
         let mut engine = Engine::new(grid_version);
-        let mut ordered_lines: Vec<(u32, PhysicsLine)> = Vec::new();
 
-        for line in track.line_group().acceleration_lines() {
-            let p0 = Point::new(line.x0(), line.y0());
-            let p1 = Point::new(line.x1(), line.y1());
-            let mut physics_line = PhysicsLine::new(
-                Line::new(p0, p1),
-                line.flipped(),
-                line.left_extension(),
-                line.right_extension(),
-            );
-            physics_line.set_accel_multiplier(line.multiplier().unwrap_or(1.0));
-
-            ordered_lines.push((line.id(), physics_line));
-        }
-
-        for line in track.line_group().standard_lines() {
-            let p0 = Point::new(line.x0(), line.y0());
-            let p1 = Point::new(line.x2(), line.y2());
-            let physics_line = PhysicsLine::new(
-                Line::new(p0, p1),
-                line.flipped(),
-                line.left_extension(),
-                line.right_extension(),
-            );
-
-            ordered_lines.push((line.id(), physics_line));
-        }
-
-        ordered_lines.sort_by_key(|(key, _)| *key);
-
-        for line in ordered_lines {
-            engine.add_line(line.1);
+        for line in track.standard_lines() {
+            let mut physics_line = PhysicsLine::new(line.endpoints());
+            physics_line.set_flipped(line.flipped());
+            physics_line.set_left_extension(line.left_extension());
+            physics_line.set_right_extension(line.right_extension());
+            physics_line.set_height(line.height());
+            physics_line.set_accel_multiplier(line.multiplier());
+            engine.add_line(physics_line);
         }
 
         let template_none = build_default_rider(&mut engine, RemountVersion::None);
@@ -782,16 +763,16 @@ impl Engine {
         let template_lra = build_default_rider(&mut engine, RemountVersion::LRA);
 
         if let Some(rider_group) = track.riders() {
-            for rider in rider_group.riders() {
+            for rider in rider_group {
                 let mut initial_properties = InitialProperties::new();
                 let target_skeleton_template_id = if lra {
                     template_lra
                 } else {
                     match rider.remount_version() {
-                        RemountVersion::None => template_none,
-                        RemountVersion::ComV1 => template_comv1,
-                        RemountVersion::ComV2 => template_comv2,
-                        RemountVersion::LRA => template_lra,
+                        lr_format_core::RemountVersion::None => template_none,
+                        lr_format_core::RemountVersion::ComV1 => template_comv1,
+                        lr_format_core::RemountVersion::ComV2 => template_comv2,
+                        lr_format_core::RemountVersion::LRA => template_lra,
                     }
                 };
                 let id = engine.add_skeleton(target_skeleton_template_id);

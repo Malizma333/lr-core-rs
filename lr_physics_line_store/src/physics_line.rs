@@ -22,17 +22,12 @@ pub struct PhysicsLine {
 }
 
 impl PhysicsLine {
-    pub fn new(
-        endpoints: Line,
-        flipped: bool,
-        left_extension: bool,
-        right_extension: bool,
-    ) -> PhysicsLine {
+    pub fn new(endpoints: Line) -> PhysicsLine {
         let mut line = PhysicsLine {
             endpoints,
-            flipped,
-            left_extension,
-            right_extension,
+            flipped: false,
+            left_extension: false,
+            right_extension: false,
             height: DEFAULT_HEIGHT,
             multiplier: 0.0,
 

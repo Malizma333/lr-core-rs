@@ -54,6 +54,14 @@ impl StandardLine {
         self.endpoints.p1_mut().set_y(y);
     }
 
+    pub fn endpoints(&self) -> Line {
+        self.endpoints
+    }
+
+    pub fn set_endpoints(&mut self, endpoints: Line) {
+        self.endpoints = endpoints;
+    }
+
     pub fn flipped(&self) -> bool {
         self.flipped
     }

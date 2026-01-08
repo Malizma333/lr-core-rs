@@ -3,7 +3,7 @@ mod tests {
     use geometry::Point;
     use lr_format_json;
     use lr_physics_engine::{Engine, EngineView, MountPhase};
-    use lr_types::track::GridVersion;
+    use lr_physics_grid::GridVersion;
     use serde::Deserialize;
     use std::fs;
     use vector2d::Vector2Df;

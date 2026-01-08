@@ -9,9 +9,11 @@ lr_physics_grid = {path = "../lr_physics_grid"}
 lr_physics_line_store = {path = "../lr_physics_line_store"}
 vector2d = {path = "../vector2d"}
 
+# Should be test only
+lr_format_core = {path = "../lr_format_core"}
+
 [dev-dependencies]
 criterion = {version = "0.8.0", features = ["html_reports"]}
-lr_format_core = {path = "../lr_format_core"}
 lr_format_json = {path = "../lr_format_json"}
 serde = {version = "1", features = ["derive"]}
 serde_json = "1"
