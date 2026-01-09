@@ -101,7 +101,7 @@ mod tests {
         }
 
         for version in [GridVersion::V6_2, GridVersion::V6_1, GridVersion::V6_0] {
-            grid.update_version(version);
+            grid.set_version(version);
             let mut other_grid = Grid::new(version);
             for line in get_lines() {
                 other_grid.add_line(line);

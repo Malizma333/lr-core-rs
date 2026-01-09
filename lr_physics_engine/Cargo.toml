@@ -6,7 +6,6 @@ version = "0.1.0"
 [dependencies]
 geometry = {path = "../geometry"}
 lr_physics_grid = {path = "../lr_physics_grid"}
-lr_physics_line_store = {path = "../lr_physics_line_store"}
 vector2d = {path = "../vector2d"}
 
 # Should be test only

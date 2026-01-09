@@ -1866,7 +1866,6 @@ dependencies = [
  "lr_format_core",
  "lr_format_json",
  "lr_physics_grid",
- "lr_physics_line_store",
  "serde",
  "serde_json",
  "vector2d",
@@ -1880,15 +1879,6 @@ dependencies = [
  "geometry",
  "serde",
  "serde_json",
- "vector2d",
-]
-
-[[package]]
-name = "lr_physics_line_store"
-version = "0.1.0"
-dependencies = [
- "geometry",
- "lr_physics_grid",
  "vector2d",
 ]
 

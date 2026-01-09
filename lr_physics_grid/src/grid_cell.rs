@@ -1,16 +1,18 @@
 use geometry::Point;
 use vector2d::{Vector2Df, Vector2Di};
 
-pub(super) const CELL_SIZE: f64 = 14.0;
-pub(super) type CellKey = i32;
+pub(crate) const CELL_SIZE: f64 = 14.0;
 
-pub(super) struct GridCell {
+#[derive(Hash, PartialEq, Eq)]
+pub(crate) struct CellKey(i32);
+
+pub(crate) struct GridCell {
     position: Vector2Di,
     remainder: Vector2Df,
 }
 
 impl GridCell {
-    pub fn new(world_position: Point) -> GridCell {
+    pub(crate) fn new(world_position: Point) -> GridCell {
         let scaled_position = world_position / f64::from(CELL_SIZE);
         let position = Vector2Di::new(
             scaled_position.x().floor() as i32,
@@ -23,15 +25,15 @@ impl GridCell {
         }
     }
 
-    pub fn position(&self) -> &Vector2Di {
+    pub(crate) fn position(&self) -> &Vector2Di {
         &self.position
     }
 
-    pub fn remainder(&self) -> &Vector2Df {
+    pub(crate) fn remainder(&self) -> &Vector2Df {
         &self.remainder
     }
 
-    pub fn get_key(&self) -> CellKey {
+    pub(crate) fn get_key(&self) -> CellKey {
         let x_comp = if self.position.x() >= 0 {
             2 * self.position.x()
         } else {
@@ -50,11 +52,13 @@ impl GridCell {
             y_comp * y_comp + x_comp
         };
 
-        if hash % 2 == 1 {
+        let key = if hash % 2 == 1 {
             (-(hash - 1) / 2) - 1
         } else {
             hash / 2 + 1
-        }
+        };
+
+        CellKey(key)
     }
 }
 
@@ -63,11 +67,11 @@ mod tests {
     use geometry::Point;
     use std::collections::HashMap;
 
-    use crate::grid_cell::{CELL_SIZE, GridCell};
+    use crate::grid_cell::{CELL_SIZE, CellKey, GridCell};
 
     #[test]
     fn unique_hash() {
-        let mut seen: HashMap<i32, (i32, i32)> = HashMap::new();
+        let mut seen: HashMap<CellKey, (i32, i32)> = HashMap::new();
 
         for i in -10..11 {
             for j in -10..11 {

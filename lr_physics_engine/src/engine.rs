@@ -1,5 +1,5 @@
 use crate::{
-    InitialProperties, MountPhase, build_default_rider,
+    InitialProperties, MountPhase, PhysicsLine, PhysicsLineBuilder, build_default_rider,
     engine::state::EngineState,
     entity::{
         joint::entity::EntityJoint,
@@ -10,11 +10,10 @@ use crate::{
             state::EntitySkeletonState,
         },
     },
+    line_store::{LineId, LineStore},
 };
-use geometry::Line;
 use lr_format_core::Track;
-use lr_physics_grid::{GridLineId, GridVersion};
-use lr_physics_line_store::{LineStore, PhysicsLine};
+use lr_physics_grid::GridVersion;
 use vector2d::Vector2Df;
 mod moment;
 mod state;
@@ -38,7 +37,6 @@ impl Default for Engine {
 }
 
 impl Engine {
-    /// Creates a new blank line rider physics engine
     pub fn new(grid_version: GridVersion) -> Self {
         Engine {
             line_store: LineStore::new(grid_version),
@@ -53,10 +51,10 @@ impl Engine {
 
     /// Changes the engine's grid version and reregisters all physics lines
     pub fn set_grid_version(&mut self, grid_version: GridVersion) {
-        self.line_store.update_grid_version(grid_version);
+        self.line_store.set_grid_version(grid_version);
     }
 
-    /// View the skeletons of a specific frame by simulating up to that frame
+    /// Provides a view of entities during a specific frame by simulating up to that frame
     pub fn view_frame(&mut self, frame: u32) -> EngineView {
         self.fill_snapshots_up_to_frame(frame);
         let index = (frame as usize).saturating_sub(1);
@@ -67,7 +65,7 @@ impl Engine {
         EngineView::new(&self.registry, state)
     }
 
-    /// View the skeletons of a specific moment by simulating up to that frame and moment
+    /// Provides a view of entities during a specific moment by simulating up to that frame and moment
     pub fn view_moment(&mut self, frame: u32, moment: PhysicsMoment) -> EngineView {
         self.fill_snapshots_up_to_frame(frame);
         let index = (frame as usize).saturating_sub(1);
@@ -80,23 +78,29 @@ impl Engine {
         EngineView::new(&self.registry, &state)
     }
 
-    pub fn add_line(&mut self, line: PhysicsLine) -> GridLineId {
+    pub fn add_line(&mut self, line: PhysicsLine) -> LineId {
         let id = self.line_store.add_line(line);
         self.invalidate_snapshots();
         id
     }
 
-    pub fn update_line(&mut self, line_id: GridLineId, new_points: Line) {
-        self.line_store.update_line(line_id, new_points);
+    pub fn get_line(&self, id: LineId) -> Option<&PhysicsLine> {
+        self.line_store.get_line(id)
+    }
+
+    pub fn replace_line(&mut self, id: LineId, new_line: PhysicsLine) {
+        self.line_store.replace_line(id, new_line);
         self.invalidate_snapshots();
     }
 
-    pub fn remove_line(&mut self, line_id: GridLineId) {
-        self.line_store.remove_line(line_id);
+    pub fn remove_line(&mut self, id: LineId) {
+        self.line_store.remove_line(id);
         self.invalidate_snapshots();
     }
 
     fn invalidate_snapshots(&mut self) {
+        // the best way to do this is probably track grid cells affected each frame,
+        // then invalidate the first frame that was effected by a grid cell changing
         self.state_snapshots.truncate(0);
     }
 
@@ -748,12 +752,13 @@ impl Engine {
         let mut engine = Engine::new(grid_version);
 
         for line in track.standard_lines() {
-            let mut physics_line = PhysicsLine::new(line.endpoints());
-            physics_line.set_flipped(line.flipped());
-            physics_line.set_left_extension(line.left_extension());
-            physics_line.set_right_extension(line.right_extension());
-            physics_line.set_height(line.height());
-            physics_line.set_accel_multiplier(line.multiplier());
+            let physics_line = PhysicsLineBuilder::new(line.endpoints())
+                .flipped(line.flipped())
+                .left_extension(line.left_extension())
+                .right_extension(line.right_extension())
+                .height(line.height())
+                .acceleration_multiplier(line.multiplier())
+                .build();
             engine.add_line(physics_line);
         }
 

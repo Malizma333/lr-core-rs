@@ -98,7 +98,7 @@ impl Grid {
     }
 
     /// Updates the grid's version by re-registering all lines
-    pub fn update_version(&mut self, new_version: GridVersion) {
+    pub fn set_version(&mut self, new_version: GridVersion) {
         self.cells.clear();
         self.version = new_version;
 

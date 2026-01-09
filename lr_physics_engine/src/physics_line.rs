@@ -1,9 +1,6 @@
+use crate::entity::point::{entity::EntityPoint, state::EntityPointState};
 use geometry::{Line, Point};
 use vector2d::Vector2Df;
-
-use crate::{ColliderProps, ColliderState};
-
-const DEFAULT_HEIGHT: f64 = 10.0;
 
 pub struct PhysicsLine {
     endpoints: Line,
@@ -11,7 +8,7 @@ pub struct PhysicsLine {
     left_extension: bool,
     right_extension: bool,
     height: f64,
-    multiplier: f64,
+    acceleration_multiplier: f64,
 
     // Computed props
     inverse_length_squared: f64,
@@ -22,84 +19,34 @@ pub struct PhysicsLine {
 }
 
 impl PhysicsLine {
-    pub fn new(endpoints: Line) -> PhysicsLine {
-        let mut line = PhysicsLine {
-            endpoints,
-            flipped: false,
-            left_extension: false,
-            right_extension: false,
-            height: DEFAULT_HEIGHT,
-            multiplier: 0.0,
-
-            inverse_length_squared: 0.0,
-            normal_unit: Vector2Df::zero(),
-            left_limit: 0.0,
-            right_limit: 0.0,
-            acceleration_vector: Vector2Df::zero(),
-        };
-        line.recompute_props();
-        line
-    }
-
     pub fn endpoints(&self) -> Line {
         self.endpoints
-    }
-
-    pub fn set_endpoints(&mut self, endpoints: Line) {
-        self.endpoints = endpoints;
-        self.recompute_props();
     }
 
     pub fn flipped(&self) -> bool {
         self.flipped
     }
 
-    pub fn set_flipped(&mut self, flipped: bool) {
-        self.flipped = flipped;
-        self.recompute_props();
-    }
-
     pub fn left_extension(&self) -> bool {
         self.left_extension
-    }
-
-    pub fn set_left_extension(&mut self, left_extension: bool) {
-        self.left_extension = left_extension;
-        self.recompute_props();
     }
 
     pub fn right_extension(&self) -> bool {
         self.right_extension
     }
 
-    pub fn set_right_extension(&mut self, right_extension: bool) {
-        self.right_extension = right_extension;
-        self.recompute_props();
-    }
-
     pub fn height(&self) -> f64 {
         self.height
     }
 
-    pub fn set_height(&mut self, height: f64) {
-        self.height = height;
-        self.recompute_props();
+    pub fn acceleration_multiplier(&self) -> f64 {
+        self.acceleration_multiplier
     }
 
-    pub fn multiplier(&self) -> f64 {
-        self.multiplier
-    }
-
-    pub fn set_accel_multiplier(&mut self, multiplier: f64) {
-        self.multiplier = multiplier;
-        self.recompute_props();
-    }
-
-    /// Returns the new (position, external_velocity) to update a point with if it interacts with this line
-    pub fn check_interaction<T: ColliderProps, U: ColliderState>(
+    pub(crate) fn check_interaction(
         &self,
-        point: &T,
-        point_state: &U,
+        point: &EntityPoint,
+        point_state: &EntityPointState,
     ) -> Option<(Point, Point)> {
         if !point.can_collide() {
             return None;
@@ -134,7 +81,7 @@ impl PhysicsLine {
             };
 
             let initial_friction_vector =
-                (self.normal_unit.rotate_cw() * point.friction()) * distance_from_line_top;
+                (self.normal_unit.rotate_cw() * point.contact_friction()) * distance_from_line_top;
 
             let friction_vector = Vector2Df::new(
                 friction_x_flipped * initial_friction_vector.x(),
@@ -151,14 +98,67 @@ impl PhysicsLine {
             None
         }
     }
+}
 
-    fn recompute_props(&mut self) {
+pub struct PhysicsLineBuilder {
+    endpoints: Line,
+    flipped: bool,
+    left_extension: bool,
+    right_extension: bool,
+    height: f64,
+    acceleration_multiplier: f64,
+}
+
+impl PhysicsLineBuilder {
+    pub fn new(endpoints: Line) -> PhysicsLineBuilder {
+        const DEFAULT_HEIGHT: f64 = 10.0;
+        PhysicsLineBuilder {
+            endpoints,
+            flipped: false,
+            left_extension: false,
+            right_extension: false,
+            height: DEFAULT_HEIGHT,
+            acceleration_multiplier: 0.0,
+        }
+    }
+
+    pub fn endpoints(mut self, endpoints: Line) -> Self {
+        self.endpoints = endpoints;
+        self
+    }
+
+    pub fn flipped(mut self, flipped: bool) -> Self {
+        self.flipped = flipped;
+        self
+    }
+
+    pub fn left_extension(mut self, left_extension: bool) -> Self {
+        self.left_extension = left_extension;
+        self
+    }
+
+    pub fn right_extension(mut self, right_extension: bool) -> Self {
+        self.right_extension = right_extension;
+        self
+    }
+
+    pub fn height(mut self, height: f64) -> Self {
+        self.height = height;
+        self
+    }
+
+    pub fn acceleration_multiplier(mut self, acceleration_multiplier: f64) -> Self {
+        self.acceleration_multiplier = acceleration_multiplier;
+        self
+    }
+
+    pub fn build(&self) -> PhysicsLine {
         let vector = self.endpoints.get_vector();
         let length = vector.length();
-        self.inverse_length_squared = 1.0 / vector.length_squared();
+        let inverse_length_squared = 1.0 / vector.length_squared();
         let unit = vector * (1.0 / length);
 
-        self.normal_unit = if self.flipped {
+        let normal_unit = if self.flipped {
             unit.rotate_cw()
         } else {
             unit.rotate_ccw()
@@ -167,19 +167,45 @@ impl PhysicsLine {
         const MAX_EXTENSION_SIZE: f64 = 0.25;
         let extension_ratio = MAX_EXTENSION_SIZE.min(self.height / length);
 
-        self.left_limit = if self.left_extension {
+        let left_limit = if self.left_extension {
             -extension_ratio
         } else {
             0.0
         };
 
-        self.right_limit = if self.right_extension {
+        let right_limit = if self.right_extension {
             1.0 + extension_ratio
         } else {
             1.0
         };
 
         const ACCELERATION_FACTOR: f64 = 0.1;
-        self.acceleration_vector = unit * (self.multiplier * ACCELERATION_FACTOR);
+        let acceleration_vector = unit * (self.acceleration_multiplier * ACCELERATION_FACTOR);
+
+        PhysicsLine {
+            endpoints: self.endpoints,
+            flipped: self.flipped,
+            left_extension: self.left_extension,
+            right_extension: self.right_extension,
+            height: self.height,
+            acceleration_multiplier: self.acceleration_multiplier,
+
+            inverse_length_squared,
+            normal_unit,
+            left_limit,
+            right_limit,
+            acceleration_vector,
+        }
+    }
+}
+
+impl From<PhysicsLine> for PhysicsLineBuilder {
+    fn from(line: PhysicsLine) -> Self {
+        PhysicsLineBuilder::new(line.endpoints)
+            .flipped(line.flipped)
+            .left_extension(line.left_extension)
+            .right_extension(line.right_extension)
+            .acceleration_multiplier(line.acceleration_multiplier)
+            .height(line.height)
     }
 }

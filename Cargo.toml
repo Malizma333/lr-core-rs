@@ -8,7 +8,6 @@ members = [
   "lr_format_sol",
   "lr_physics_engine",
   "lr_physics_grid",
-  "lr_physics_line_store",
   "color",
   "lcg_random",
   "amf0",

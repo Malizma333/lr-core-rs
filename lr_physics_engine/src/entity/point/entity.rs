@@ -1,5 +1,4 @@
 use geometry::Point;
-use lr_physics_line_store::ColliderProps;
 use vector2d::Vector2Df;
 
 use crate::entity::point::state::EntityPointState;
@@ -11,19 +10,17 @@ pub struct EntityPoint {
     pub(super) air_friction: f64,
 }
 
-impl ColliderProps for EntityPoint {
-    fn can_collide(&self) -> bool {
-        self.is_contact
-    }
-
-    fn friction(&self) -> f64 {
-        self.contact_friction
-    }
-}
-
 impl EntityPoint {
     pub(crate) fn initial_position(&self) -> Point {
         self.initial_position
+    }
+
+    pub(crate) fn can_collide(&self) -> bool {
+        self.is_contact
+    }
+
+    pub(crate) fn contact_friction(&self) -> f64 {
+        self.contact_friction
     }
 
     pub(crate) fn process_initial_step(&self, state: &mut EntityPointState, gravity: Vector2Df) {

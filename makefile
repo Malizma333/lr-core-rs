@@ -17,6 +17,14 @@ new: ## Create a new library crate
 		echo "Usage: make new CRATE=[name]"; \
 	fi
 
+.PHONY: doc
+doc: ## Create documentation
+	@if [ -z $(CRATE) ]; then\
+		cargo doc --workspace;\
+	else\
+		cargo doc -p $(CRATE);\
+	fi
+
 .PHONY: format
 format: ## Format files with rustfmt
 	cargo fmt --all
@@ -26,7 +34,7 @@ lint: ## Lint files with clippy
 	cargo clippy --all-targets --all-features -- -Aclippy::style
 
 .PHONY: test
-test: ## Run tests (set CRATE for a specific crate)
+test: ## Run tests
 	@if [ -z $(CRATE) ]; then\
 		cargo test --workspace;\
 	else\
@@ -34,7 +42,7 @@ test: ## Run tests (set CRATE for a specific crate)
 	fi
 
 .PHONY: coverage
-coverage: ## Run coverage on tests, with report outputted to target/coverage (set CRATE for a specific crate)
+coverage: ## Run coverage on tests, with report outputted to target/coverage
 	@if [ -z $(CRATE) ]; then\
 		.cargo/bin/cargo-tarpaulin --workspace -o Html --output-dir target/coverage;\
 	else\
@@ -42,7 +50,7 @@ coverage: ## Run coverage on tests, with report outputted to target/coverage (se
 	fi
 
 .PHONY: benchmark
-benchmark: ## Run benchmarks, with report outputted to target/criterion (set CRATE for a specific crate)
+benchmark: ## Run benchmarks, with report outputted to target/criterion
 	@if [ -z $(CRATE) ]; then\
 		cargo bench --workspace;\
 	else\
