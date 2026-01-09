@@ -1,13 +1,14 @@
-//! <https://github.com/KallDrexx/rust-media-libs>
-//! License: See ../LICENSE-APACHE and ../LICENSE-MIT
-//! Modifications Copyright 2025 Tobias Bessler
+// <https://github.com/KallDrexx/rust-media-libs>
+// License: See ../LICENSE-APACHE and ../LICENSE-MIT
+// Modifications Copyright 2026 Tobias Bessler
 
-use super::{Amf0Value, errors::Amf0SerializationError, markers};
-use byteorder::{BigEndian, WriteBytesExt};
+use quick_byte::QuickWrite;
+
+use super::{Amf0Value, error::SerializationError, markers};
 use std::collections::HashMap;
 
 // Serializes values into an amf0 encoded vector of bytes
-pub fn serialize(values: &Vec<Amf0Value>) -> Result<Vec<u8>, Amf0SerializationError> {
+pub fn serialize(values: &Vec<Amf0Value>) -> Result<Vec<u8>, SerializationError> {
     let mut bytes = vec![];
     for value in values {
         serialize_value(value, &mut bytes)?;
@@ -16,7 +17,7 @@ pub fn serialize(values: &Vec<Amf0Value>) -> Result<Vec<u8>, Amf0SerializationEr
     Ok(bytes)
 }
 
-fn serialize_value(value: &Amf0Value, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
+fn serialize_value(value: &Amf0Value, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
     match *value {
         Amf0Value::Boolean(val) => {
             bytes.push(markers::BOOLEAN_MARKER);
@@ -53,22 +54,22 @@ fn serialize_value(value: &Amf0Value, bytes: &mut Vec<u8>) -> Result<(), Amf0Ser
     }
 }
 
-fn serialize_number(value: f64, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
-    bytes.write_f64::<BigEndian>(value)?;
+fn serialize_number(value: f64, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
+    bytes.write_f64_be(value)?;
     Ok(())
 }
 
-fn serialize_bool(value: bool, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
+fn serialize_bool(value: bool, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
     bytes.push(value as u8);
     Ok(())
 }
 
-fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), Amf0SerializationError> {
+fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
     if value.len() > (u16::MAX as usize) {
-        return Err(Amf0SerializationError::NormalStringTooLong);
+        return Err(SerializationError::NormalStringTooLong);
     }
 
-    bytes.write_u16::<BigEndian>(value.len() as u16)?;
+    bytes.write_u16_be(value.len() as u16)?;
     bytes.extend(value.as_bytes());
     Ok(())
 }
@@ -76,14 +77,14 @@ fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), Amf0Seria
 fn serialize_object(
     properties: &HashMap<String, Amf0Value>,
     bytes: &mut Vec<u8>,
-) -> Result<(), Amf0SerializationError> {
+) -> Result<(), SerializationError> {
     for (name, value) in properties {
-        bytes.write_u16::<BigEndian>(name.len() as u16)?;
+        bytes.write_u16_be(name.len() as u16)?;
         bytes.extend(name.as_bytes());
         serialize_value(value, bytes)?;
     }
 
-    bytes.write_u16::<BigEndian>(markers::UTF_8_EMPTY_MARKER)?;
+    bytes.write_u16_be(markers::UTF_8_EMPTY_MARKER)?;
     bytes.push(markers::OBJECT_END_MARKER);
     Ok(())
 }
@@ -91,8 +92,8 @@ fn serialize_object(
 fn serialize_strict_array(
     array: &Vec<Amf0Value>,
     bytes: &mut Vec<u8>,
-) -> Result<(), Amf0SerializationError> {
-    bytes.write_u32::<BigEndian>(array.len() as u32)?;
+) -> Result<(), SerializationError> {
+    bytes.write_u32_be(array.len() as u32)?;
 
     for value in array {
         serialize_value(value, bytes)?;
@@ -104,8 +105,8 @@ fn serialize_strict_array(
 fn serialize_ecma_array(
     properties: &HashMap<String, Amf0Value>,
     bytes: &mut Vec<u8>,
-) -> Result<(), Amf0SerializationError> {
-    bytes.write_u32::<BigEndian>(properties.len() as u32)?;
+) -> Result<(), SerializationError> {
+    bytes.write_u32_be(properties.len() as u32)?;
 
     serialize_object(properties, bytes)?;
 
@@ -115,10 +116,10 @@ fn serialize_ecma_array(
 #[cfg(test)]
 mod tests {
     use super::super::Amf0Value;
-    use super::Amf0SerializationError;
+    use super::SerializationError;
     use super::markers;
     use super::serialize;
-    use byteorder::{BigEndian, WriteBytesExt};
+    use quick_byte::QuickWrite;
     use std::collections::HashMap;
 
     #[test]
@@ -134,9 +135,9 @@ mod tests {
         let mut expected = vec![];
 
         expected.write_u8(markers::STRICT_ARRAY_MARKER).unwrap();
-        expected.write_u32::<BigEndian>(1).unwrap();
+        expected.write_u32_be(1).unwrap();
         expected.write_u8(markers::NUMBER_MARKER).unwrap();
-        expected.write_f64::<BigEndian>(number).unwrap();
+        expected.write_f64_be(number).unwrap();
 
         assert_eq!(result, expected);
     }
@@ -150,7 +151,7 @@ mod tests {
 
         let mut expected = vec![];
         expected.write_u8(markers::NUMBER_MARKER).unwrap();
-        expected.write_f64::<BigEndian>(number).unwrap();
+        expected.write_f64_be(number).unwrap();
 
         assert_eq!(result, expected);
     }
@@ -188,7 +189,7 @@ mod tests {
 
         let mut expected = vec![];
         expected.write_u8(markers::STRING_MARKER).unwrap();
-        expected.write_u16::<BigEndian>(value.len() as u16).unwrap();
+        expected.write_u16_be(value.len() as u16).unwrap();
         expected.extend(value.as_bytes());
 
         assert_eq!(result, expected);
@@ -217,13 +218,11 @@ mod tests {
 
         let mut expected = vec![];
         expected.push(markers::OBJECT_MARKER);
-        expected.write_u16::<BigEndian>(4).unwrap();
+        expected.write_u16_be(4).unwrap();
         expected.extend("test".as_bytes());
         expected.push(markers::NUMBER_MARKER);
-        expected.write_f64::<BigEndian>(NUMBER).unwrap();
-        expected
-            .write_u16::<BigEndian>(markers::UTF_8_EMPTY_MARKER)
-            .unwrap();
+        expected.write_f64_be(NUMBER).unwrap();
+        expected.write_u16_be(markers::UTF_8_EMPTY_MARKER).unwrap();
         expected.push(markers::OBJECT_END_MARKER);
 
         assert_eq!(result, expected);
@@ -240,7 +239,7 @@ mod tests {
         let input = vec![Amf0Value::Utf8String(value)];
         let result = serialize(&input);
 
-        matches!(result, Err(Amf0SerializationError::NormalStringTooLong));
+        matches!(result, Err(SerializationError::NormalStringTooLong));
     }
 
     #[test]

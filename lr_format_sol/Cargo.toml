@@ -1,0 +1,14 @@
+[package]
+edition = "2024"
+name = "lr_format_sol"
+version = "0.1.0"
+
+[dependencies]
+amf0 = {path = "../amf0"}
+geometry = {path = "../geometry"}
+lr_format_core = {path = "../lr_format_core"}
+quick_byte = {path = "../quick_byte"}
+vector2d = {path = "../vector2d"}
+
+[dev-dependencies]
+pretty_assertions = "1"

@@ -1,13 +1,13 @@
-//! <https://github.com/KallDrexx/rust-media-libs>
-//! License: See ../LICENSE-APACHE and ../LICENSE-MIT
-//! Modifications Copyright 2025 Tobias Bessler
+// <https://github.com/KallDrexx/rust-media-libs>
+// License: See ../LICENSE-APACHE and ../LICENSE-MIT
+// Modifications Copyright 2026 Tobias Bessler
 
 mod deserialization;
-mod errors;
+mod error;
 mod serialization;
 
 pub use deserialization::deserialize;
-pub use errors::{Amf0DeserializationError, Amf0SerializationError};
+pub use error::{DeserializationError, SerializationError};
 pub use serialization::serialize;
 
 use std::collections::HashMap;
