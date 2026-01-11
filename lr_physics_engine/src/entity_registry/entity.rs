@@ -76,12 +76,15 @@ impl Entity {
     }
 
     // This is the main physics loop that transforms an entity state
+    // Returns whether the rider dismounted
     pub(super) fn process_frame(
         &self,
-        mut state: EntityState,
+        state: &mut EntityState,
         template: &EntityTemplate,
         line_registry: &LineRegistry,
-    ) -> EntityState {
+    ) -> bool {
+        let mut dismounted = false;
+
         for (point_id, point) in template.points() {
             const GRAVITY_MULTIPLIER: f64 = 0.175;
             let gravity = Vector2Df::down() * GRAVITY_MULTIPLIER;
@@ -128,9 +131,7 @@ impl Entity {
                             None,
                             None,
                         );
-                    } else if (mount_phase.remounting() || mount_phase.mounted())
-                        && !state.dismounted_this_frame()
-                    {
+                    } else if (mount_phase.remounting() || mount_phase.mounted()) && !dismounted {
                         if bone.get_intact(point_states, mount_phase.remounting()) {
                             let adjusted =
                                 bone.get_adjusted(point_states, mount_phase.remounting());
@@ -145,7 +146,7 @@ impl Entity {
                                 None,
                             );
                         } else {
-                            state.dismount_this_frame();
+                            dismounted = true;
 
                             let next_mount_phase = match template.remount_version() {
                                 RemountVersion::None => MountPhase::Dismounted {
@@ -211,11 +212,9 @@ impl Entity {
 
         if mount_phase.mounted() || mount_phase.remounting() {
             for joint in template.joints().values() {
-                if joint.is_mount()
-                    && template.get_joint_should_break(&state, joint)
-                    && !state.dismounted_this_frame()
+                if joint.is_mount() && template.get_joint_should_break(&state, joint) && !dismounted
                 {
-                    state.dismount_this_frame();
+                    dismounted = true;
 
                     let next_mount_phase = match template.remount_version() {
                         RemountVersion::None => MountPhase::Dismounted {
@@ -264,16 +263,16 @@ impl Entity {
             }
         }
 
-        state
+        dismounted
     }
 
     // This retrieves the next mount phase
     pub(super) fn process_mount_phase(
         &self,
-        mut state: EntityState,
+        state: &mut EntityState,
         template: &EntityTemplate,
         other_states: &mut Vec<EntityState>,
-    ) -> EntityState {
+    ) {
         let current_mount_phase = state.skeleton_state().mount_phase();
         let sled_intact = state.skeleton_state().sled_intact();
 
@@ -305,7 +304,7 @@ impl Entity {
                             let mut can_swap = false;
 
                             for other_state in other_states {
-                                if template.can_swap_sleds(&mut state, other_state) {
+                                if template.can_swap_sleds(state, other_state) {
                                     can_swap = true;
                                     break;
                                 }
@@ -371,7 +370,7 @@ impl Entity {
                     let mut can_swap = false;
 
                     for other_state in other_states {
-                        if template.can_swap_sleds(&mut state, other_state) {
+                        if template.can_swap_sleds(state, other_state) {
                             can_swap = true;
                             break;
                         }
@@ -416,7 +415,5 @@ impl Entity {
         };
 
         state.skeleton_state_mut().set_mount_phase(next_mount_phase);
-
-        state
     }
 }

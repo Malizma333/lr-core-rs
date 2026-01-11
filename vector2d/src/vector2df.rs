@@ -142,16 +142,16 @@ impl Vector2Df {
         Vector2Df::new(self.x, -self.y)
     }
 
-    pub fn to_hex_string(&self) -> String {
-        format!("(0x{:016x}, 0x{:016x})", self.x.to_bits(), self.y.to_bits(),)
-    }
-
     pub fn with_x(&self, x: f64) -> Vector2Df {
         Vector2Df::new(x, self.y)
     }
 
     pub fn with_y(&self, y: f64) -> Vector2Df {
         Vector2Df::new(self.x, y)
+    }
+
+    pub fn to_hex_string(&self) -> String {
+        format!("(0x{:016x}, 0x{:016x})", self.x.to_bits(), self.y.to_bits(),)
     }
 }
 

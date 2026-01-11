@@ -22,3 +22,9 @@ When should there be defaults?
 
 How can layers be a cleaner type?
 - Enum first, then struct
+
+Should we use external packages?
+- Only for development (some very rare exceptions), relying for production increases binary size and has potential to break for future development
+
+Should we use macros?
+- Only (pseudo)official derive macros, avoid at all costs macro by example, don't define our own macros

@@ -1,14 +1,14 @@
 mod bone;
 mod entity;
 mod entity_state;
+mod entity_template;
 mod joint;
 mod mount_phase;
 mod point;
 mod remount_version;
-mod skeleton;
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap, VecDeque},
     hash::Hash,
 };
 
@@ -16,13 +16,13 @@ pub use bone::{EntityBone, EntityBoneBuilder};
 pub(crate) use entity::Entity;
 pub(crate) use entity_state::EntityPointState;
 pub use entity_state::EntityState;
+pub use entity_template::{
+    EntityBoneId, EntityJointId, EntityPointId, EntityTemplate, EntityTemplateBuilder,
+};
 pub use joint::{EntityJoint, EntityJointBuilder};
 pub use mount_phase::MountPhase;
 pub use point::{EntityPoint, EntityPointBuilder};
 pub use remount_version::RemountVersion;
-pub use skeleton::{
-    EntityBoneId, EntityJointId, EntityPointId, EntityTemplate, EntityTemplateBuilder,
-};
 use vector2d::Vector2Df;
 
 use crate::{PhysicsMoment, line_registry::LineRegistry};
@@ -122,15 +122,17 @@ impl EntityRegistry {
 
         while self.latest_synced_frame < frame {
             let mut state_index = 0;
+            let mut dismounts = VecDeque::new();
 
             for entity in self.entities.values() {
                 let template = self.entity_templates.get(&entity.template_id()).unwrap();
 
-                let mut state = entity_states.get(state_index).unwrap().clone();
+                let state = &mut entity_states[state_index];
 
-                state = entity.process_frame(state, template, line_registry);
+                let dismounted = entity.process_frame(state, template, line_registry);
 
-                entity_states[state_index] = state.clone();
+                dismounts.push_back(dismounted);
+
                 state_index += 1;
             }
 
@@ -139,20 +141,23 @@ impl EntityRegistry {
             for entity in self.entities.values() {
                 let template = self.entity_templates.get(&entity.template_id()).unwrap();
 
-                let mut state = entity_states.get(state_index).unwrap().clone();
+                let mut state = entity_states[state_index].clone();
 
-                if !state.dismounted_this_frame() {
-                    state = entity.process_mount_phase(state, template, &mut entity_states);
+                let dismounted = dismounts.pop_front().is_some_and(|d| d);
+
+                // TODO entity_states is all skeletons and may not match template
+                if !dismounted {
+                    entity.process_mount_phase(&mut state, template, &mut entity_states);
                 }
 
-                entity_states[state_index] = state.clone();
+                entity_states[state_index] = state;
                 state_index += 1;
             }
 
             state_index = 0;
 
             for entity in self.entities.values_mut() {
-                let state = entity_states.get(state_index).unwrap().clone();
+                let state = entity_states[state_index].clone();
                 entity.push_to_cache(state);
                 state_index += 1;
             }

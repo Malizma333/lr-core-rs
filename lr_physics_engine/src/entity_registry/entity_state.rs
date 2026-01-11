@@ -11,23 +11,12 @@ use vector2d::Vector2Df;
 
 use crate::entity_registry::{EntityPointId, EntityTemplate, MountPhase};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EntityState {
-    dismounted_this_frame: bool,
     skeleton_state: EntitySkeletonState,
     // TODO not a fan of this map being cloned, see if we can static allocate since we know how many points there are
     // or allocate as a Vec for less expensive clone, then have a map of Id to vec index
     point_states: BTreeMap<EntityPointId, EntityPointState>,
-}
-
-impl Clone for EntityState {
-    fn clone(&self) -> Self {
-        Self {
-            dismounted_this_frame: false,
-            skeleton_state: self.skeleton_state.clone(),
-            point_states: self.point_states.clone(),
-        }
-    }
 }
 
 impl EntityState {
@@ -51,7 +40,6 @@ impl EntityState {
         }
 
         Self {
-            dismounted_this_frame: false,
             skeleton_state,
             point_states,
         }
@@ -79,6 +67,13 @@ impl EntityState {
         self.skeleton_state.sled_intact()
     }
 
+    pub(crate) fn debug_points(&self) -> Vec<String> {
+        self.point_states
+            .iter()
+            .map(|point| point.1.position().to_hex_string())
+            .collect()
+    }
+
     pub(crate) fn skeleton_state(&self) -> &EntitySkeletonState {
         &self.skeleton_state
     }
@@ -95,13 +90,5 @@ impl EntityState {
         // TODO audit unwrap usage (and other panics)
         // Look into using slotmap for guaranteed safe key usage
         self.point_states.get_mut(point_id).unwrap()
-    }
-
-    pub(crate) fn dismounted_this_frame(&self) -> bool {
-        self.dismounted_this_frame
-    }
-
-    pub(crate) fn dismount_this_frame(&mut self) {
-        self.dismounted_this_frame = true;
     }
 }

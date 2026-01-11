@@ -48,6 +48,10 @@ impl Point {
     pub fn distance_from(&self, other: Point) -> f64 {
         self.vector_from(other).length()
     }
+
+    pub fn to_hex_string(&self) -> String {
+        format!("(0x{:016x}, 0x{:016x})", self.x.to_bits(), self.y.to_bits(),)
+    }
 }
 
 impl Mul<Point> for f64 {
