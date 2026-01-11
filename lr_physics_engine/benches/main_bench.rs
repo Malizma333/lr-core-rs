@@ -37,7 +37,7 @@ fn bench_view_frame(
     group.bench_function(id, |b| {
         b.iter(|| {
             black_box(engine.view_frame(black_box(target_frame)));
-            engine.clear_frame_cache();
+            engine.clear_cache();
         });
     });
 }

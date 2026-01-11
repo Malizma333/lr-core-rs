@@ -2,7 +2,10 @@
 mod tests {
     use geometry::Point;
     use lr_format_json;
-    use lr_physics_engine::{Engine, EngineView, MountPhase};
+    use lr_physics_engine::{
+        Engine,
+        entity_registry::{EntityState, MountPhase},
+    };
     use lr_physics_grid::GridVersion;
     use serde::Deserialize;
     use std::fs;
@@ -58,17 +61,16 @@ mod tests {
         }
     }
 
-    fn compare_states(result: EngineView, expected: &EngineTestCaseState) {
+    fn compare_states(result: Vec<EntityState>, expected: &EngineTestCaseState) {
         let expected_entities = &expected.entities;
-        let result_entities = result.skeletons();
         assert!(
-            result_entities.len() == expected_entities.len(),
+            result.len() == expected_entities.len(),
             "entity count mismatch: {} != {}",
-            result_entities.len(),
+            result.len(),
             expected_entities.len(),
         );
         for (i, expected_entity) in expected_entities.iter().enumerate() {
-            let result_entity = &result_entities[i];
+            let result_entity = &result[i];
             if let Some(expected_mount_state) = &expected_entity.mount_state {
                 let result_mount_state = match result_entity.mount_phase() {
                     MountPhase::Mounted => "MOUNTED",

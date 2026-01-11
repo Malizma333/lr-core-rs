@@ -1,7 +1,7 @@
 use geometry::{Line, Point};
 use vector2d::Vector2Df;
 
-use crate::engine::entity_registry::point::{entity::EntityPoint, state::EntityPointState};
+use crate::entity_registry::{EntityPoint, EntityPointState};
 
 pub struct PhysicsLine {
     endpoints: Line,
@@ -72,6 +72,7 @@ impl PhysicsLine {
                 friction_vector = friction_vector.flipped_horizontal()
             }
 
+            // TODO See if we can flip this
             if point_state.external_velocity().y() < new_position.y() {
                 friction_vector = friction_vector.flipped_vertical();
             }

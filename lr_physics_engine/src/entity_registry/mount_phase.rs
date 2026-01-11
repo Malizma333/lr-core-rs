@@ -6,15 +6,25 @@ pub enum MountPhase {
     Remounting { frames_until_mounted: u32 },
 }
 
+// TODO remove these in favor of if let ..
 impl MountPhase {
-    pub(crate) fn mounted(&self) -> bool {
+    pub fn mounted(&self) -> bool {
         match self {
             MountPhase::Mounted => true,
             _ => false,
         }
     }
 
-    pub(crate) fn dismounted(&self) -> bool {
+    pub fn dismounting(&self) -> bool {
+        match self {
+            MountPhase::Dismounting {
+                frames_until_dismounted: _,
+            } => true,
+            _ => false,
+        }
+    }
+
+    pub fn dismounted(&self) -> bool {
         match self {
             MountPhase::Dismounted {
                 frames_until_remounting: _,
@@ -23,7 +33,7 @@ impl MountPhase {
         }
     }
 
-    pub(crate) fn remounting(&self) -> bool {
+    pub fn remounting(&self) -> bool {
         match self {
             MountPhase::Remounting {
                 frames_until_mounted: _,

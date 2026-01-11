@@ -2,14 +2,15 @@ use geometry::Point;
 use vector2d::Vector2Df;
 
 #[derive(Debug, Clone)]
-pub struct EntityPointState {
+pub(crate) struct EntityPointState {
     position: Point,
     velocity: Vector2Df,
+    // TODO rename this
     external_velocity: Point,
 }
 
 impl EntityPointState {
-    pub(crate) fn new(position: Point, velocity: Vector2Df, external_velocity: Point) -> Self {
+    pub(super) fn new(position: Point, velocity: Vector2Df, external_velocity: Point) -> Self {
         EntityPointState {
             position,
             velocity,

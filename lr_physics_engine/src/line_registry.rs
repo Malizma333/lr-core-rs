@@ -1,8 +1,10 @@
+mod physics_line;
+
+pub use physics_line::{PhysicsLine, PhysicsLineBuilder};
+
 use geometry::Point;
 use lr_physics_grid::{Grid, GridLineId, GridVersion};
 use std::collections::HashMap;
-
-use crate::PhysicsLine;
 
 #[derive(Hash, PartialEq, Eq, Clone, Copy)]
 pub struct LineId(GridLineId);
