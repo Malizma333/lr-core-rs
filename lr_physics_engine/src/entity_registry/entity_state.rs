@@ -20,7 +20,6 @@ pub struct EntityState {
 }
 
 impl EntityState {
-    // TODO add feature flag to apply bone rest lengths after initial state applied
     pub(super) fn new(
         template: &EntityTemplate,
         initial_offset: Vector2Df,
