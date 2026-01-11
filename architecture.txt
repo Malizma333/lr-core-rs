@@ -28,3 +28,5 @@ Should we use external packages?
 
 Should we use macros?
 - Only (pseudo)official derive macros, avoid at all costs macro by example, don't define our own macros
+
+Note: everything relies on reference frame where down is positive

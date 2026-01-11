@@ -72,7 +72,6 @@ impl PhysicsLine {
                 friction_vector = friction_vector.flipped_horizontal()
             }
 
-            // TODO See if we can flip this
             if point_state.external_velocity().y() < new_position.y() {
                 friction_vector = friction_vector.flipped_vertical();
             }
