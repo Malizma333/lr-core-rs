@@ -179,7 +179,7 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
                 track.layers().push(layer);
             } else {
                 let mut layer_folder = LayerFolderBuilder::new(json_layer.id);
-                layer_folder.name(json_layer.name.to_string());
+                layer_folder.name(json_layer.name.clone());
                 layer_folder.visible(json_layer.visible);
 
                 if let Some(editable) = json_layer.editable {

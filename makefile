@@ -31,7 +31,7 @@ format: ## Format files with rustfmt
 
 .PHONY: lint
 lint: ## Lint files with clippy
-	cargo clippy --all-targets --all-features -- -Dwarnings
+	cargo clippy --all-targets --all-features -- -D warnings
 
 .PHONY: test
 test: ## Run tests
