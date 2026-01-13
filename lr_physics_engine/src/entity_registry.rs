@@ -9,7 +9,9 @@ mod remount_version;
 
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
+    error, fmt,
     hash::Hash,
+    iter::zip,
 };
 
 pub use bone::{EntityBone, EntityBoneBuilder};
@@ -34,11 +36,29 @@ pub struct EntityTemplateId(usize);
 pub struct EntityId(usize);
 
 pub(crate) struct EntityRegistry {
-    // TODO Should these be slot maps? How do we verify order of insertion impacting order of remount processing?
     entity_templates: HashMap<EntityTemplateId, EntityTemplate>,
     entities: BTreeMap<EntityId, Entity>,
     latest_synced_frame: u32,
 }
+
+#[derive(Debug)]
+pub enum Error {
+    EntityNotFound(EntityId),
+}
+
+impl error::Error for Error {}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::EntityNotFound(id) => {
+                write!(f, "Entity with id not found: {}", id.0)
+            }
+        }
+    }
+}
+
+const EXPECT_TEMPLATE_MSG: &str = "Entity should point to valid template";
 
 impl EntityRegistry {
     pub(crate) fn new() -> Self {
@@ -55,40 +75,73 @@ impl EntityRegistry {
         id
     }
 
-    pub(crate) fn create_entity(&mut self, template_id: EntityTemplateId) -> EntityId {
+    pub(crate) fn create_entity(&mut self, template_id: EntityTemplateId) -> Option<EntityId> {
         self.clear_cache();
-        let template = self.entity_templates.get_mut(&template_id).unwrap();
-        let entity = Entity::new(template_id, template);
-        let id = EntityId(self.entities.len());
-        self.entities.insert(id, entity);
-        id
+        let template = self.entity_templates.get(&template_id);
+        template.map(|template| {
+            let entity = Entity::new(template_id, template);
+            let id = EntityId(self.entities.len());
+            self.entities.insert(id, entity);
+            id
+        })
     }
 
-    pub(crate) fn get_entity_initial_offset(&self, entity_id: EntityId) -> Vector2Df {
-        self.entities.get(&entity_id).unwrap().initial_offset()
+    pub(crate) fn get_entity_initial_offset(&self, entity_id: EntityId) -> Option<Vector2Df> {
+        self.entities
+            .get(&entity_id)
+            .map(|entity| entity.initial_offset())
     }
 
-    pub(crate) fn set_entity_initial_offset(&mut self, entity_id: EntityId, offset: Vector2Df) {
+    pub(crate) fn set_entity_initial_offset(
+        &mut self,
+        entity_id: EntityId,
+        offset: Vector2Df,
+    ) -> Result<(), Error> {
         self.clear_cache();
-        let entity = self.entities.get_mut(&entity_id).unwrap();
-        let template = self.entity_templates.get(&entity.template_id()).unwrap();
-        entity.set_initial_offset(offset, template)
+        let entity = self
+            .entities
+            .get_mut(&entity_id)
+            .ok_or(Error::EntityNotFound(entity_id))?;
+        let template = self
+            .entity_templates
+            .get(&entity.template_id())
+            .expect(EXPECT_TEMPLATE_MSG);
+        entity.set_initial_offset(offset, template);
+        Ok(())
     }
 
-    pub(crate) fn get_entity_initial_velocity(&self, entity_id: EntityId) -> Vector2Df {
-        self.entities.get(&entity_id).unwrap().initial_velocity()
+    pub(crate) fn get_entity_initial_velocity(&self, entity_id: EntityId) -> Option<Vector2Df> {
+        self.entities
+            .get(&entity_id)
+            .map(|entity| entity.initial_velocity())
     }
 
-    pub(crate) fn set_entity_initial_velocity(&mut self, entity_id: EntityId, velocity: Vector2Df) {
+    pub(crate) fn set_entity_initial_velocity(
+        &mut self,
+        entity_id: EntityId,
+        velocity: Vector2Df,
+    ) -> Result<(), Error> {
         self.clear_cache();
-        let entity = self.entities.get_mut(&entity_id).unwrap();
-        let template = self.entity_templates.get(&entity.template_id()).unwrap();
-        entity.set_initial_velocity(velocity, template)
+        let entity = self
+            .entities
+            .get_mut(&entity_id)
+            .ok_or(Error::EntityNotFound(entity_id))?;
+        let template = self
+            .entity_templates
+            .get(&entity.template_id())
+            .expect(EXPECT_TEMPLATE_MSG);
+        entity.set_initial_velocity(velocity, template);
+        Ok(())
     }
 
-    pub(crate) fn remove_entity(&mut self, entity_id: EntityId) {
+    pub(crate) fn remove_entity(&mut self, entity_id: EntityId) -> Result<(), Error> {
         self.clear_cache();
-        self.entities.remove(&entity_id);
+        let removed_entity = self.entities.remove(&entity_id);
+        if removed_entity.is_none() {
+            Err(Error::EntityNotFound(entity_id))
+        } else {
+            Ok(())
+        }
     }
 
     pub(crate) fn clear_cache(&mut self) {
@@ -118,45 +171,44 @@ impl EntityRegistry {
         }
 
         while self.latest_synced_frame < frame {
-            let mut state_index = 0;
             let mut dismounts = VecDeque::new();
 
-            for entity in self.entities.values() {
-                let template = self.entity_templates.get(&entity.template_id()).unwrap();
+            for (entity, state) in zip(self.entities.values(), &mut entity_states) {
+                let template = self
+                    .entity_templates
+                    .get(&entity.template_id())
+                    .expect(EXPECT_TEMPLATE_MSG);
 
-                let state = &mut entity_states[state_index];
-
-                let dismounted = entity.process_frame(state, template, line_registry);
+                let dismounted = state.process_frame(template, line_registry);
 
                 dismounts.push_back(dismounted);
-
-                state_index += 1;
             }
 
-            state_index = 0;
+            for (state_index, entity) in self.entities.values().enumerate() {
+                let template = self
+                    .entity_templates
+                    .get(&entity.template_id())
+                    .expect(EXPECT_TEMPLATE_MSG);
 
-            for entity in self.entities.values() {
-                let template = self.entity_templates.get(&entity.template_id()).unwrap();
-
-                let mut state = entity_states[state_index].clone();
+                let mut state = entity_states
+                    .get(state_index)
+                    .expect("Index should be within bounds of entity state array")
+                    .clone();
 
                 let dismounted = dismounts.pop_front().is_some_and(|d| d);
 
                 // TODO entity_states is all skeletons and may not match template
                 if !dismounted {
-                    entity.process_mount_phase(&mut state, template, &mut entity_states);
+                    state.process_mount_phase(template, &mut entity_states);
                 }
 
-                entity_states[state_index] = state;
-                state_index += 1;
+                *entity_states
+                    .get_mut(state_index)
+                    .expect("Index should be within bounds of entity state array") = state;
             }
 
-            state_index = 0;
-
-            for entity in self.entities.values_mut() {
-                let state = entity_states[state_index].clone();
+            for (entity, state) in zip(self.entities.values_mut(), entity_states.clone()) {
                 entity.push_to_cache(state);
-                state_index += 1;
             }
 
             self.latest_synced_frame += 1;

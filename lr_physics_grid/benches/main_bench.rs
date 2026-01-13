@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+#![allow(clippy::unwrap_used)]
 use criterion::{
     BenchmarkGroup, BenchmarkId, Criterion, criterion_group, criterion_main, measurement::WallTime,
 };
@@ -67,10 +69,10 @@ fn bench_add_lines(group: &mut BenchmarkGroup<'_, WallTime>, lines: &[Line]) {
             let mut index = 0;
             b.iter(|| {
                 let mut grid = Grid::new(version);
-                grid.add_line(black_box(lines[index % lines.len()]));
+                grid.add_line(black_box(*lines.get(index % lines.len()).unwrap()));
                 index += 1;
                 black_box(grid)
-            })
+            });
         });
     }
 }

@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, f64::INFINITY};
+use std::collections::BTreeMap;
 
 use geometry::Point;
 use vector2d::Vector2Df;
@@ -119,7 +119,7 @@ impl EntityBoneBuilder {
             bias: 0.5,
             initial_length_factor: 1.0,
             repel_only: false,
-            endurance: INFINITY,
+            endurance: f64::INFINITY,
             adjustment_strength: 1.0,
             endurance_remount_factor: 1.0,
             adjustment_strength_remount_factor: 1.0,
@@ -163,8 +163,12 @@ impl EntityBoneBuilder {
 
     pub fn build(self, point_map: &BTreeMap<EntityPointId, EntityPoint>) -> EntityBone {
         let points = (
-            point_map.get(&self.point_ids.0).unwrap(),
-            point_map.get(&self.point_ids.1).unwrap(),
+            point_map
+                .get(&self.point_ids.0)
+                .expect("Building this bone should properly resolve builder points"),
+            point_map
+                .get(&self.point_ids.1)
+                .expect("Building this bone should properly resolve builder points"),
         );
         EntityBone {
             point_ids: self.point_ids,
@@ -182,7 +186,7 @@ impl EntityBoneBuilder {
                     .initial_position()
                     .distance_from(points.1.initial_position())
                     * self.initial_length_factor,
-                is_breakable: self.endurance < INFINITY,
+                is_breakable: self.endurance < f64::INFINITY,
             },
         }
     }

@@ -3,7 +3,7 @@ use core::fmt;
 use serde::{
     Deserialize, Deserializer, Serialize,
     de::{Error as DeError, SeqAccess, Visitor},
-    ser::Error,
+    ser::Error as _,
 };
 
 // LRA line array types:
@@ -131,10 +131,9 @@ impl<'de> Visitor<'de> for LRAJsonArrayLineVisitor {
                 ))
             }
             2 => {
-                let id = FaultyU32::from(
-                    seq.next_element()?
-                        .ok_or_else(|| DeError::invalid_length(1, &self))?,
-                );
+                let id = seq
+                    .next_element()?
+                    .ok_or_else(|| DeError::invalid_length(1, &self))?;
                 let x1: f64 = seq
                     .next_element()?
                     .ok_or_else(|| DeError::invalid_length(2, &self))?;

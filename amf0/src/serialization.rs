@@ -2,7 +2,7 @@
 // License: See ../LICENSE-APACHE and ../LICENSE-MIT
 // Modifications Copyright 2026 Tobias Bessler
 
-use quick_byte::QuickWrite;
+use quick_byte::QuickWrite as _;
 
 use super::{Amf0Value, error::SerializationError, markers};
 use std::collections::HashMap;
@@ -60,7 +60,7 @@ fn serialize_number(value: f64, bytes: &mut Vec<u8>) -> Result<(), Serialization
 }
 
 fn serialize_bool(value: bool, bytes: &mut Vec<u8>) -> Result<(), SerializationError> {
-    bytes.push(value as u8);
+    bytes.push(u8::from(value));
     Ok(())
 }
 
@@ -69,6 +69,7 @@ fn serialize_string(value: &String, bytes: &mut Vec<u8>) -> Result<(), Serializa
         return Err(SerializationError::NormalStringTooLong);
     }
 
+    #[expect(clippy::cast_possible_truncation)]
     bytes.write_u16_be(value.len() as u16)?;
     bytes.extend(value.as_bytes());
     Ok(())
@@ -78,7 +79,9 @@ fn serialize_object(
     properties: &HashMap<String, Amf0Value>,
     bytes: &mut Vec<u8>,
 ) -> Result<(), SerializationError> {
+    #[expect(clippy::iter_over_hash_type)]
     for (name, value) in properties {
+        #[expect(clippy::cast_possible_truncation)]
         bytes.write_u16_be(name.len() as u16)?;
         bytes.extend(name.as_bytes());
         serialize_value(value, bytes)?;
@@ -93,6 +96,7 @@ fn serialize_strict_array(
     array: &Vec<Amf0Value>,
     bytes: &mut Vec<u8>,
 ) -> Result<(), SerializationError> {
+    #[expect(clippy::cast_possible_truncation)]
     bytes.write_u32_be(array.len() as u32)?;
 
     for value in array {
@@ -106,6 +110,7 @@ fn serialize_ecma_array(
     properties: &HashMap<String, Amf0Value>,
     bytes: &mut Vec<u8>,
 ) -> Result<(), SerializationError> {
+    #[expect(clippy::cast_possible_truncation)]
     bytes.write_u32_be(properties.len() as u32)?;
 
     serialize_object(properties, bytes)?;
@@ -115,11 +120,12 @@ fn serialize_ecma_array(
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use super::super::Amf0Value;
     use super::SerializationError;
     use super::markers;
     use super::serialize;
-    use quick_byte::QuickWrite;
+    use quick_byte::QuickWrite as _;
     use std::collections::HashMap;
 
     #[test]
@@ -189,6 +195,7 @@ mod tests {
 
         let mut expected = vec![];
         expected.write_u8(markers::STRING_MARKER).unwrap();
+        #[expect(clippy::cast_possible_truncation)]
         expected.write_u16_be(value.len() as u16).unwrap();
         expected.extend(value.as_bytes());
 
@@ -231,7 +238,7 @@ mod tests {
     #[test]
     fn error_when_string_length_greater_than_u16() {
         let mut value = String::new();
-        let max = (u16::MAX as u32) + 1;
+        let max = u32::from(u16::MAX) + 1;
         for _ in 0..max {
             value.push('a');
         }

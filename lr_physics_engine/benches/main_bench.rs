@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+#![allow(clippy::unwrap_used)]
 use criterion::{
     BenchmarkGroup, BenchmarkId, Criterion, criterion_group, criterion_main, measurement::WallTime,
 };
@@ -51,7 +53,7 @@ fn bench_engine_simulation(c: &mut Criterion) {
         let file = fs::read(file_name).expect("Failed to read JSON file");
         let track = lr_format_json::read(&file).expect("Failed to parse track file");
         let mut engine = PhysicsEngine::from_track(&track, false);
-        let mut group = c.benchmark_group(format!("{}", benchmark.file));
+        let mut group = c.benchmark_group(benchmark.file.to_string());
         bench_view_frame(&mut group, &mut engine, benchmark.target_frame);
         group.finish();
     }

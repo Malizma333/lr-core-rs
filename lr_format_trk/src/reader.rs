@@ -8,10 +8,10 @@ use lr_format_core::{
         from_lra_audio_offset, from_lra_gravity, from_lra_scenery_width, from_lra_zoom,
     },
 };
-use quick_byte::QuickRead;
+use quick_byte::QuickRead as _;
 use std::{
     collections::HashSet,
-    io::{Cursor, Read, Seek, SeekFrom},
+    io::{Cursor, Read as _, Seek as _, SeekFrom},
 };
 use vector2d::Vector2Df;
 
@@ -48,28 +48,28 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
     let mut cursor = Cursor::new(data);
 
     // Magic number
-    let mut magic_number = [0u8; 4];
+    let mut magic_number = [0_u8; 4];
     cursor.read_exact(&mut magic_number)?;
 
     if magic_number != [b'T', b'R', b'K', 0xF2] {
-        Err(TrkReadError::InvalidMagicNumber(format!(
+        return Err(TrkReadError::InvalidMagicNumber(format!(
             "{:02X?}",
             &magic_number,
-        )))?
+        )));
     }
 
     // Version
     let version = cursor.read_u8()?;
 
     if version > 1 {
-        Err(TrkReadError::UnsupportedTrackVersion(version.to_string()))?
+        return Err(TrkReadError::UnsupportedTrackVersion(version.to_string()));
     }
 
     let feature_string_length = cursor.read_u16_le()?;
     let mut buffer = vec![0; usize::from(feature_string_length)];
     cursor.read_exact(&mut buffer)?;
     let feature_string = str::from_utf8(&buffer)?;
-    let mut included_features: HashSet<&str> = Default::default();
+    let mut included_features = HashSet::new();
 
     for feature in feature_string.split(';').filter(|s| !s.is_empty()) {
         included_features.insert(feature);
@@ -108,13 +108,18 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
             .collect();
 
         if song_data.len() != 2 {
-            Err(TrkReadError::InvalidSongFormat(song_data.join(",")))?
+            return Err(TrkReadError::InvalidSongFormat(song_data.join(",")));
         }
 
-        let name = song_data[0];
-        let seconds_offset = song_data[1].parse::<f64>()?;
+        let name = song_data
+            .get(0)
+            .ok_or(TrkReadError::InvalidSongFormat(song_data.join(",")))?;
+        let seconds_offset = song_data
+            .get(1)
+            .ok_or(TrkReadError::InvalidSongFormat(song_data.join(",")))?
+            .parse::<f64>()?;
         track
-            .audio_filename(name.to_string())
+            .audio_filename((*name).to_string())
             .audio_offset_until_start(from_lra_audio_offset(seconds_offset));
     }
 
@@ -134,7 +139,7 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
             1 => LineType::Standard,
             2 => LineType::Acceleration,
             0 => LineType::Scenery,
-            other => Err(TrkReadError::UnsupportedLineType(other.to_string()))?,
+            other => return Err(TrkReadError::UnsupportedLineType(other.to_string())),
         };
 
         let flipped = (flags >> 7) != 0;
@@ -234,14 +239,14 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
 
     // Metadata section
 
-    let mut meta_magic_number = [0u8; 4];
+    let mut meta_magic_number = [0_u8; 4];
     cursor.read_exact(&mut meta_magic_number)?;
 
     if &meta_magic_number != b"META" {
-        Err(TrkReadError::InvalidMagicNumber(format!(
+        return Err(TrkReadError::InvalidMagicNumber(format!(
             "{:02X?}",
             &meta_magic_number,
-        )))?
+        )));
     }
 
     let num_entries = cursor.read_u16_le()?;
@@ -265,13 +270,17 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
         let key_value_pair: Vec<&str> = meta_string.split("=").filter(|s| !s.is_empty()).collect();
 
         if key_value_pair.len() != 2 {
-            Err(TrkReadError::InvalidKeyValue(key_value_pair.join(",")))?
+            return Err(TrkReadError::InvalidKeyValue(key_value_pair.join(",")));
         }
 
-        let key = key_value_pair[0];
-        let value = key_value_pair[1];
+        let key = key_value_pair
+            .get(0)
+            .ok_or(TrkReadError::InvalidKeyValue(key_value_pair.join(",")))?;
+        let value = key_value_pair
+            .get(1)
+            .ok_or(TrkReadError::InvalidKeyValue(key_value_pair.join(",")))?;
 
-        match key {
+        match *key {
             FEATURE_START_ZOOM => {
                 start_zoom = Some(from_lra_zoom(value.parse::<f32>()?));
             }
@@ -307,33 +316,100 @@ pub fn read(data: &Vec<u8>) -> Result<Track, TrkReadError> {
                     let values: Vec<&str> = trigger.split(':').filter(|s| !s.is_empty()).collect();
 
                     if values.is_empty() {
-                        Err(TrkReadError::EmptyTriggerData)?
+                        return Err(TrkReadError::EmptyTriggerData);
                     }
 
-                    match values[0] {
+                    match *values.get(0).ok_or(TrkReadError::EmptyTriggerData)? {
                         "0" => {
                             // Zoom
-                            let _target_zoom = from_lra_zoom(values[1].parse::<f32>()?);
-                            let _start_frame = u32::try_from(values[2].parse::<i32>()?)?;
-                            let _end_frame = u32::try_from(values[3].parse::<i32>()?)?;
+                            let _target_zoom = from_lra_zoom(
+                                values
+                                    .get(1)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<f32>()?,
+                            );
+                            let _start_frame = u32::try_from(
+                                values
+                                    .get(2)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _end_frame = u32::try_from(
+                                values
+                                    .get(3)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
                         }
                         "1" => {
                             // Background Color
-                            let _red = u8::try_from(values[1].parse::<i32>()?)?;
-                            let _green = u8::try_from(values[2].parse::<i32>()?)?;
-                            let _blue = u8::try_from(values[3].parse::<i32>()?)?;
-                            let _start_frame = u32::try_from(values[4].parse::<i32>()?)?;
-                            let _end_frame = u32::try_from(values[5].parse::<i32>()?)?;
+                            let _red = u8::try_from(
+                                values
+                                    .get(1)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _green = u8::try_from(
+                                values
+                                    .get(2)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _blue = u8::try_from(
+                                values
+                                    .get(3)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _start_frame = u32::try_from(
+                                values
+                                    .get(4)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _end_frame = u32::try_from(
+                                values
+                                    .get(5)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
                         }
                         "2" => {
                             // Line Color
-                            let _red = u8::try_from(values[1].parse::<i32>()?)?;
-                            let _green = u8::try_from(values[2].parse::<i32>()?)?;
-                            let _blue = u8::try_from(values[3].parse::<i32>()?)?;
-                            let _start_frame = u32::try_from(values[4].parse::<i32>()?)?;
-                            let _end_frame = u32::try_from(values[5].parse::<i32>()?)?;
+                            let _red = u8::try_from(
+                                values
+                                    .get(1)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _green = u8::try_from(
+                                values
+                                    .get(2)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _blue = u8::try_from(
+                                values
+                                    .get(3)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _start_frame = u32::try_from(
+                                values
+                                    .get(4)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
+                            let _end_frame = u32::try_from(
+                                values
+                                    .get(5)
+                                    .ok_or(TrkReadError::InvalidTriggerData(trigger.to_string()))?
+                                    .parse::<i32>()?,
+                            )?;
                         }
-                        other => Err(TrkReadError::UnsupportedTriggerType(other.to_string()))?,
+                        other => {
+                            return Err(TrkReadError::UnsupportedTriggerType(other.to_string()));
+                        }
                     }
                 }
             }

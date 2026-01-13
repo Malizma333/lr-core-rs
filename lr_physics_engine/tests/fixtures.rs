@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use geometry::Point;
-    use lr_format_json;
     use lr_physics_engine::{
         PhysicsEngine,
         entity_registry::{EntityState, MountPhase},
@@ -45,7 +45,7 @@ mod tests {
         for (i, test) in test_cases.iter().enumerate() {
             println!("Engine test {}: {}", i, test.test);
 
-            if &last_test_file != &test.file {
+            if last_test_file != test.file {
                 let file_name = format!(
                     "../fixtures/lr_physics_engine/tests/{}.track.json",
                     test.file
@@ -70,25 +70,17 @@ mod tests {
             expected_entities.len(),
         );
         for (i, expected_entity) in expected_entities.iter().enumerate() {
-            let result_entity = &result[i];
+            let result_entity = &result.get(i).unwrap();
             if let Some(expected_mount_state) = &expected_entity.mount_state {
                 let result_mount_state = match result_entity.mount_phase() {
                     MountPhase::Mounted => "MOUNTED",
-                    MountPhase::Dismounted {
-                        frames_until_remounting: _,
-                    } => "DISMOUNTED",
-                    MountPhase::Dismounting {
-                        frames_until_dismounted: _,
-                    } => "DISMOUNTING",
-                    MountPhase::Remounting {
-                        frames_until_mounted: _,
-                    } => "REMOUNTING",
+                    MountPhase::Dismounted { .. } => "DISMOUNTED",
+                    MountPhase::Dismounting { .. } => "DISMOUNTING",
+                    MountPhase::Remounting { .. } => "REMOUNTING",
                 };
-                assert!(
-                    result_mount_state == expected_mount_state,
-                    "rider {i} mount state mismatch: {} != {}",
-                    result_mount_state,
-                    expected_mount_state,
+                assert_eq!(
+                    result_mount_state, expected_mount_state,
+                    "rider {i} mount state mismatch",
                 );
             }
 
@@ -98,12 +90,9 @@ mod tests {
                 } else {
                     "BROKEN"
                 };
-                assert!(
-                    result_sled_state == expected_sled_state,
-                    "rider {} sled state mismatch: {} != {}",
-                    i,
-                    result_sled_state,
-                    expected_sled_state,
+                assert_eq!(
+                    result_sled_state, expected_sled_state,
+                    "rider {i} sled state mismatch",
                 );
             }
 
@@ -142,18 +131,16 @@ mod tests {
                 let (expected_position, expected_velocity) =
                     (Point::new(pos_x, pos_y), Vector2Df::new(vel_x, vel_y));
 
-                assert!(
-                    result_point_positions[j] == expected_position,
-                    "rider {i} point {j} position mismatch: {:?} != {:?}",
-                    result_point_positions[j],
+                assert_eq!(
+                    *result_point_positions.get(j).unwrap(),
                     expected_position,
+                    "rider {i} point {j} position mismatch",
                 );
 
-                assert!(
-                    result_point_velocities[j] == expected_velocity,
-                    "rider {i} point {j} velocity mismatch: {:?} != {:?}",
-                    result_point_velocities[j],
-                    expected_position,
+                assert_eq!(
+                    *result_point_velocities.get(j).unwrap(),
+                    expected_velocity,
+                    "rider {i} point {j} velocity mismatch",
                 );
             }
         }

@@ -6,7 +6,7 @@ use crate::{
     PhysicsMoment,
     entity_registry::{
         EntityId, EntityRegistry, EntityState, EntityTemplate, EntityTemplateBuilder,
-        EntityTemplateId, RemountVersion,
+        EntityTemplateId, Error, RemountVersion,
     },
     line_registry::{LineId, LineRegistry, PhysicsLine, PhysicsLineBuilder},
 };
@@ -70,37 +70,64 @@ impl PhysicsEngine {
         self.entity_registry.add_entity_template(entity_template)
     }
 
-    pub fn add_entity(&mut self, entity_template_id: EntityTemplateId) -> EntityId {
+    /// Adds a new entity given a template id
+    ///
+    /// Returns the id of the newly created entity if the template id is valid
+    pub fn add_entity(&mut self, entity_template_id: EntityTemplateId) -> Option<EntityId> {
         self.entity_registry.create_entity(entity_template_id)
     }
 
-    pub fn get_entity_initial_offset(&self, entity_id: EntityId) -> Vector2Df {
+    /// Gets an entity's initial offset from (0,0)
+    ///
+    /// Returns the offset if the entity id is valid
+    pub fn get_entity_initial_offset(&self, entity_id: EntityId) -> Option<Vector2Df> {
         self.entity_registry.get_entity_initial_offset(entity_id)
     }
 
-    pub fn set_entity_initial_offset(&mut self, entity_id: EntityId, offset: Vector2Df) {
+    /// Sets an entity's initial offset from (0,0)
+    ///
+    /// Errors if the entity id is invalid
+    pub fn set_entity_initial_offset(
+        &mut self,
+        entity_id: EntityId,
+        offset: Vector2Df,
+    ) -> Result<(), Error> {
         self.entity_registry
             .set_entity_initial_offset(entity_id, offset)
     }
 
-    pub fn get_entity_initial_velocity(&self, entity_id: EntityId) -> Vector2Df {
+    /// Gets an entity's initial overall velocity
+    ///
+    /// Returns the velocity if the entity id is valid
+    pub fn get_entity_initial_velocity(&self, entity_id: EntityId) -> Option<Vector2Df> {
         self.entity_registry.get_entity_initial_velocity(entity_id)
     }
 
-    pub fn set_entity_initial_velocity(&mut self, entity_id: EntityId, velocity: Vector2Df) {
+    /// Sets an entity's initial velocity
+    ///
+    /// Errors if the entity id is invalid
+    pub fn set_entity_initial_velocity(
+        &mut self,
+        entity_id: EntityId,
+        velocity: Vector2Df,
+    ) -> Result<(), Error> {
         self.entity_registry
             .set_entity_initial_velocity(entity_id, velocity)
     }
 
-    pub fn remove_entity(&mut self, entity_id: EntityId) {
+    /// Removes an entity instance from the registry
+    ///
+    /// Errors if the entity id is invalid
+    pub fn remove_entity(&mut self, entity_id: EntityId) -> Result<(), Error> {
         self.entity_registry.remove_entity(entity_id)
     }
 
-    // TODO make these only visible by tests
-
+    /// Completely clears the state cache of all entities in the registry
     pub fn clear_cache(&mut self) {
         self.entity_registry.clear_cache();
     }
+
+    // TODO make these only visible by tests
 
     pub fn from_track(track: &Track, lra: bool) -> Self {
         let grid_version = match track.grid_version() {
@@ -143,14 +170,20 @@ impl PhysicsEngine {
                 }
             };
 
-            let entity_id = engine.add_entity(template_id);
+            let entity_id = engine
+                .add_entity(template_id)
+                .expect("Template id should be valid");
 
             if let Some(offset) = rider.start_offset() {
-                engine.set_entity_initial_offset(entity_id, offset);
+                engine
+                    .set_entity_initial_offset(entity_id, offset)
+                    .expect("Entity id should be valid");
             }
 
             if let Some(velocity) = rider.start_velocity() {
-                engine.set_entity_initial_velocity(entity_id, velocity);
+                engine
+                    .set_entity_initial_velocity(entity_id, velocity)
+                    .expect("Entity id should be valid");
             }
         }
 

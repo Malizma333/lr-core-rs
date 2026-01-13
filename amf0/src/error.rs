@@ -21,6 +21,9 @@ pub enum DeserializationError {
     // (e.g. we are reading an object property but there was no property value).
     UnexpectedEof,
 
+    // This happens when trying to use a reference would lead to an out of bounds error
+    InvalidReference,
+
     Other(Box<dyn Error + Send + Sync>),
 }
 
@@ -33,6 +36,9 @@ impl fmt::Display for DeserializationError {
             }
             Self::UnexpectedEof => {
                 write!(f, "Hit end of the byte buffer but was expecting more data")
+            }
+            Self::InvalidReference => {
+                write!(f, "Reference tried accessing element out of bounds")
             }
             Self::Other(e) => write!(f, "Other error occurred: {}", e),
         }
@@ -87,7 +93,7 @@ impl Error for SerializationError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match &self {
             SerializationError::Other(e) => Some(&**e),
-            _ => None,
+            SerializationError::NormalStringTooLong => None,
         }
     }
 }

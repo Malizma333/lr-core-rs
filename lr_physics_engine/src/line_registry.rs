@@ -54,7 +54,11 @@ impl LineRegistry {
         let line_ids = self.grid.get_lines_near_point(point);
         line_ids
             .iter()
-            .map(|id| &self.line_lookup[&LineId(*id)])
+            .map(|id| {
+                self.line_lookup
+                    .get(&LineId(*id))
+                    .expect("Line in grid should also exist in line lookup")
+            })
             .collect()
     }
 }

@@ -21,3 +21,6 @@ serde_json = "1"
 [[bench]]
 harness = false
 name = "main_bench"
+
+[lints]
+workspace = true

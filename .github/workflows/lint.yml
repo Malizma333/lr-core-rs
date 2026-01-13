@@ -12,4 +12,4 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - run: cargo clippy --all-targets --all-features -- -Aclippy::style
+      - run: cargo clippy --all-targets --all-features -- -Dwarnings

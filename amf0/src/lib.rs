@@ -14,6 +14,7 @@ use std::collections::HashMap;
 
 // An Enum representing the different supported types of Amf0 values
 #[derive(PartialEq, Debug, Clone)]
+#[non_exhaustive]
 pub enum Amf0Value {
     Number(f64),
     Boolean(bool),

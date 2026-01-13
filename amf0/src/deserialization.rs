@@ -2,7 +2,7 @@
 // License: See ../LICENSE-APACHE and ../LICENSE-MIT
 // Modifications Copyright 2026 Tobias Bessler
 
-use quick_byte::QuickRead;
+use quick_byte::QuickRead as _;
 
 use super::{Amf0Value, error::DeserializationError, markers};
 use std::collections::HashMap;
@@ -18,11 +18,8 @@ pub fn deserialize<R: Read>(bytes: &mut R) -> Result<Vec<Amf0Value>, Deserializa
     let mut references = vec![];
     let mut results = vec![];
 
-    loop {
-        match read_next_value(bytes, &mut references)? {
-            Some(x) => results.push(x),
-            None => break,
-        };
+    while let Some(x) = read_next_value(bytes, &mut references)? {
+        results.push(x);
     }
 
     Ok(results)
@@ -97,11 +94,8 @@ fn parse_object<R: Read>(
 ) -> Result<Amf0Value, DeserializationError> {
     let mut properties = HashMap::new();
 
-    loop {
-        match parse_object_property(bytes, references)? {
-            Some(property) => properties.insert(property.label, property.value),
-            None => break,
-        };
+    while let Some(property) = parse_object_property(bytes, references)? {
+        properties.insert(property.label, property.value);
     }
 
     let deserialized_value = Amf0Value::Object(properties);
@@ -131,16 +125,16 @@ fn parse_strict_array<R: Read>(
     bytes: &mut R,
     references: &mut Vec<Amf0Value>,
 ) -> Result<Amf0Value, DeserializationError> {
-    let _array_count = bytes.read_u32_be()?;
+    let array_count = bytes.read_u32_be()?;
     let mut values: Vec<Amf0Value> = Vec::new();
 
-    for _ in 0.._array_count {
+    for _ in 0..array_count {
         match read_next_value(bytes, references)? {
             Some(value) => {
                 values.push(value);
             }
             None => break,
-        };
+        }
     }
 
     references.push(Amf0Value::StrictArray(values.clone()));
@@ -180,15 +174,19 @@ fn parse_object_property<R: Read>(
 
 fn parse_reference<R: Read>(
     bytes: &mut R,
-    references: &Vec<Amf0Value>,
+    references: &[Amf0Value],
 ) -> Result<Amf0Value, DeserializationError> {
     let index = bytes.read_u16_be()?;
-    Ok(references[index as usize].clone())
+    Ok(references
+        .get(index as usize)
+        .ok_or(DeserializationError::InvalidReference)?
+        .clone())
 }
 
 #[cfg(test)]
 mod tests {
-    use quick_byte::QuickWrite;
+    #![allow(clippy::unwrap_used)]
+    use quick_byte::QuickWrite as _;
 
     use super::super::Amf0Value;
     use super::deserialize;
@@ -261,6 +259,7 @@ mod tests {
 
         let mut vector = vec![];
         vector.write_u8(markers::STRING_MARKER).unwrap();
+        #[expect(clippy::cast_possible_truncation)]
         vector.write_u16_be(value.len() as u16).unwrap();
         vector.extend(value.as_bytes());
 

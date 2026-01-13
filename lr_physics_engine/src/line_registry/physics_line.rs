@@ -3,6 +3,9 @@ use vector2d::Vector2Df;
 
 use crate::entity_registry::{EntityPoint, EntityPointState};
 
+const MAX_EXTENSION_SIZE: f64 = 0.25;
+const ACCELERATION_FACTOR: f64 = 0.1;
+
 pub struct PhysicsLine {
     endpoints: Line,
     flipped: bool,
@@ -69,7 +72,7 @@ impl PhysicsLine {
                 (self.normal_unit.rotated_cw() * point.contact_friction()) * distance_from_line_top;
 
             if point_state.computed_previous_position().x() >= new_position.x() {
-                friction_vector = friction_vector.flipped_horizontal()
+                friction_vector = friction_vector.flipped_horizontal();
             }
 
             if point_state.computed_previous_position().y() < new_position.y() {
@@ -152,7 +155,6 @@ impl PhysicsLineBuilder {
             unit.rotated_ccw()
         };
 
-        const MAX_EXTENSION_SIZE: f64 = 0.25;
         let extension_ratio = MAX_EXTENSION_SIZE.min(self.height / length);
 
         let left_limit = if self.left_extension {
@@ -167,7 +169,6 @@ impl PhysicsLineBuilder {
             1.0
         };
 
-        const ACCELERATION_FACTOR: f64 = 0.1;
         let acceleration_vector = unit * (self.acceleration_multiplier * ACCELERATION_FACTOR);
 
         PhysicsLine {

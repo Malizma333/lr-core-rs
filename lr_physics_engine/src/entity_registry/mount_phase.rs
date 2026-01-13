@@ -8,36 +8,18 @@ pub enum MountPhase {
 
 impl MountPhase {
     pub fn is_mounted(&self) -> bool {
-        match self {
-            MountPhase::Mounted => true,
-            _ => false,
-        }
+        matches!(self, MountPhase::Mounted)
     }
 
     pub fn is_dismounting(&self) -> bool {
-        match self {
-            MountPhase::Dismounting {
-                frames_until_dismounted: _,
-            } => true,
-            _ => false,
-        }
+        matches!(self, MountPhase::Dismounting { .. })
     }
 
     pub fn is_dismounted(&self) -> bool {
-        match self {
-            MountPhase::Dismounted {
-                frames_until_remounting: _,
-            } => true,
-            _ => false,
-        }
+        matches!(self, MountPhase::Dismounted { .. })
     }
 
     pub fn is_remounting(&self) -> bool {
-        match self {
-            MountPhase::Remounting {
-                frames_until_mounted: _,
-            } => true,
-            _ => false,
-        }
+        matches!(self, MountPhase::Remounting { .. })
     }
 }

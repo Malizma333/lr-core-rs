@@ -157,6 +157,7 @@ impl Vector2Df {
 
 #[cfg(test)]
 mod tests {
+    #![expect(clippy::float_cmp)]
     use crate::{Vector2Di, vector2df::Vector2Df};
 
     #[test]

@@ -8,30 +8,18 @@ pub enum RemountVersion {
 
 impl RemountVersion {
     pub fn is_none(&self) -> bool {
-        match self {
-            RemountVersion::None => true,
-            _ => false,
-        }
+        matches!(self, RemountVersion::None)
     }
 
     pub fn is_comv1(&self) -> bool {
-        match self {
-            RemountVersion::ComV1 => true,
-            _ => false,
-        }
+        matches!(self, RemountVersion::ComV1)
     }
 
     pub fn is_comv2(&self) -> bool {
-        match self {
-            RemountVersion::ComV2 => true,
-            _ => false,
-        }
+        matches!(self, RemountVersion::ComV2)
     }
 
     pub fn is_lra(&self) -> bool {
-        match self {
-            RemountVersion::LRA => true,
-            _ => false,
-        }
+        matches!(self, RemountVersion::LRA)
     }
 }
