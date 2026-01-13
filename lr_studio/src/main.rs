@@ -10,11 +10,12 @@ fn main() {
 }
 
 #[derive(Default)]
-struct LineRiderStudioApp {}
+struct LineRiderStudioApp;
 
 impl LineRiderStudioApp {
     fn new(_cc: &eframe::CreationContext<'_>) -> Self {
-        Self::default()
+        // Self::default()
+        LineRiderStudioApp
     }
 }
 

@@ -13,12 +13,13 @@ pub(crate) struct GridCell {
 
 impl GridCell {
     pub(crate) fn new(world_position: Point) -> GridCell {
-        let scaled_position = world_position / f64::from(CELL_SIZE);
+        let scaled_position = world_position / CELL_SIZE;
+        #[expect(clippy::cast_possible_truncation)]
         let position = Vector2Di::new(
             scaled_position.x().floor() as i32,
             scaled_position.y().floor() as i32,
         );
-        let remainder = world_position.vector_from(f64::from(CELL_SIZE) * Point::from(position));
+        let remainder = world_position.vector_from(CELL_SIZE * Point::from(position));
         GridCell {
             position,
             remainder,
@@ -52,6 +53,7 @@ impl GridCell {
             y_comp * y_comp + x_comp
         };
 
+        #[expect(clippy::integer_division)]
         let key = if hash % 2 == 1 {
             (-(hash - 1) / 2) - 1
         } else {

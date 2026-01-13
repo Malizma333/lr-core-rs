@@ -86,8 +86,10 @@ impl Line {
         }
     }
 
-    pub fn contains_point(&self, point: Point) -> bool {
-        self.0.distance_from(point) + self.1.distance_from(point) == self.0.distance_from(self.1)
+    pub fn contains_point_approx(&self, point: Point) -> bool {
+        (self.0.distance_from(point) + self.1.distance_from(point) - self.0.distance_from(self.1))
+            .abs()
+            < 0.001
     }
 
     /** Returns the closest point that lies on this line from another point */
@@ -139,14 +141,20 @@ mod tests {
         let point2 = Point::new(-1.0, -1.0);
         let point3 = Point::new(-2.0, -2.0);
         let point4 = Point::new(1.0, -1.0);
-        assert!(line.contains_point(point1), "line should contain point");
-        assert!(line.contains_point(point2), "line should contain endpoint");
         assert!(
-            !line.contains_point(point3),
+            line.contains_point_approx(point1),
+            "line should contain point"
+        );
+        assert!(
+            line.contains_point_approx(point2),
+            "line should contain endpoint"
+        );
+        assert!(
+            !line.contains_point_approx(point3),
             "line should not contain point extending segment"
         );
         assert!(
-            !line.contains_point(point4),
+            !line.contains_point_approx(point4),
             "line should not contain point away from segment"
         );
     }

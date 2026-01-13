@@ -117,10 +117,7 @@ impl Grid {
 
     fn register(&mut self, line_id: GridLineId, position: &GridCell) {
         let cell_key = position.get_key();
-        self.cells
-            .entry(cell_key)
-            .or_insert_with(BTreeSet::new)
-            .insert(line_id);
+        self.cells.entry(cell_key).or_default().insert(line_id);
     }
 
     fn unregister(&mut self, line_id: GridLineId, position: &GridCell) {
@@ -135,13 +132,13 @@ impl Grid {
         let endpoint_vector = endpoints.get_vector();
 
         let mut delta_x = if endpoint_vector.x() > 0.0 {
-            f64::from(CELL_SIZE) - current_cell.remainder().x()
+            CELL_SIZE - current_cell.remainder().x()
         } else {
             -1.0 - current_cell.remainder().x()
         };
 
         let mut delta_y = if endpoint_vector.y() > 0.0 {
-            f64::from(CELL_SIZE) - current_cell.remainder().y()
+            CELL_SIZE - current_cell.remainder().y()
         } else {
             -1.0 - current_cell.remainder().y()
         };
@@ -149,16 +146,16 @@ impl Grid {
         if matches!(self.version, GridVersion::V6_2) {
             if current_cell.position().x() < 0 {
                 delta_x = if endpoint_vector.x() > 0.0 {
-                    f64::from(CELL_SIZE) + current_cell.remainder().x()
+                    CELL_SIZE + current_cell.remainder().x()
                 } else {
-                    -(f64::from(CELL_SIZE) + current_cell.remainder().x())
+                    -(CELL_SIZE + current_cell.remainder().x())
                 }
             }
             if current_cell.position().y() < 0 {
                 delta_y = if endpoint_vector.y() > 0.0 {
-                    f64::from(CELL_SIZE) + current_cell.remainder().y()
+                    CELL_SIZE + current_cell.remainder().y()
                 } else {
-                    -(f64::from(CELL_SIZE) + current_cell.remainder().y())
+                    -(CELL_SIZE + current_cell.remainder().y())
                 }
             }
         }
@@ -174,13 +171,13 @@ impl Grid {
             let next_y = (slope * (current_position.x() + delta_x) + y_intercept).round();
             if (next_y - current_position.y()).abs() < delta_y.abs() {
                 Point::new(current_position.x() + delta_x, next_y)
-            } else if (next_y - current_position.y()).abs() == delta_y.abs() {
+            } else if (next_y - current_position.y()).abs() > delta_y.abs() {
+                Point::new(next_x, current_position.y() + delta_y)
+            } else {
                 Point::new(
                     current_position.x() + delta_x,
                     current_position.y() + delta_y,
                 )
-            } else {
-                Point::new(next_x, current_position.y() + delta_y)
             }
         } else {
             let y_based_delta_x = delta_y * (endpoint_vector.x() / endpoint_vector.y());
@@ -189,13 +186,13 @@ impl Grid {
             let next_y = current_position.y() + x_based_delta_y;
             if x_based_delta_y.abs() < delta_y.abs() {
                 Point::new(current_position.x() + delta_x, next_y)
-            } else if x_based_delta_y.abs() == delta_y.abs() {
+            } else if x_based_delta_y.abs() > delta_y.abs() {
+                Point::new(next_x, current_position.y() + delta_y)
+            } else {
                 Point::new(
                     current_position.x() + delta_x,
                     current_position.y() + delta_y,
                 )
-            } else {
-                Point::new(next_x, current_position.y() + delta_y)
             }
         }
     }
@@ -216,7 +213,7 @@ impl Grid {
         let mut current_position_along_line = endpoints.p0();
         let mut current_cell = initial_cell;
         let line_vector = endpoints.get_vector();
-        let line_normal = line_vector.rotate_ccw() * (1.0 / line_vector.length());
+        let line_normal = line_vector.rotated_ccw() * (1.0 / line_vector.length());
 
         if matches!(self.version, GridVersion::V6_0) {
             let line_halfway = 0.5 * Vector2Df::new(line_vector.x().abs(), line_vector.y().abs());
@@ -274,6 +271,7 @@ impl Grid {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use crate::{
         Grid, GridVersion,
         grid_cell::{CELL_SIZE, GridCell},
@@ -387,10 +385,10 @@ mod tests {
                 "Test '{}' failed",
                 case.name
             );
-            for i in 0..grid_cells.len() {
+            for (cell_index, cell) in grid_cells.iter().enumerate() {
                 assert!(
-                    grid_cells[i].position().x() == case.expected[i].0
-                        && grid_cells[i].position().y() == case.expected[i].1,
+                    cell.position().x() == case.expected.get(cell_index).unwrap().0
+                        && cell.position().y() == case.expected.get(cell_index).unwrap().1,
                     "Test '{}' failed",
                     case.name
                 );

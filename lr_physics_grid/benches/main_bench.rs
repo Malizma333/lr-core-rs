@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used)]
+#![allow(clippy::unwrap_used)]
 use criterion::{
     BenchmarkGroup, BenchmarkId, Criterion, criterion_group, criterion_main, measurement::WallTime,
 };
@@ -61,16 +63,16 @@ fn get_lines(flags: u8) -> Vec<Line> {
 
 fn bench_add_lines(group: &mut BenchmarkGroup<'_, WallTime>, lines: &[Line]) {
     for version in [GridVersion::V6_0, GridVersion::V6_1, GridVersion::V6_2] {
-        let id = BenchmarkId::from_parameter(version.to_string());
+        let id = BenchmarkId::from_parameter(format!("{:?}", version));
 
         group.bench_function(id, |b| {
             let mut index = 0;
             b.iter(|| {
                 let mut grid = Grid::new(version);
-                grid.add_line(black_box(lines[index % lines.len()]));
+                grid.add_line(black_box(*lines.get(index % lines.len()).unwrap()));
                 index += 1;
                 black_box(grid)
-            })
+            });
         });
     }
 }

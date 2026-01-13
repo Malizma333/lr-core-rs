@@ -5,8 +5,8 @@ use lr_format_core::{
     GridVersion, RemountVersion, RiderBuilder, SceneryLineBuilder, StandardLineBuilder, Track,
     TrackBuilder,
 };
-use quick_byte::QuickRead;
-use std::io::{Cursor, Read, Seek};
+use quick_byte::QuickRead as _;
+use std::io::{Cursor, Read as _, Seek as _};
 use vector2d::Vector2Df;
 
 /// Retrieve the number of tracks an sol file contains
@@ -15,9 +15,7 @@ pub fn get_track_count(data: &[u8]) -> u32 {
 
     // HACK: We assume header size is constant, and track list length will always be from 0x2C to 0x2F
     let _ = cursor.seek(std::io::SeekFrom::Start(0x2C));
-    let num_tracks = cursor.read_u32_be().unwrap_or(0);
-
-    num_tracks
+    cursor.read_u32_be().unwrap_or(0)
 }
 
 pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError> {
@@ -26,43 +24,43 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
     let mut bytes = Cursor::new(data);
 
     // Magic number
-    let mut magic_number = [0u8; 2];
+    let mut magic_number = [0_u8; 2];
     bytes.read_exact(&mut magic_number)?;
 
     if magic_number != [0x00, 0xBF] {
-        Err(SolReadError::InvalidMagicNumber(format!(
+        return Err(SolReadError::InvalidMagicNumber(format!(
             "{:02X?}",
             &magic_number,
-        )))?
+        )));
     }
 
     // Header
     let _file_size = bytes.read_u32_be()? + 6;
 
-    let mut tag = [0u8; 4];
+    let mut tag = [0_u8; 4];
     bytes.read_exact(&mut tag)?;
 
     if tag != [b'T', b'C', b'S', b'O'] {
-        Err(SolReadError::InvalidMagicNumber(format!("{:02X?}", &tag)))?
+        return Err(SolReadError::InvalidMagicNumber(format!("{:02X?}", &tag)));
     }
 
-    let mut marker = [0u8; 6];
+    let mut marker = [0_u8; 6];
     bytes.read_exact(&mut marker)?;
     if marker != [0x00, 0x04, 0x00, 0x00, 0x00, 0x00] {
-        Err(SolReadError::InvalidMagicNumber(format!(
+        return Err(SolReadError::InvalidMagicNumber(format!(
             "{:02X?}",
             &marker,
-        )))?
+        )));
     }
 
     let sol_string_length = bytes.read_u16_be()?;
     let mut sol_name = vec![0; usize::from(sol_string_length)];
     bytes.read_exact(&mut sol_name)?;
     if str::from_utf8(&sol_name)? != "savedLines" {
-        Err(SolReadError::InvalidMagicNumber(format!(
+        return Err(SolReadError::InvalidMagicNumber(format!(
             "{:02X?}",
             &sol_name,
-        )))?
+        )));
     }
 
     let _padding = bytes.read_u32_be()?;
@@ -71,7 +69,7 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
     let mut data_name = vec![0; usize::from(data_string_length)];
     bytes.read_exact(&mut data_name)?;
     if str::from_utf8(&data_name)? != "trackList" {
-        Err(SolReadError::MissingTrackList)?
+        return Err(SolReadError::MissingTrackList);
     }
 
     // Track Data
@@ -80,7 +78,7 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
     let mut trimmed_cursor = bytes.take(data_size.saturating_sub(1) - current_pos);
     let result = &deserialize(&mut trimmed_cursor)?;
 
-    let track_list_amf = &result[0];
+    let track_list_amf = result.get(0).ok_or(SolReadError::MissingTrackList)?;
     let track_list =
         track_list_amf
             .clone()
@@ -130,7 +128,7 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
             "6.0" => GridVersion::V6_0,
             "6.1" => GridVersion::V6_1,
             "6.2" => GridVersion::V6_2,
-            other => Err(SolReadError::UnsupportedGridVersion(other.to_string()))?,
+            other => return Err(SolReadError::UnsupportedGridVersion(other.to_string())),
         };
         track.grid_version(grid_version);
     } else {
@@ -197,6 +195,7 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
 
         let mut ordered_standard_lines = Vec::new();
 
+        #[expect(clippy::iter_over_hash_type)]
         for line_amf in lines_list.values() {
             let line = line_amf
                 .clone()
@@ -243,58 +242,52 @@ pub fn read(data: &[u8], track_index: Option<u32>) -> Result<Track, SolReadError
                 .get("4")
                 .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?;
 
-            let ext = ext_amf.clone().get_number().unwrap_or(0.0);
+            #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let ext = ext_amf.clone().get_number().unwrap_or(0.0) as u32;
 
-            let left_extension = ext == 1.0 || ext == 3.0;
-            let right_extension = ext == 2.0 || ext == 3.0;
+            let left_extension = ext == 1 || ext == 3;
+            let right_extension = ext == 2 || ext == 3;
 
             let flipped_amf = line
                 .get("5")
                 .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?;
 
+            #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
             let flipped = flipped_amf
                 .clone()
                 .get_boolean()
-                .or_else(|| flipped_amf.clone().get_number().map(|num| num == 1.0))
+                .or_else(|| flipped_amf.clone().get_number().map(|num| num as u32 == 1))
                 .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?;
 
             let id_amf = line
                 .get("8")
                 .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?;
 
-            let id_float = id_amf
+            #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let id = id_amf
                 .clone()
                 .get_number()
-                .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?;
-
-            let unsafe_id =
-                if id_float.is_finite() && id_float >= 0.0 && id_float <= f64::from(u32::MAX) {
-                    Some(id_float as u32)
-                } else {
-                    None
-                };
-
-            let id = match unsafe_id {
-                Some(val) => val,
-                None => Err(SolReadError::InvalidLine(format!("{:?}", line_amf)))?,
-            };
+                .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?
+                as u32;
 
             let line_type_amf = line
                 .get("9")
                 .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?;
 
-            let line_type_numeric = line_type_amf
+            #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let line_type = line_type_amf
                 .clone()
                 .get_number()
-                .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?;
+                .ok_or(SolReadError::InvalidLine(format!("{:?}", line_amf)))?
+                as u32;
 
-            let is_standard_line = match line_type_numeric {
-                0.0 | 1.0 => true,
-                2.0 => false,
-                other => Err(SolReadError::UnsupportedLineType(other.to_string()))?,
+            let is_standard_line = match line_type {
+                0 | 1 => true,
+                2 => false,
+                other => return Err(SolReadError::UnsupportedLineType(other.to_string())),
             };
 
-            let multiplier = if line_type_numeric == 1.0 { 1.0 } else { 0.0 };
+            let multiplier = if line_type == 1 { 1.0 } else { 0.0 };
 
             let endpoints = Line::new(Point::new(x1, y1), Point::new(x2, y2));
 

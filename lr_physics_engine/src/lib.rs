@@ -1,10 +1,7 @@
-mod default_rider;
 mod engine;
-mod entity;
-mod line_store;
-mod physics_line;
+pub mod entity_registry;
+pub mod line_registry;
+mod moment;
 
-pub use default_rider::build_default_rider;
-pub use engine::{Engine, EngineView};
-pub use entity::{InitialProperties, MountPhase};
-pub use physics_line::{PhysicsLine, PhysicsLineBuilder};
+pub use engine::PhysicsEngine;
+pub use moment::PhysicsMoment;

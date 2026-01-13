@@ -8,6 +8,7 @@ pub enum TrkReadError {
     UnsupportedLineType(String),
     InvalidKeyValue(String),
     EmptyTriggerData,
+    InvalidTriggerData(String),
     UnsupportedTriggerType(String),
     Other(Box<dyn Error + Send + Sync>),
 }
@@ -21,6 +22,7 @@ impl fmt::Display for TrkReadError {
             Self::UnsupportedLineType(e) => write!(f, "Unsupported line type: {}", e),
             Self::InvalidKeyValue(e) => write!(f, "Invalid key value format: {}", e),
             Self::EmptyTriggerData => write!(f, "Empty trigger data"),
+            Self::InvalidTriggerData(e) => write!(f, "Invalid trigger data: {}", e),
             Self::UnsupportedTriggerType(e) => write!(f, "Unsupported trigger type: {}", e),
             Self::Other(e) => write!(f, "Other error occurred: {}", e),
         }

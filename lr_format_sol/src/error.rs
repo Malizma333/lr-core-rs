@@ -1,4 +1,3 @@
-use amf0;
 use std::{error::Error, fmt, io, num, str};
 
 #[derive(Debug)]

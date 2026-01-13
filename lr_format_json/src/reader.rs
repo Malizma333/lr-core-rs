@@ -17,13 +17,13 @@ enum LineType {
 
 pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
     let json_string = str::from_utf8(bytes)?;
-    let json_track: JsonTrack = serde_json::from_str(&json_string)?;
+    let json_track: JsonTrack = serde_json::from_str(json_string)?;
 
     let grid_version = match json_track.version.as_str() {
         "6.0" => GridVersion::V6_0,
         "6.1" => GridVersion::V6_1,
         "6.2" => GridVersion::V6_2,
-        other => Err(JsonReadError::UnsupportedGridVersion(other.to_string()))?,
+        other => return Err(JsonReadError::UnsupportedGridVersion(other.to_string())),
     };
 
     let mut track = TrackBuilder::new(grid_version);
@@ -36,7 +36,7 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
                 0 => LineType::Standard,
                 1 => LineType::Acceleration,
                 2 => LineType::Scenery,
-                other => Err(JsonReadError::UnsupportedLineType(other.to_string()))?,
+                other => return Err(JsonReadError::UnsupportedLineType(other.to_string())),
             };
 
             let endpoints = Line::new(Point::new(line.x1, line.y1), Point::new(line.x2, line.y2));
@@ -57,21 +57,13 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
             };
 
             let multiplier = if line_type == LineType::Acceleration {
-                if let Some(multiplier) = line.multiplier {
-                    multiplier
-                } else {
-                    1.0
-                }
+                line.multiplier.unwrap_or(1.0)
             } else {
                 0.0
             };
 
             let width = if line_type == LineType::Scenery {
-                if let Some(width) = line.width {
-                    width
-                } else {
-                    1.0
-                }
+                line.width.unwrap_or(1.0)
             } else {
                 1.0
             };
@@ -113,8 +105,8 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
                     y2,
                     extended,
                     flipped,
-                    _,
-                    _,
+                    (),
+                    (),
                     multiplier,
                 ) => {
                     let endpoints = Line::new(Point::new(x1, y1), Point::new(x2, y2));
@@ -187,7 +179,7 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
                 track.layers().push(layer);
             } else {
                 let mut layer_folder = LayerFolderBuilder::new(json_layer.id);
-                layer_folder.name(json_layer.name.to_string());
+                layer_folder.name(json_layer.name.clone());
                 layer_folder.visible(json_layer.visible);
 
                 if let Some(editable) = json_layer.editable {
@@ -335,7 +327,7 @@ pub fn read(bytes: &[u8]) -> Result<Track, JsonReadError> {
                     let _start_frame = trigger.start;
                     let _end_frame = trigger.end;
                 }
-                other => Err(JsonReadError::UnsupportedTriggerType(other.to_string()))?,
+                other => return Err(JsonReadError::UnsupportedTriggerType(other.to_string())),
             }
         }
     }

@@ -1,6 +1,10 @@
-use crate::entity::point::{entity::EntityPoint, state::EntityPointState};
 use geometry::{Line, Point};
 use vector2d::Vector2Df;
+
+use crate::entity_registry::{EntityPoint, EntityPointState};
+
+const MAX_EXTENSION_SIZE: f64 = 0.25;
+const ACCELERATION_FACTOR: f64 = 0.1;
 
 pub struct PhysicsLine {
     endpoints: Line,
@@ -48,10 +52,6 @@ impl PhysicsLine {
         point: &EntityPoint,
         point_state: &EntityPointState,
     ) -> Option<(Point, Point)> {
-        if !point.can_collide() {
-            return None;
-        }
-
         let offset_from_point = point_state.position().vector_from(self.endpoints.p0());
         let moving_into_line = Vector2Df::dot(self.normal_unit, point_state.velocity()) > 0.0;
         let distance_from_line_top = Vector2Df::dot(self.normal_unit, offset_from_point);
@@ -66,34 +66,25 @@ impl PhysicsLine {
         {
             let new_position = point_state
                 .position()
-                .translated_by(-1.0 * self.normal_unit * distance_from_line_top);
+                .translated_by(-self.normal_unit * distance_from_line_top);
 
-            let friction_x_flipped = if point_state.external_velocity().x() >= new_position.x() {
-                -1.0
-            } else {
-                1.0
-            };
+            let mut friction_vector =
+                (self.normal_unit.rotated_cw() * point.contact_friction()) * distance_from_line_top;
 
-            let friction_y_flipped = if point_state.external_velocity().y() < new_position.y() {
-                -1.0
-            } else {
-                1.0
-            };
+            if point_state.computed_previous_position().x() >= new_position.x() {
+                friction_vector = friction_vector.flipped_horizontal();
+            }
 
-            let initial_friction_vector =
-                (self.normal_unit.rotate_cw() * point.contact_friction()) * distance_from_line_top;
+            if point_state.computed_previous_position().y() < new_position.y() {
+                friction_vector = friction_vector.flipped_vertical();
+            }
 
-            let friction_vector = Vector2Df::new(
-                friction_x_flipped * initial_friction_vector.x(),
-                friction_y_flipped * initial_friction_vector.y(),
-            );
-
-            let new_external_velocity = point_state
-                .external_velocity()
+            let new_computed_previous_position = point_state
+                .computed_previous_position()
                 .translated_by(friction_vector)
-                .translated_by(-1.0 * self.acceleration_vector);
+                .translated_by(-self.acceleration_vector);
 
-            Some((new_position, new_external_velocity))
+            Some((new_position, new_computed_previous_position))
         } else {
             None
         }
@@ -159,12 +150,11 @@ impl PhysicsLineBuilder {
         let unit = vector * (1.0 / length);
 
         let normal_unit = if self.flipped {
-            unit.rotate_cw()
+            unit.rotated_cw()
         } else {
-            unit.rotate_ccw()
+            unit.rotated_ccw()
         };
 
-        const MAX_EXTENSION_SIZE: f64 = 0.25;
         let extension_ratio = MAX_EXTENSION_SIZE.min(self.height / length);
 
         let left_limit = if self.left_extension {
@@ -179,7 +169,6 @@ impl PhysicsLineBuilder {
             1.0
         };
 
-        const ACCELERATION_FACTOR: f64 = 0.1;
         let acceleration_vector = unit * (self.acceleration_multiplier * ACCELERATION_FACTOR);
 
         PhysicsLine {

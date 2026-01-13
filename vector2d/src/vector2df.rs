@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 
 use crate::Vector2Di;
 
@@ -45,6 +45,13 @@ impl Div<f64> for Vector2Df {
 
     fn div(self, rhs: f64) -> Self::Output {
         Vector2Df::new(self.x / rhs, self.y / rhs)
+    }
+}
+
+impl Neg for Vector2Df {
+    type Output = Vector2Df;
+    fn neg(self) -> Self::Output {
+        Vector2Df::new(-self.x, -self.y)
     }
 }
 
@@ -115,36 +122,24 @@ impl Vector2Df {
         self.length_squared().sqrt()
     }
 
-    pub fn distance_squared(v1: Vector2Df, v2: Vector2Df) -> f64 {
-        (v1 - v2).length_squared()
-    }
-
-    pub fn distance(v1: Vector2Df, v2: Vector2Df) -> f64 {
-        (v1 - v2).length()
-    }
-
     /** Creates a new vector rotated 90° clockwise about the origin */
-    pub fn rotate_cw(&self) -> Vector2Df {
+    pub fn rotated_cw(&self) -> Vector2Df {
         Vector2Df::new(self.y, -self.x)
     }
 
     /** Creates a new vector rotated 90° counterclockwise about the origin */
-    pub fn rotate_ccw(&self) -> Vector2Df {
+    pub fn rotated_ccw(&self) -> Vector2Df {
         Vector2Df::new(-self.y, self.x)
     }
 
     /** Flips the x value of a vector */
-    pub fn flip_horizontal(&self) -> Vector2Df {
+    pub fn flipped_horizontal(&self) -> Vector2Df {
         Vector2Df::new(-self.x, self.y)
     }
 
     /** Flips the y value of a vector */
-    pub fn flip_vertical(&self) -> Vector2Df {
+    pub fn flipped_vertical(&self) -> Vector2Df {
         Vector2Df::new(self.x, -self.y)
-    }
-
-    pub fn to_hex_string(&self) -> String {
-        format!("(0x{:016x}, 0x{:016x})", self.x.to_bits(), self.y.to_bits(),)
     }
 
     pub fn with_x(&self, x: f64) -> Vector2Df {
@@ -154,10 +149,15 @@ impl Vector2Df {
     pub fn with_y(&self, y: f64) -> Vector2Df {
         Vector2Df::new(self.x, y)
     }
+
+    pub fn to_hex_string(&self) -> String {
+        format!("(0x{:016x}, 0x{:016x})", self.x.to_bits(), self.y.to_bits(),)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    #![expect(clippy::float_cmp)]
     use crate::{Vector2Di, vector2df::Vector2Df};
 
     #[test]
@@ -277,24 +277,16 @@ mod tests {
     }
 
     #[test]
-    fn distance() {
-        let v1 = Vector2Df::new(7.0, -10.0);
-        let v2 = Vector2Df::new(2.0, 2.0);
-        let result = Vector2Df::distance(v1, v2);
-        assert!(result == 13.0);
-    }
-
-    #[test]
     fn rotate_clockwise() {
         let v1 = Vector2Df::new(-3.0, 9.0);
-        let v2 = v1.rotate_cw();
+        let v2 = v1.rotated_cw();
         assert!(v2.x == 9.0 && v2.y == 3.0);
     }
 
     #[test]
     fn rotate_counterclockwise() {
         let v1 = Vector2Df::new(2.0, -7.0);
-        let v2 = v1.rotate_ccw();
+        let v2 = v1.rotated_ccw();
         assert!(v2.x == 7.0 && v2.y == 2.0);
     }
 }
