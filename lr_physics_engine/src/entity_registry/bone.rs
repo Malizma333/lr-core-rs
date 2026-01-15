@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
 
-use geometry::Point;
 use vector2d::Vector2Df;
 
-use crate::entity_registry::{EntityPoint, EntityPointId, entity_state::EntityPointState};
+use crate::entity_registry::{EntityPoint, EntityPointId, EntityState};
 
 /// Computed properties when built
 struct Computed {
@@ -49,11 +48,12 @@ impl EntityBone {
         }
     }
 
-    pub(crate) fn get_adjusted(
-        &self,
-        point_states: (&EntityPointState, &EntityPointState),
-        remounting: bool,
-    ) -> (Point, Point) {
+    pub(crate) fn adjust_points(&self, state: &mut EntityState, remounting: bool) {
+        let point_states = (
+            state.point_state(&self.point_ids.0),
+            state.point_state(&self.point_ids.1),
+        );
+
         let bone_vector = point_states
             .0
             .position()
@@ -67,7 +67,7 @@ impl EntityBone {
         };
         let adjustment = adjustment_strength * percent_adjustment;
 
-        (
+        let adjusted = (
             point_states
                 .0
                 .position()
@@ -76,14 +76,21 @@ impl EntityBone {
                 .1
                 .position()
                 .translated_by(bone_vector * adjustment * self.bias),
-        )
+        );
+
+        state
+            .point_state_mut(&self.point_ids.0)
+            .update(Some(adjusted.0), None, None);
+        state
+            .point_state_mut(&self.point_ids.1)
+            .update(Some(adjusted.1), None, None);
     }
 
-    pub(crate) fn get_intact(
-        &self,
-        point_states: (&EntityPointState, &EntityPointState),
-        remounting: bool,
-    ) -> bool {
+    pub(crate) fn is_intact(&self, state: &EntityState, remounting: bool) -> bool {
+        let point_states = (
+            state.point_state(&self.point_ids.0),
+            state.point_state(&self.point_ids.1),
+        );
         let bone_vector = point_states
             .1
             .position()
