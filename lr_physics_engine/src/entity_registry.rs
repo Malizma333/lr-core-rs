@@ -171,33 +171,30 @@ impl EntityRegistry {
 
         while self.latest_synced_frame < frame {
             let mut dismounts = Vec::new();
+            let mut templates = Vec::new();
 
-            for (entity, state) in zip(self.entities.values(), &mut entity_states) {
+            for entity in self.entities.values() {
                 let template = self
                     .entity_templates
                     .get(&entity.template_id())
                     .expect("Entity should point to valid template");
+                templates.push(template);
+            }
 
+            for (template, state) in zip(&templates, &mut entity_states) {
                 let dismounted = state.process_frame(template, line_registry);
-
                 dismounts.push(dismounted);
             }
 
-            for ((entity_index, entity), dismounted) in
-                zip(self.entities.values().enumerate(), dismounts)
+            for ((entity_index, dismounted), template) in
+                zip(zip(0..self.entities.len(), dismounts), &templates)
             {
-                let template = self
-                    .entity_templates
-                    .get(&entity.template_id())
-                    .expect("Entity should point to valid template");
-
                 let mut state = entity_states
                     .get(entity_index)
                     .expect("Index should be within bounds of entity state array")
                     .clone();
 
-                // TODO only allow entity states that match isomorphism
-                state.process_mount_phase(template, &mut entity_states, &dismounted);
+                state.process_mount_phase(template, &mut entity_states, &templates, &dismounted);
 
                 *entity_states
                     .get_mut(entity_index)

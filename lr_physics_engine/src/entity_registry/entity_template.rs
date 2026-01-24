@@ -136,6 +136,36 @@ impl EntityTemplate {
 
         is_remounting
     }
+
+    /// Checks if two templates are remount compatible with each other
+    ///
+    /// Specifically, this checks that they have the same amount of points and bones,
+    /// with the bones have the same breakable properties (thus forming the same
+    /// larger graph of segments and mounts)
+    ///
+    /// This is just a hardcoded strategy for now, but further strategies may be
+    /// explored in the future
+    pub(crate) fn can_remount_with(&self, other: &Self) -> bool {
+        if self.points.len() != other.points.len() || self.bones.len() != other.bones.len() {
+            return false;
+        }
+
+        for (bone, other_bone) in zip(self.bones.values(), other.bones.values()) {
+            let bone_breakable = match bone.connection_type() {
+                bone::ConnectionType::Mount(_) => true,
+                bone::ConnectionType::Segment(_) => false,
+            };
+            let other_bone_breakable = match other_bone.connection_type() {
+                bone::ConnectionType::Mount(_) => true,
+                bone::ConnectionType::Segment(_) => false,
+            };
+            if bone_breakable != other_bone_breakable {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 pub struct EntityTemplateBuilder {

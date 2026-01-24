@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    iter::zip,
+};
 
 use geometry::Point;
 use vector2d::Vector2Df;
@@ -296,6 +299,7 @@ impl EntityState {
         &mut self,
         template: &EntityTemplate,
         other_states: &mut Vec<EntityState>,
+        other_templates: &[&EntityTemplate],
         dismounted: &BTreeSet<MountId>,
     ) {
         let mut new_mount_phases = self.mount_phases.clone();
@@ -323,8 +327,12 @@ impl EntityState {
                         } => {
                             let mut can_swap = false;
 
-                            for other_state in &mut *other_states {
-                                if self.can_swap_sleds(template, other_state, *mount_id) {
+                            for (other_state, other_template) in
+                                zip(&mut *other_states, other_templates)
+                            {
+                                if template.can_remount_with(other_template)
+                                    && self.can_swap_sleds(template, other_state, *mount_id)
+                                {
                                     can_swap = true;
                                     break;
                                 }
@@ -387,8 +395,12 @@ impl EntityState {
                         } => {
                             let mut can_swap = false;
 
-                            for other_state in &mut *other_states {
-                                if self.can_swap_sleds(template, other_state, *mount_id) {
+                            for (other_state, other_template) in
+                                zip(&mut *other_states, other_templates)
+                            {
+                                if template.can_remount_with(other_template)
+                                    && self.can_swap_sleds(template, other_state, *mount_id)
+                                {
                                     can_swap = true;
                                     break;
                                 }
