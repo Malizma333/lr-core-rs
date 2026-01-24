@@ -303,73 +303,70 @@ impl EntityState {
         for (mount_id, current_mount_phase) in &mut new_mount_phases {
             if !dismounted.contains(mount_id) {
                 *current_mount_phase = match template.remount_version() {
-                    RemountVersion::LRA => {
-                        // TODO removed conditional sled break check here, check if still valid
-                        match current_mount_phase {
-                            MountPhase::Dismounting {
-                                frames_until_dismounted,
-                            } => {
-                                if *frames_until_dismounted == 0 {
-                                    MountPhase::Dismounted {
-                                        frames_until_remounting: template.remounting_timer(),
-                                    }
-                                } else {
-                                    MountPhase::Dismounting {
-                                        frames_until_dismounted: frames_until_dismounted
-                                            .saturating_sub(1),
-                                    }
+                    RemountVersion::LRA => match current_mount_phase {
+                        MountPhase::Dismounting {
+                            frames_until_dismounted,
+                        } => {
+                            if *frames_until_dismounted == 0 {
+                                MountPhase::Dismounted {
+                                    frames_until_remounting: template.remounting_timer(),
+                                }
+                            } else {
+                                MountPhase::Dismounting {
+                                    frames_until_dismounted: frames_until_dismounted
+                                        .saturating_sub(1),
                                 }
                             }
-                            MountPhase::Dismounted {
-                                frames_until_remounting,
-                            } => {
-                                let mut can_swap = false;
+                        }
+                        MountPhase::Dismounted {
+                            frames_until_remounting,
+                        } => {
+                            let mut can_swap = false;
 
-                                for other_state in &mut *other_states {
-                                    if self.can_swap_sleds(template, other_state, *mount_id) {
-                                        can_swap = true;
-                                        break;
-                                    }
-                                }
-
-                                if can_swap {
-                                    if *frames_until_remounting == 0 {
-                                        MountPhase::Remounting {
-                                            frames_until_mounted: template.mounted_timer(),
-                                        }
-                                    } else {
-                                        MountPhase::Dismounted {
-                                            frames_until_remounting: frames_until_remounting
-                                                .saturating_sub(1),
-                                        }
-                                    }
-                                } else {
-                                    MountPhase::Dismounted {
-                                        frames_until_remounting: template.remounting_timer(),
-                                    }
+                            for other_state in &mut *other_states {
+                                if self.can_swap_sleds(template, other_state, *mount_id) {
+                                    can_swap = true;
+                                    break;
                                 }
                             }
-                            MountPhase::Remounting {
-                                frames_until_mounted,
-                            } => {
-                                if self.skeleton_can_enter_phase(template, false) {
-                                    if *frames_until_mounted == 0 {
-                                        MountPhase::Mounted
-                                    } else {
-                                        MountPhase::Remounting {
-                                            frames_until_mounted: frames_until_mounted
-                                                .saturating_sub(1),
-                                        }
-                                    }
-                                } else {
+
+                            if can_swap {
+                                if *frames_until_remounting == 0 {
                                     MountPhase::Remounting {
                                         frames_until_mounted: template.mounted_timer(),
                                     }
+                                } else {
+                                    MountPhase::Dismounted {
+                                        frames_until_remounting: frames_until_remounting
+                                            .saturating_sub(1),
+                                    }
+                                }
+                            } else {
+                                MountPhase::Dismounted {
+                                    frames_until_remounting: template.remounting_timer(),
                                 }
                             }
-                            MountPhase::Mounted => MountPhase::Mounted,
                         }
-                    }
+                        MountPhase::Remounting {
+                            frames_until_mounted,
+                        } => {
+                            if self.skeleton_can_enter_phase(template, false) {
+                                if *frames_until_mounted == 0 {
+                                    MountPhase::Mounted
+                                } else {
+                                    MountPhase::Remounting {
+                                        frames_until_mounted: frames_until_mounted
+                                            .saturating_sub(1),
+                                    }
+                                }
+                            } else {
+                                MountPhase::Remounting {
+                                    frames_until_mounted: template.mounted_timer(),
+                                }
+                            }
+                        }
+                        MountPhase::Mounted => MountPhase::Mounted,
+                    },
                     RemountVersion::ComV1 | RemountVersion::ComV2 => match current_mount_phase {
                         MountPhase::Dismounting {
                             frames_until_dismounted,

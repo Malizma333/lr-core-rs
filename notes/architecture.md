@@ -37,9 +37,6 @@ Should we use macros?
   - Usually indicates a refactor is needed anyway
 - Don't define our own macros
 
-How should line triggers interact with frame triggers?
-- TODO
-
 How should version specific features (eg LRA Remount/bugfixes or .com Scarf) be plugins?
   - Enabling feature flags when building engine (eg `.legacy_remount()`)
 

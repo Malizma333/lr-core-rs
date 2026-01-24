@@ -59,8 +59,6 @@ impl fmt::Display for Error {
     }
 }
 
-const EXPECT_TEMPLATE_MSG: &str = "Entity should point to valid template";
-
 impl EntityRegistry {
     pub(crate) fn new() -> Self {
         Self {
@@ -106,7 +104,7 @@ impl EntityRegistry {
         let template = self
             .entity_templates
             .get(&entity.template_id())
-            .expect(EXPECT_TEMPLATE_MSG);
+            .expect("Entity should point to valid template");
         entity.set_initial_offset(offset, template);
         Ok(())
     }
@@ -130,7 +128,7 @@ impl EntityRegistry {
         let template = self
             .entity_templates
             .get(&entity.template_id())
-            .expect(EXPECT_TEMPLATE_MSG);
+            .expect("Entity should point to valid template");
         entity.set_initial_velocity(velocity, template);
         Ok(())
     }
@@ -178,7 +176,7 @@ impl EntityRegistry {
                 let template = self
                     .entity_templates
                     .get(&entity.template_id())
-                    .expect(EXPECT_TEMPLATE_MSG);
+                    .expect("Entity should point to valid template");
 
                 let dismounted = state.process_frame(template, line_registry);
 
@@ -191,14 +189,14 @@ impl EntityRegistry {
                 let template = self
                     .entity_templates
                     .get(&entity.template_id())
-                    .expect(EXPECT_TEMPLATE_MSG);
+                    .expect("Entity should point to valid template");
 
                 let mut state = entity_states
                     .get(entity_index)
                     .expect("Index should be within bounds of entity state array")
                     .clone();
 
-                // TODO this doesn't check same template
+                // TODO only allow entity states that match isomorphism
                 state.process_mount_phase(template, &mut entity_states, &dismounted);
 
                 *entity_states

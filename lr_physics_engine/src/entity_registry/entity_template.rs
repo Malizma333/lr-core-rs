@@ -178,9 +178,6 @@ impl EntityTemplateBuilder {
         id
     }
 
-    // TODO support removing points, which should also removed the bones and joints involving that point
-    // This would also make undoing that action more complex than simply re-adding that point
-
     pub fn add_bone(&mut self, bone: EntityBoneBuilder) -> EntityBoneId {
         let highest_id = self
             .bones
@@ -380,11 +377,6 @@ impl EntityTemplateBuilder {
         }
     }
 
-    // Known bug: Default riders of different remount versions are not able to
-    // cross-remount with each other because they come from different templates,
-    // even though they normally would in linerider.com. This is such a niche case
-    // that it's probably not worth fixing.
-    // TODO Maybe we could solve this with computing graph isomorphism?
     /// Builds the original bosh skeleton
     pub fn default_rider(version: RemountVersion) -> EntityTemplate {
         let repel_length_factor = 0.5;
