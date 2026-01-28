@@ -267,7 +267,7 @@ impl EntityTemplateBuilder {
         // Loop through every unbreakable bone to construction the disjoint set
         // The resulting groups are the segments (groups of points connected by unbreakable bones)
         for bone in self.bones.values() {
-            if !bone.breakable() {
+            if !bone.is_breakable() {
                 let mut root0 = bone.point_ids().0;
                 while let Some(parent_node) = parents
                     .get(&root0)
@@ -338,7 +338,7 @@ impl EntityTemplateBuilder {
                 *root_indices.0.max(root_indices.1),
             );
 
-            if bone.breakable() {
+            if bone.is_breakable() {
                 let next_id = if segment_ids.0 == segment_ids.1 {
                     // Breakable bone, same segment
                     // Belongs to a unique mount
@@ -588,13 +588,13 @@ impl EntityTemplateBuilder {
         );
         skeleton.add_bone(
             EntityBoneBuilder::new((shoulder, left_foot))
-                .repel(true)
+                .should_attract(false)
                 .initial_length_factor(repel_length_factor)
                 .adjustment_strength_remount_factor(unbreakable_remount_strength_factor),
         );
         skeleton.add_bone(
             EntityBoneBuilder::new((shoulder, right_foot))
-                .repel(true)
+                .should_attract(false)
                 .initial_length_factor(repel_length_factor)
                 .adjustment_strength_remount_factor(unbreakable_remount_strength_factor),
         );

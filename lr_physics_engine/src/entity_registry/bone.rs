@@ -25,7 +25,8 @@ pub struct EntityBone {
     point_ids: (EntityPointId, EntityPointId),
     bias: f64,
     initial_length_factor: f64,
-    repel_only: bool,
+    can_repel: bool,
+    can_attract: bool,
     endurance: f64,
     adjustment_strength: f64,
     endurance_remount_factor: f64,
@@ -49,8 +50,12 @@ impl EntityBone {
     pub(crate) fn get_percent_adjustment(&self, bone_vector: Vector2Df) -> f64 {
         let current_length = bone_vector.length();
         let should_repel = current_length < self.computed.rest_length;
+        let should_attract = current_length > self.computed.rest_length;
 
-        if current_length == 0.0 || (self.repel_only && !should_repel) {
+        if current_length == 0.0
+            || (should_repel && !self.can_repel)
+            || (should_attract && !self.can_attract)
+        {
             0.0
         } else {
             (current_length - self.computed.rest_length) / current_length
@@ -121,7 +126,8 @@ pub struct EntityBoneBuilder {
     point_ids: (EntityPointId, EntityPointId),
     bias: f64,
     initial_length_factor: f64,
-    repel_only: bool,
+    repel: bool,
+    attract: bool,
     endurance: f64,
     adjustment_strength: f64,
     endurance_remount_factor: f64,
@@ -134,7 +140,8 @@ impl EntityBoneBuilder {
             point_ids,
             bias: 0.5,
             initial_length_factor: 1.0,
-            repel_only: false,
+            repel: true,
+            attract: true,
             endurance: f64::INFINITY,
             adjustment_strength: 1.0,
             endurance_remount_factor: 1.0,
@@ -146,7 +153,7 @@ impl EntityBoneBuilder {
         self.point_ids
     }
 
-    pub(crate) fn breakable(&self) -> bool {
+    pub(crate) fn is_breakable(&self) -> bool {
         self.endurance != f64::INFINITY
     }
 
@@ -160,8 +167,13 @@ impl EntityBoneBuilder {
         self
     }
 
-    pub fn repel(mut self, repel_only: bool) -> Self {
-        self.repel_only = repel_only;
+    pub fn should_repel(mut self, repel: bool) -> Self {
+        self.repel = repel;
+        self
+    }
+
+    pub fn should_attract(mut self, attract: bool) -> Self {
+        self.attract = attract;
         self
     }
 
@@ -209,7 +221,8 @@ impl EntityBoneBuilder {
         EntityBone {
             point_ids: self.point_ids,
             bias: self.bias,
-            repel_only: self.repel_only,
+            can_repel: self.repel,
+            can_attract: self.attract,
             initial_length_factor: self.initial_length_factor,
             endurance: self.endurance,
             adjustment_strength: self.adjustment_strength,
@@ -230,7 +243,8 @@ impl From<EntityBone> for EntityBoneBuilder {
             point_ids: bone.point_ids,
             bias: bone.bias,
             initial_length_factor: bone.initial_length_factor,
-            repel_only: bone.repel_only,
+            repel: bone.can_repel,
+            attract: bone.can_attract,
             endurance: bone.endurance,
             adjustment_strength: bone.adjustment_strength,
             endurance_remount_factor: bone.endurance_remount_factor,

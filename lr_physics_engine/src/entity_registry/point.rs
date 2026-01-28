@@ -48,7 +48,7 @@ pub struct EntityPointBuilder {
 
 /// Point builder for custom skeletons
 impl EntityPointBuilder {
-    pub(crate) fn new(initial_position: Point) -> EntityPointBuilder {
+    pub fn new(initial_position: Point) -> EntityPointBuilder {
         Self {
             initial_position,
             is_contact: false,

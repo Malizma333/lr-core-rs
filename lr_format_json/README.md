@@ -12,7 +12,7 @@ Created for linerider.com. LRA implemented a compatible serializer for the legac
     // line type
     // id
     // x1, y1, x2, y2
-    // line extension bit flags
+    // line extension bit flags (0b01 is right extension, 0b10 is left extension)
     // flipped
     // previous id, next id (from sol format)
     // multiplier
